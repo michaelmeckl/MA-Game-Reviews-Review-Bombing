@@ -4,17 +4,17 @@ __pycache__/
 *$py.class
 
 .idea
-./data_for_analysis/
-./Steam/steam_review_data/
-./Steam/Steam-Games-Scraper-main/
-./Metacritic/metacritic_data/
-./Twitter/extracted_tweets/
-./Twitter/session.json
-./Reddit/reddit_data/
-./Reddit/praw.ini
+data_for_analysis/
+Steam/steam_review_data/
+Steam/Steam-Games-Scraper-main/
+Metacritic/metacritic_data/
+Twitter/extracted_tweets/
+Twitter/session.json
+Reddit/reddit_data/
+Reddit/praw.ini
 
-/sentiment_analysis_and_nlp/checkpoints/
-/sentiment_analysis_and_nlp/model_test/
+sentiment_analysis_and_nlp/checkpoints/
+sentiment_analysis_and_nlp/model_test/
 
 
 # Distribution / packaging
