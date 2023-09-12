@@ -3,6 +3,7 @@
 
 import logging
 import re
+import time
 from datetime import datetime
 import pandas as pd
 import praw
@@ -285,7 +286,7 @@ def get_reddit_data_for_games():
     default_query_comments = 'ReviewBomb OR "review bombing"'
     # default_query_comments = 'review AND (good OR bad OR negative OR positive OR hate)'   # alternative
 
-    use_game_specific_query = True  # whether to use the default queries above or the game specific ones
+    use_game_specific_query = False  # whether to use the default queries above or the game specific ones
     #################################################################
 
     def get_all_query(game_name: str):
@@ -415,6 +416,7 @@ def get_reddit_data_for_games():
         print(f"{'-' * 50}")
         get_comments_for_game(game, subreddits, query_comments, start_date, end_date)
         print(f"\nFinished with game {game}\n######################################\n")
+        time.sleep(2)
 
 
 # ! nach neuem Pricing (seit 1. Juli) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?

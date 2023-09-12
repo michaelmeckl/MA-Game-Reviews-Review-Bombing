@@ -12,6 +12,12 @@ from bs4 import BeautifulSoup
 from enum import Enum
 from useful_code_from_other_projects.FPSMeasurer import timeit
 
+"""
+IMPORTANT:
+Unfortunately, this scraper no longer works as the metacritic website has been completely re-designed sometime around 
+the 10.09.2023 (the first re-design in many years actually ...)
+"""
+
 
 ##################### Global Variables #####################
 class PLATFORM(Enum):
@@ -29,7 +35,7 @@ class PLATFORM(Enum):
 # the names are directly used for the url, so they should be written exactly as expected by Metacritic
 games_to_scrape = {
     # "hogwarts-legacy": [PLATFORM.PC.value],
-    # "cyberpunk-2077": [PLATFORM.PC.value],  # PLATFORM.PS5, PLATFORM.PS4, PLATFORM.XBOX_SERIES_X, PLATFORM.XBOX_ONE],
+    "cyberpunk-2077": [PLATFORM.PC.value],  # PLATFORM.PS5, PLATFORM.PS4, PLATFORM.XBOX_SERIES_X, PLATFORM.XBOX_ONE],
     # "the-last-of-us-part-ii": [PLATFORM.PS4.value],
     # "firewatch": [PLATFORM.PC.value],
     # "borderlands": [PLATFORM.PC.value],
@@ -41,12 +47,12 @@ games_to_scrape = {
     # "metro-last-light": [PLATFORM.PC.value],
     # "metro-2033-redux": [PLATFORM.PC.value],
     # "metro-2033": [PLATFORM.PC.value],
-    "overwatch-2": [PLATFORM.PC.value],
+    # "overwatch-2": [PLATFORM.PC.value],
 }
 
-SCRAPE_ALL = True  # if False use time period instead of scraping all user reviews
-since = "01-03-2022"  # "start date", i.e. the oldest date
-until = "01-07-2023"  # "end date", i.e. the most recent date
+SCRAPE_ALL = False  # if False use time period instead of scraping all user reviews
+since = "01-01-2023"  # "start date", i.e. the oldest date
+until = "01-02-2023"  # "end date", i.e. the most recent date
 
 headers = {'User-agent': 'Mozilla/5.0'}
 
@@ -321,8 +327,6 @@ def scrape_time_period(requests_session, out_data: dict, metacritic_url: str, nu
         # The idea of the algorithm is to first find the end date of the given time period (i.e. the newest relevant
         # review) and the simply iterate over all reviews until the start date (i.e. the oldest relevant review) is
         # reached.
-        # TODO alternative (less efficient?): iterate through all in a loop until end and start date encountered and
-        #  only scrape the reviews between them
 
         # the first and last review on each page have an additional class "first_review" / "last_review" respectively
         all_reviews_on_page = soup.find('ol', class_='reviews user_reviews').findAll("li", class_=["review",

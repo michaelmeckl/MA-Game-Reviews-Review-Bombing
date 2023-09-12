@@ -29,6 +29,9 @@ zusätzlich (veraltet, inzwischen befindet sich eine neuere Methode im anderen C
 ## Metacritic
 Da keine offizielle API und keine guten, aktuellen Scraper gefunden, eigenen Scraper geschrieben.
 
+**Anmerkung: seit ca. 10.09.2023 funktioniert der Scraper nicht mehr, da die gesamte Metacritic-Webseite komplett 
+modernisiert und re-designt wurde :(**
+
 **100 % fertig:**
 * Scrapen von Spielen (allgemeine Informationen zum Spiel + Reviews) für die angegebenen Plattformen: entweder alle 
   Reviews (sortiert nach Datum) oder Suche nach allen Reviews in einem angegebenen Zeitraum
@@ -107,8 +110,8 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     Firewatch, Overwatch 2 und Cyberpunk 2077" + zugehörige User Informationen
     * Reviews zu Cyberpunk 2077 nur aus dem Zeitraum 10.12.2020 - 02.01.2021 (inklusive)
 * **Reddit:**
-  * Firewatch Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code)
-    * **TODO: die anderen allgemeinen fehlen noch**
+  * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
+    Spielen "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing
   * Submissions & Kommentare mit zugehörigen User Informationen für spezifische Queries für die Spiele "Cyberpunk 2077, 
     Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für 
     Queries & Zeiträume, s. Code; manchmal auch Ergebnisse mehrerer Queries kombiniert)

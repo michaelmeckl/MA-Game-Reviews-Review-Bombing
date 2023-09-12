@@ -431,8 +431,9 @@ def load_reviews_for_games():
     # the end date is NOT included! (i.e. for end date 21.01 the actual end date is 20.01)
     game_dict = {
         # "Hogwarts Legacy": ("06-02-2023", None),
+        # "Cyberpunk 2077": ("09-12-2020", "17-12-2020"),
         # "Cyberpunk 2077": ("01-03-2022", "14-03-2022"),
-        "Cyberpunk 2077": ("09-12-2020", "17-12-2020"),
+        "Cyberpunk 2077": ("01-01-2023", "01-02-2023"),
         # "Borderlands GOTY": ("01-04-2019", "30-04-2019"),
         # "Borderlands GOTY Enhanced": ("01-04-2019", "30-04-2019"),
         # "Borderlands: The Pre-Sequel": ("01-04-2019", "30-04-2019"),
