@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import pprint
 import re
 from datetime import datetime
 import pandas as pd
 import praw
 import prawcore
+import pprint
 import requests
 import requests.auth
 from Reddit.comments_utils import search_comments_with_redditwarp, extract_comments_for_submission
 from Reddit.reddit_utils import save_reddit_data, REDDIT_BASE_URL, OUT_DATA, get_user_information
-from useful_code_from_other_projects.utils import compare_pandas_dataframes
 # from pmaw import PushshiftAPI
 
 
@@ -267,54 +266,38 @@ def get_comments_for_game(game, subreddits, query, start_date=None, end_date=Non
 
     df_all = pd.concat(dataframes, join="outer").drop_duplicates(subset=['id'], keep='first').reset_index(drop=True)
     df_all.to_csv(OUT_DATA / f"merged_reddit_comments_{game}.csv", index=False)
+    # TODO search r/all for comments as well ?
 
 
-def get_reddit_data():
-    enable_praw_logging()
+def get_reddit_data_for_games():
+    # enable_praw_logging()
+    if not OUT_DATA.is_dir():
+        OUT_DATA.mkdir()
 
-    ################ Config #################
-    game = "HogwartsLegacy"
-    # subreddits = ["cyberpunkgame", "CyberpunkTheGame", "LowSodiumCyberpunk"]
-    subreddits = ["HarryPotterGame", "hogwartslegacyJKR", "HogwartsLegacyGaming"]
-
+    """
     # the query to use for searching submissions in the subreddits
     query_subreddit = "\"ReviewBomb*\" OR \"review-bomb*\" OR \"review bomb*\""
     # the query to use for searching submissions in the r/all subreddit
     query_all = '("ReviewBomb*" OR "review-bomb*" OR "review bomb*") AND "Hogwarts Legacy"'
-    # the query to use for comment search
-    query_comments = query_subreddit
-
-    # use None to specify no date
-    start_date = "06-02-2023"
-    end_date = "27-06-2023"
-    #########################################
-
-    get_submissions_for_game(game, subreddits, query_subreddit, query_all, start_date, end_date)
-    print(f"{'-' * 50}")
-    get_comments_for_game(game, subreddits, query_comments, start_date, end_date)
-
-
-def get_reddit_data_for_games():
+    """
+    #################################################################
     default_query = 'ReviewBomb OR boycott OR controversy OR fake OR sabotage OR manipulate OR spam OR hate'
-
     default_query_comments = 'ReviewBomb OR "review bombing"'
-    # default_query_comments = 'review AND (good OR bad OR negative OR positive OR hate)'
+    # default_query_comments = 'review AND (good OR bad OR negative OR positive OR hate)'   # alternative
+
+    use_game_specific_query = True  # whether to use the default queries above or the game specific ones
+    #################################################################
 
     def get_all_query(game_name: str):
         return f'{game_name} AND ({default_query})'
 
+    """
     games = {
         "Hogwarts Legacy": {
             "name": '"Hogwarts Legacy"',
             "subreddits": ["HarryPotterGame", "hogwartslegacyJKR", "HogwartsLegacyGaming"],
             "start_date": "06-02-2023",
             "end_date": "22-02-2023",
-        },
-        "Cyberpunk 2077": {
-            "name": '"Cyberpunk 2077"',
-            "subreddits": ["cyberpunkgame", "CyberpunkTheGame", "LowSodiumCyberpunk"],
-            "start_date": "09-12-2020",
-            "end_date": "25-12-2020",
         },
         "Elden Ring": {
             "name": '"Elden Ring"',
@@ -334,12 +317,6 @@ def get_reddit_data_for_games():
             "start_date": None,
             "end_date": None,
         },
-        "Borderlands 3": {
-            "name": "Borderlands",  # search for all Borderlands parts as others were review-bombed as well
-            "subreddits": ["borderlands3", "Borderlands"],
-            "start_date": "03-04-2019",
-            "end_date": "11-04-2019",
-        },
         "Titan Souls": {
             "name": '"Titan Souls"',
             "subreddits": ["TitanSouls"],
@@ -352,11 +329,67 @@ def get_reddit_data_for_games():
             "start_date": None,
             "end_date": None,
         },
+    }
+    """
+
+    games = {
+        "ukraine_russia_review_bombing": {
+            "name": '(ukraine OR russia) AND (ReviewBomb OR "review bombing" OR game review)',
+            "subreddits": ["cyberpunkgame", "CyberpunkTheGame", "LowSodiumCyberpunk", "witcher", "thewitcher3",
+                           "Witcher3", "CDProjektRed", "gwent", "thronebreaker", "stalker", "Frostpunk", "ThisWarofMine"
+                           ],
+            "start_date": "24-02-2022", "end_date": "01-05-2022",
+            "query_subreddit": '(review OR support OR sales) AND (ukraine OR russia)',
+            "query_comments": '(ReviewBomb OR "review bombing" OR review OR support OR sales) AND (ukraine OR russia)',
+            # query_all is usually the name AND query_subreddit
+            "query_all": '(ukraine OR russia) AND (ReviewBomb OR "review bombing" OR game review) AND ((review OR '
+                         'support OR sales) AND (ukraine OR russia))',
+        },
+        "Cyberpunk 2077": {
+            "name": '"Cyberpunk 2077"',
+            "subreddits": ["cyberpunkgame", "CyberpunkTheGame", "LowSodiumCyberpunk"],
+            "start_date": "09-12-2020", "end_date": "01-02-2021",
+            "query_subreddit": "lie OR fraud OR scam OR broken OR disappoint OR disappointment OR disappointing",
+            "query_comments": "lie OR fraud OR scam",
+            "query_all": '"Cyberpunk 2077" AND (lie OR fraud OR scam OR broken OR disappoint OR disappointment OR '
+                         'disappointing)',
+            # "start_date": "01-01-2023", "end_date": "01-02-2023",
+            # "query_subreddit": 'award OR "Steam Awards" OR "Labor of Love"',
+            # "query_comments": 'steam OR award OR "Labor of Love"',
+            # "query_all": '"Cyberpunk 2077" AND (award OR "Steam Awards" OR "Labor of Love")',
+        },
+        "Borderlands 3": {
+            "name": "borderlands 3",
+            "subreddits": ["borderlands3", "Borderlands2", "Borderlands"],
+            "start_date": "01-04-2019", "end_date": "01-05-2020",
+            "query_subreddit": '"epic store" OR "epic games" OR exclusive',
+            "query_comments": "epic games store exclusive",
+            "query_all": 'borderlands 3 AND ("epic store" OR "epic games" OR exclusive)',
+        },
+        "Metro Exodus": {
+            "name": '(metro OR "metro exodus")',  # search for all Metro parts as others were review-bombed as well
+            "subreddits": ["metro", "metroexodus", "metro_exodus"],
+            "start_date": "20-01-2019", "end_date": "01-03-2020",
+            "query_subreddit": '"epic store" OR "epic games" OR exclusive',
+            "query_comments": "epic games store",   # better without 'exclusive' here
+            "query_all": '(metro OR "metro exodus") AND ("epic store" OR "epic games" OR exclusive)',
+        },
         "Firewatch": {
-            "name": 'Firewatch',
+            "name": "Firewatch",
             "subreddits": ["Firewatch"],
-            "start_date": None,
-            "end_date": None,
+            "start_date": "01-09-2017", "end_date": None,   # "01-11-2017"  # None otherwise no results in subreddit
+            "query_subreddit": "DCMA OR takedown OR pewdiepie",
+            "query_comments": "DCMA OR takedown OR pewdiepie",
+            "query_all": 'Firewatch AND (DCMA OR takedown OR pewdiepie)',
+        },
+        "Overwatch 2": {
+            "name": '"Overwatch 2"',
+            "subreddits": ["Overwatch", "overwatch2"],
+            "start_date": "01-10-2022", "end_date": None,
+            "query_subreddit": "promise OR shutdown OR greed OR monetization OR microtranscation",
+            "query_comments": "(negative OR hate) AND (promise OR shutdown OR greed OR monetization OR "
+                              "microtranscation)",
+            "query_all": '"Overwatch 2" AND (promise OR shutdown OR greed OR monetization OR microtranscation)',
         },
     }
 
@@ -364,24 +397,27 @@ def get_reddit_data_for_games():
         game_infos = games[game]
         name = game_infos["name"]
         subreddits = game_infos["subreddits"]
-        start_date = None  # game_infos["start_date"]
-        end_date = None  # game_infos["end_date"]
 
-        query_subreddit = default_query
-        query_comments = default_query_comments
-        query_all = get_all_query(name)
-        # TODO search r/all for comments as well ?
+        if use_game_specific_query:
+            query_subreddit = game_infos["query_subreddit"]
+            query_comments = game_infos["query_comments"]
+            query_all = game_infos["query_all"]
+            start_date = game_infos["start_date"]
+            end_date = game_infos["end_date"]
+        else:
+            query_subreddit = default_query
+            query_comments = default_query_comments
+            query_all = get_all_query(name)
+            start_date = end_date = None   # for general query use no time period because results are only a few anyway
 
         print(f"Getting submissions for game \"{game}\" with all_query \"{query_all}\"...")
         get_submissions_for_game(game, subreddits, query_subreddit, query_all, start_date, end_date)
         print(f"{'-' * 50}")
         get_comments_for_game(game, subreddits, query_comments, start_date, end_date)
-
         print(f"\nFinished with game {game}\n######################################\n")
 
 
 # ! nach neuem Pricing (seit 1. Juli) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
 if __name__ == "__main__":
     # extracted_submissions = extract_submissions_from(["cyberpunkgame"])
-    # get_reddit_data()
     get_reddit_data_for_games()

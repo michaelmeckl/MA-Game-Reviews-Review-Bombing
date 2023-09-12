@@ -88,8 +88,6 @@ regelmäßig Accounts gewechselt werden, aber ansonsten kann man damit die Twitt
 # Aktuell verfügbare Daten
 vgl. [data_for_analysis](./data_for_analysis) - Ordner
 
-**Reddit & Twitter nicht mehr ganz aktuell**
-
 * **Steam:**
   * ca. 250 negative Reviews zu Hogwarts Legacy (7.02.2023 - 21.02.2023) (noch ohne User Infos)
   * negative User Reviews (keine min/max review time und bei den meisten bei Sprachen "all", bei manchen auf "english, 
@@ -100,7 +98,7 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * Firewatch
     * Overwatch 2
     * Cyberpunk 2077
-      * 09.12.2020 - 16.12.2020  &  01.03.2022 - 13.03.2022
+      * 09.12.2020 - 16.12.2020 (46820 Reviews)  &  01.03.2022 - 13.03.2022 (4977 Reviews)
       * 17.12.2020 - 02.01.2021  &  8.06.2023 - 19.06.2023 (bei diesen nur eingeschränkte review time bis 1h)
 * **Metacritic:**
   * allgemeine Informationen + 407 UserReviews zu Hogwarts Legacy im Zeitraum 7.02.2023 - 21.02.2023
@@ -109,24 +107,34 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     Firewatch, Overwatch 2 und Cyberpunk 2077" + zugehörige User Informationen
     * Reviews zu Cyberpunk 2077 nur aus dem Zeitraum 10.12.2020 - 02.01.2021 (inklusive)
 * **Reddit:**
-  * 49 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Cyberpunk 2077 
-    (aus Subreddits und r/all) aus dem Zeitraum 10.12.2020 - 27.06.2023 sowie 224 Kommentare zu derselben Query (und 
-    demselben Zeitraum) aus dem r/cyberpunkgame - Subreddit
-    * Kommentare älter als 6 Monate scheinen hier aber (auch auf Webseite) nicht gefunden zu werden?
-  * 8 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Hogwarts 
-    Legacy (aus Subreddits und r/all) aus dem Zeitraum 06.02.2023 - 27.06.2023 sowie 79 Kommentare zu derselben Query 
-    (und demselben Zeitraum) aus dem r/HarryPotterGame - Subreddit
-  * Submissions und Kommentare zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The Last of Us Part II, Borderlands Series, Titan Souls und Kunai für die Queries `ReviewBomb OR boycott OR controversy OR fake OR sabotage OR manipulate OR spam OR hate` (Submissions) sowie `ReviewBomb OR "review bombing"`(Kommentare)
+  * Firewatch Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code)
+    * **TODO: die anderen allgemeinen fehlen noch**
+  * Submissions & Kommentare mit zugehörigen User Informationen für spezifische Queries für die Spiele "Cyberpunk 2077, 
+    Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für 
+    Queries & Zeiträume, s. Code; manchmal auch Ergebnisse mehrerer Queries kombiniert)
 * **Twitter:**
-  * Hogwarts Legacy:
-  49 Tweets in Zeitraum 06.02.2023 - 27.06.2023 zur Query `"(Hogwarts Legacy) AND ("review bomb*" OR 
-    "ReviewBomb*" OR "review-bomb*" OR "fake review*" OR "spam review*")" lang:en`
-    * ca 3000-4000 Tweets zu verschiedenen Queries aus Februar 2022 (s. Code) + ca. 8000 Tweets für 06.02
-  * Cyberpunk 2077: 
-  20 Tweets im Zeitraum 10.12.2020 - 27.06.2023 zur Query `"(Cyberpunk 2077) AND ("review bomb*" OR "ReviewBomb*" OR 
-    "review-bomb*" OR "fake review*" OR "spam review*)" lang:en`
-    * ca 2000 Tweets zu verschiedenen Queries aus Dezember 2020 und März 2022 (s. Code)
-  * Tweets für die Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The 
-    Last of Us Part II, Borderlands Series, Titan Souls und Kunai 
-  * 8449 Tweets zu Ghostwire Tokyo für die Query `Ghostwire Tokyo (lang:en OR lang:de) since:2023-04-11 
-    until:2023-04-19` und 259 Tweets zu Kunai für die Query `Kunai game since:2020-02-06 until:2020-02-28`
+  * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
+    controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen 
+    "Cyberpunk 2077, Metro Exodus, Borderlands (3), Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review 
+    Bombing
+  * Tweets zu spezifischen Queries für die Spiele "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und 
+    Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
+
+* **Old Data:**
+  * **Reddit:**
+    * 49 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Cyberpunk 2077 
+      (aus Subreddits und r/all) aus dem Zeitraum 10.12.2020 - 27.06.2023
+    * 8 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Hogwarts 
+      Legacy (aus Subreddits und r/all) aus dem Zeitraum 06.02.2023 - 27.06.2023
+    * Submissions und Kommentare zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The Last 
+      of Us Part II, Borderlands Series und Titan Souls für die Queries `ReviewBomb OR boycott OR controversy 
+      OR fake OR sabotage OR manipulate OR spam OR hate` (Submissions) sowie `ReviewBomb OR "review bombing"`(Kommentare)
+  * **Twitter:**
+    * Hogwarts Legacy:
+      * ca 3000-4000 Tweets zu verschiedenen Queries aus Februar 2022 + ca. 8000 Tweets für 06.02
+    * Cyberpunk 2077:
+      * ca 2000 Tweets von bestimmten Tagen im Dezember 2020 und März 2022
+    * Tweets für die Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The 
+      Last of Us Part II, Borderlands Series, Titan Souls und Kunai
+    * 8449 Tweets zu Ghostwire Tokyo für die Query `Ghostwire Tokyo (lang:en OR lang:de) since:2023-04-11 
+      until:2023-04-19`

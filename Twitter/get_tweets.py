@@ -1,28 +1,26 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import pathlib
-import pprint
 import time
 import os
 import pandas as pd
-import requests
-import snscrape.modules.twitter as sntwitter
 from tweety import Twitter
 from tweety.filters import SearchFilters
 from tweety.types import Tweet
 import emoji
 from useful_code_from_other_projects.utils import enable_max_pandas_display_size, compare_pandas_dataframes
+import pprint
+# import requests
+# import snscrape.modules.twitter as sntwitter
 
+
+# old code with the now outdated snscrape module:
+"""
 ##################### Configuration #####################
-"""
-GAME = "Hogwarts Legacy"
-start_date = "2023-02-06"
-# end_date = "2023-03-01"
-"""
-
 GAME = "Cyberpunk 2077"
 start_date = "2020-12-09"
-# auch Variationen von Cyberpunk 2077 bringen nicht mehr Ergebnisse leider :(
+# end_date = "2020-12-31"
 QUERY = f'{GAME} ("review bomb * " OR "sabotag*" OR "fake * " OR "boycott * ") since:{start_date}'  # until:{end_date}'
 
 #########################################################
@@ -30,11 +28,9 @@ QUERY = f'{GAME} ("review bomb * " OR "sabotag*" OR "fake * " OR "boycott * ") s
 
 # probably outdated with the new twitter restrictions (must be logged in to view content) and rate limits :(
 def get_tweets(game=GAME, q=QUERY):
-    """
-    For how to formulate queries, see https://twitter.com/search-advanced.
-    Use "..." for exact search, (#...) to search for hashtags, until: and since: for time search, from: for tweets
-    from user, -... to exclude words, AND / OR for boolean search and lang:en to search only in specific language.
-    """
+    # For how to formulate queries, see https://twitter.com/search-advanced.
+    # Use "..." for exact search, (#...) to search for hashtags, until: and since: for time search, from: for tweets
+    # from user, -... to exclude words, AND / OR for boolean search and lang:en to search only in specific language.
     max_tweets = 100
     tweets_list = []
 
@@ -61,8 +57,9 @@ def get_tweets(game=GAME, q=QUERY):
     print(tweets_df.head(5))
     # time_period = f"{start_date}-{end_date}" if (start_date is not None and end_date is not None) else "all_time"
     tweets_df.to_csv(f'tweets_{game}_{start_date}-now.csv', index=False)
+"""
 
-
+"""
 def use_twitter_syndication():
     # TODO how does this work ? syndication seems to cross-post tweets but no idea how i can send a query there ...
     url = "https://cdn.syndication.twimg.com/tweet-result"
@@ -91,7 +88,7 @@ def use_twitter_syndication():
     pprint.pprint(response.text)
     print("\n##############################################\n")
     pprint.pprint(response.json)
-
+"""
 
 """
 async def test_twscrape():
@@ -121,6 +118,20 @@ async def test_twscrape():
         print(tweet.id, tweet.user.username, tweet.rawContent)
         print(tweet.dict())
 """
+
+
+def analyze_emojis(text_with_emojis: str):
+    # convert all emojis to text and return all found emojis as a separate list
+    number_emojis = emoji.emoji_count(text_with_emojis, unique=False)
+    if number_emojis == 0:
+        return text_with_emojis, []
+
+    emoji_list = [found_emoji.chars for found_emoji in
+                  emoji.analyze(text_with_emojis, non_emoji=False, join_emoji=True)]
+
+    # print(emoji.distinct_emoji_list(text_with_emojis))
+    cleaned_text = emoji.demojize(text_with_emojis, language='alias')
+    return cleaned_text, emoji_list
 
 
 def process_tweet_list(tweets: list[Tweet]):
@@ -235,8 +246,8 @@ def extract_tweets_loop(app: Twitter, query: str, csv_file_path: str):
                 load_more = False
 
 
-def get_tweets_tweety(use_single_query=True):
-    # the until - date is always exclusive! (i.e. the day after)
+def get_tweets_tweety():
+    """
     # currently: 1 day before and 2 weeks after release OR 1 week after a special event
     games = {
         "Hogwarts Legacy": [
@@ -249,7 +260,7 @@ def get_tweets_tweety(use_single_query=True):
             'Cyberpunk 2077 review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
             ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
             "Cyberpunk 2077 since:2020-12-09 until:2020-12-25",
-            "Cyberpunk 2077 since:2022-03-02 until:2022-03-10",
+            "Cyberpunk 2077 since:2022-03-02 until:2022-03-31",
             "Cyberpunk 2077 since:2023-01-02 until:2023-01-10",
         ],
         "Elden Ring": [
@@ -284,12 +295,91 @@ def get_tweets_tweety(use_single_query=True):
             "Kunai game since:2020-02-06 until:2020-02-28",
         ],
     }
+    """
 
+    # the until - date is always exclusive! (i.e. the day after)
+    # general queries for review bombing and fake reviews
+    games_general = {
+        "Cyberpunk 2077": [
+            'Cyberpunk 2077 review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
+            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+            # "Cyberpunk 2077 review since:2020-12-09 until:2021-01-01",
+            # "Cyberpunk 2077 review since:2022-03-01 until:2022-04-01",
+            # "Cyberpunk 2077 review since:2023-01-01 until:2023-02-01",
+        ],
+        "Ukraine_Russia_ReviewBomb": [
+            '(russia OR ukraine) AND review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR '
+            'controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Borderlands 3": [
+            'Borderlands review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
+            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+            # 'Borderlands review since:2019-04-01 until:2019-05-01',
+            # 'Borderlands review since:2020-03-01 until:2020-04-01',
+        ],
+        "Metro Exodus": [
+            '("metro exodus" OR metro) AND review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR '
+            'controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Firewatch": [
+            'Firewatch review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR '
+            'manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Overwatch 2": [
+            'Overwatch 2 review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR '
+            'manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+    }
+
+    # queries specifically for certain review bombings
+    games_specific = {
+        "Cyberpunk 2077": [
+            '"Cyberpunk 2077" (lie OR fraud OR scam OR broken OR disappoint OR disappointment OR disappointing)'
+            ' since:2020-12-09 until:2021-01-01',
+            '"Cyberpunk 2077" (negative OR hate OR review) (lie OR fraud OR scam OR broken OR disappoint OR'
+            ' disappointment OR disappointing) since:2020-12-09 until:2021-01-01',
+            '"Cyberpunk 2077" (award OR "Steam Awards" OR "Labor of Love") since:2023-01-01 until:2023-02-01',
+        ],
+        "Ukraine_Russia_ReviewBomb": [
+            '(ReviewBomb OR "review bombing" OR "negative game review") AND (russia OR ukraine) since:2022-02-24'
+            ' until:2022-04-01',
+            '("CD Projekt Red" OR "CD Project Red" OR CDPR OR Witcher OR Gwent OR Thronebreaker OR "Cyberpunk 2077" '
+            'OR Frostpunk OR ("STALKER" OR "S.T.A.L.K.E.R")) AND (russia OR ukraine) since:2022-02-24 until:2022-04-01',
+            '("CD Projekt Red" OR "CD Project Red" OR CDPR OR Witcher OR Gwent OR Thronebreaker OR "Cyberpunk 2077"'
+            ' OR Frostpunk OR ("STALKER" OR "S.T.A.L.K.E.R")) AND (sales OR support) AND (russia OR ukraine)'
+            ' since:2022-02-24 until:2022-04-01',
+        ],
+        "Borderlands 3": [
+            '(borderlands 3) AND ("epic store" OR "epic games") since:2019-04-01 until:2019-05-01',
+            '(borderlands 3) AND ("epic store" OR "epic games") since:2020-03-01 until:2020-04-01',
+        ],
+        "Metro Exodus": [
+            '("metro exodus" OR metro) AND ("epic store" OR "epic games") since:2019-01-20 until:2019-03-01',
+            '("metro exodus" OR metro) AND ("epic store" OR "epic games") since:2020-02-01 until:2020-03-01',
+        ],
+        "Firewatch": [
+            'Firewatch (DCMA OR pewdiepie) since:2017-09-10 until:2017-11-01',
+        ],
+        "Overwatch 2": [
+            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtranscation) since:2023-08-10 '
+            'until:2023-09-01',
+            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtranscation) since:2022-10-04 '
+            'until:2022-11-01',
+            '"Overwatch 2" (review (bomb OR bombs OR bombing)) since:2023-08-10 until:2023-09-01',
+            '"Overwatch 2" (review (bomb OR bombs OR bombing)) since:2022-10-04 until:2022-11-01',
+        ],
+    }
+
+    #################################################################
     # twitter authentication
     app = Twitter("session")
     # app.sign_in("MM487558184414", "masterarbeit.1")  # test account
     # app.sign_in("LordM4679", "Mastersemester.7")  # test account 2
     app.connect()
+
+    use_single_query = False
+    use_specific_queries = False
+    #################################################################
 
     if use_single_query:
         # only for easy testing with a specific game and query
@@ -305,11 +395,13 @@ def get_tweets_tweety(use_single_query=True):
         if not Output_Folder.is_dir():
             Output_Folder.mkdir()
 
+        games = games_specific if use_specific_queries else games_general
         for game in games:
             queries = games[game]
             for i, query in enumerate(queries):
                 print(f"Searching with query: \"{query}\"\n")
-                csv_out_path = Output_Folder / f"tweets_{game}--query_{i+1}.csv"
+                query_tag = "specific" if use_specific_queries else "general"
+                csv_out_path = Output_Folder / f"tweets_{game}--query_{i+1}--{query_tag}.csv"
 
                 extract_tweets_loop(app, query, csv_out_path)
                 print(f"\nFinished with query \"{query}\" for game {game}\n######################################\n")
@@ -317,31 +409,14 @@ def get_tweets_tweety(use_single_query=True):
             print(f"\nFinished with game {game}\n######################################\n")
 
 
-def analyze_emojis(text_with_emojis: str):
-    # convert all emojis to text and return all found emojis as a separate list
-    number_emojis = emoji.emoji_count(text_with_emojis, unique=False)
-    if number_emojis == 0:
-        return text_with_emojis, []
-
-    emoji_list = [found_emoji.chars for found_emoji in
-                  emoji.analyze(text_with_emojis, non_emoji=False, join_emoji=True)]
-
-    # print(emoji.distinct_emoji_list(text_with_emojis))
-    cleaned_text = emoji.demojize(text_with_emojis, language='alias')
-    return cleaned_text, emoji_list
-
-
 def compare_result_dataframes():
-    df_2 = pd.read_csv("./comparison/tweets_Hogwarts Legacy--query_15.csv")
-    df_3 = pd.read_csv("./comparison/tweets_Hogwarts Legacy review--10_02.csv")
-    df_4 = pd.read_csv("./comparison/tweets_Hogwarts Legacy_good_bad.csv")
+    df_2 = pd.read_csv("./tweets_Metro Exodus_query_0.csv")
+    df_3 = pd.read_csv("./tweets_Metro Exodus_query_1.csv")
+    df_4 = pd.read_csv("./tweets_Metro Exodus_query_2.csv")
     compare_pandas_dataframes(df_2, df_3, merge_column="id", df_1_name="df_2-3", df_2_name="df_3-2")
     compare_pandas_dataframes(df_2, df_4, merge_column="id", df_1_name="df_2-4", df_2_name="df_4-2")
 
 
 if __name__ == "__main__":
     enable_max_pandas_display_size()
-
-    # get_tweets()
-    # asyncio.run(test_twscrape())
     get_tweets_tweety()

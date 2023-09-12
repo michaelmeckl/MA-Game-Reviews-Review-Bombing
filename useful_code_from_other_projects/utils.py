@@ -133,6 +133,20 @@ def remove_duplicates(df: pd.DataFrame, column: str = None) -> pd.DataFrame:
     return without_duplicates
 
 
+def combine_identical_dataframes(df_list: list[pd.DataFrame], drop_duplicates=True, drop_column="id", sort_df=True,
+                                 sort_column=None):
+    """
+    Combines a list of dataframes with the same columns. Optionally drops duplicate entries and sorts the
+    resulting dataframe.
+    """
+    combined_dataframe = pd.concat(df_list, ignore_index=True)
+    if drop_duplicates:
+        combined_dataframe = remove_duplicates(df=combined_dataframe, column=drop_column)  # .reset_index(drop=True)
+    if sort_df and sort_column is not None:
+        combined_dataframe = combined_dataframe.sort_values(by=sort_column, ascending=False)
+    return combined_dataframe
+
+
 def compare_pandas_dataframes(df_1: pd.DataFrame, df_2: pd.DataFrame, merge_column: str, df_1_name="df_1",
                               df_2_name="df_2", write_to_csv=True):
     """
