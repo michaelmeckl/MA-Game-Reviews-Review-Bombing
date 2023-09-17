@@ -29,12 +29,15 @@ zusätzlich (veraltet, inzwischen befindet sich eine neuere Methode im anderen C
 ## Metacritic
 Da keine offizielle API und keine guten, aktuellen Scraper gefunden, eigenen Scraper geschrieben.
 
-**Anmerkung: seit ca. 10.09.2023 funktioniert der Scraper nicht mehr, da die gesamte Metacritic-Webseite komplett 
-modernisiert und re-designt wurde :(**
+**Anmerkung:** seit ca. 10.09.2023 funktioniert der Scraper nicht mehr, da die gesamte Metacritic-Webseite komplett 
+modernisiert und re-designt wurde :(
+
+**Update:** inzwischen existiert in [metacritic_scraper_new.py](./Metacritic/metacritic_scraper_new.py) ein neuer 
+Scraper für die neue Metacritic-Seite
 
 **100 % fertig:**
-* Scrapen von Spielen (allgemeine Informationen zum Spiel + Reviews) für die angegebenen Plattformen: entweder alle 
-  Reviews (sortiert nach Datum) oder Suche nach allen Reviews in einem angegebenen Zeitraum
+* Scrapen von Spielen (allgemeine Informationen zum Spiel + Reviews + User Informationen) für die angegebenen 
+  Plattformen: entweder alle Reviews (sortiert nach Datum) oder Suche nach allen Reviews in einem angegebenen Zeitraum
 * es werden alle Reviews (nicht nur schlecht bewertete) nach Datum sortiert extrahiert
 * in [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) werden die extrahierten Reviews 
   gefiltert (nur englisch oder deutsch, nur Ratings 0-2 und (optional) Keyword-Search)
@@ -42,7 +45,7 @@ modernisiert und re-designt wurde :(**
   nicht immer in der richtigen Reihenfolge anzeigt :(
 
 **Ablauf :**
-1. in [metacritic_scraper.py](./Metacritic/metacritic_scraper.py) oben in Dictionary Spielname (vgl. Name in 
+1. in [metacritic_scraper_new.py](./Metacritic/metacritic_scraper_new.py) oben in Dictionary Spielname (vgl. Name in 
    Metacritic-Url) eintragen mit Plattform
 2. alle Reviews oder nur in Zeitraum - Flag entsprechend ändern (+ ggf. Zeitraum)
 3. danach mit [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) die extrahierten Reviews filtern
@@ -102,13 +105,21 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * Overwatch 2
     * Cyberpunk 2077
       * 09.12.2020 - 16.12.2020 (46820 Reviews)  &  01.03.2022 - 13.03.2022 (4977 Reviews)
+      * 01.01.2023 - 31.01.2023
       * 17.12.2020 - 02.01.2021  &  8.06.2023 - 19.06.2023 (bei diesen nur eingeschränkte review time bis 1h)
+  * negative User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
+    Review-Histogramm-Daten + allgemeine Infos zu den Spielen aus dem Russland-Ukraine-Review Bombing 
+    (S.T.A.L.K.E.R-Serie, Witcher 1 & 2 & 3, Gwent, Thronebreaker und Frostpunk)
 * **Metacritic:**
   * allgemeine Informationen + 407 UserReviews zu Hogwarts Legacy im Zeitraum 7.02.2023 - 21.02.2023
   * allgemeine Informationen + alle PC - UserReviews zu den Spielen "Metro 2033, Metro: Last Light, Metro 2033 Redux, 
     Metro: Last Light Redux, Metro Exodus, Borderlands, Borderlands The Pre-Sequel, Borderlands 2, Borderlands 3, 
-    Firewatch, Overwatch 2 und Cyberpunk 2077" + zugehörige User Informationen
-    * Reviews zu Cyberpunk 2077 nur aus dem Zeitraum 10.12.2020 - 02.01.2021 (inklusive)
+    Firewatch und Overwatch 2" + zugehörige User Informationen
+    * die gleichen Informationen wie oben zu Cyberpunk 2077 aus den Zeiträumen 10.12.2020 - 02.01.2021,
+      01.03.2022 - 31.03.2022 und 01.01.2023 - 31.01.2023
+  * allgemeine Informationen + alle PC - UserReviews + zugehörige User Informationen zu den Spielen aus dem 
+    Russland-Ukraine-Review Bombing aus dem Zeitraum 24.02.2022 - 31.03.2022 (S.T.A.L.K.E.R-Serie, Witcher 1 
+    (& Enhanced Edition) & 2 & 3, Gwent, Thronebreaker und Frostpunk)
 * **Reddit:**
   * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
     Spielen "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing

@@ -131,7 +131,7 @@ def scrape_general_game_information(soup: BeautifulSoup, out_data: dict):
             user_score_distribution[score_distribution_label] = score_distribution_count.text
     except Exception as e:
         print(f"ERROR: {e}")
-        user_score_distribution = ""
+        user_score_distribution = {}
 
     out_data["user_score_distribution"].append(user_score_distribution)
 
@@ -176,7 +176,7 @@ def scrape_user_profile(username: str, user_dict: dict):
         user_dict["author_num_game_reviews"].append(num_game_reviews)
     except Exception as e:
         print(f"ERROR: {e}")
-        user_dict["author_num_game_reviews"].append("")
+        user_dict["author_num_game_reviews"].append(0)
 
     try:
         average_review_score = main_content.find("div", class_="review_average").find("span", class_="summary_data").find("span").text
@@ -201,7 +201,7 @@ def scrape_user_profile(username: str, user_dict: dict):
         user_dict["author_review_distribution"].append(review_score_distribution)
     except Exception as e:
         print(f"ERROR: {e}")
-        user_dict["author_review_distribution"].append("")
+        user_dict["author_review_distribution"].append({})
 
 
 # Util-Method to extract the creation date from a user review and return it as a datetime object
@@ -311,7 +311,7 @@ def find_newest_relevant_review_on_page(all_reviews, end_date):
 
 # there are cases where the sorting by Metacritic itself is wrong, e.g. random wrong date between correctly sorted ones
 def scrape_time_period(requests_session, out_data: dict, metacritic_url: str, num_pages: int):
-    # since and until must be in the form "DD-MM-YYYY"
+    # convert since and until into datetime objects for easier comparison; both must be in the format "DD-MM-YYYY"
     start_date = datetime.strptime(since, '%d-%m-%Y')
     end_date = datetime.strptime(until, '%d-%m-%Y')
 
