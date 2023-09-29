@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import os
+import pathlib
 import re
 import time
 from datetime import datetime
@@ -156,7 +158,8 @@ def extract_relevant_submission_content(submission, existing_submissions: set, o
     out_data.append({
         "id": submission.id, "title": submission.title, "content": submission_content, "score": submission.score,
         "subreddit": submission.subreddit, "created_at": submission.created_utc,
-        "created_at_formatted": post_time_with_timezone, "num_comments": submission.num_comments, "url": submission.url,
+        "created_at_formatted": post_time_with_timezone, "num_comments": submission.num_comments,
+        "url": submission.permalink,
         "author_id": user_info["id"], "author_name": user_info["username"],
         "author_created_at": user_info["created_at"], "author_created_at_formatted": user_info["created_at_formatted"],
         "author_is_suspended": user_info["is_suspended"], "author_is_mod": user_info["is_mod"],
@@ -419,7 +422,53 @@ def get_reddit_data_for_games():
         time.sleep(2)
 
 
+def get_comments_for_extracted_submissions():
+    def load_comments(submission_row):
+        submission_id = submission_row["id"]
+        try:
+            submission = get_specific_submission(submission_id, choice="i")
+            comment_list = extract_comments_for_submission(submission, only_top_level=False)
+
+            # Fill in the missing values from the associated submission; this could be done when extracting the
+            # comment, but it is far more efficient (in terms of requests) to only do it once here for all comments
+            submission_date = submission_row["created_at_formatted"]
+            submission_subreddit = submission_row["subreddit"]
+            submission_url = submission_row["url"]
+            submission_author = submission_row["author_name"]
+            submission_author_id = submission_row["author_id"]
+            for comment_infos in comment_list:
+                comment_infos.update({
+                    "subreddit": submission_subreddit, "original_post_date": submission_date,
+                    "original_post_url": submission_url, "original_post_author": submission_author,
+                    "original_post_author_id": submission_author_id,
+                })
+
+            all_comments.extend(comment_list)
+        except Exception as e:
+            print(f"ERROR when trying to load comments for submission ({submission_id}): {e}")
+
+    submissions_folder = pathlib.Path(__file__).parent.parent / "data_for_analysis" / "reddit"
+    for submissions_file in os.listdir(submissions_folder):
+        if "submissions" not in submissions_file:
+            continue
+        print("Loading comments for submission file: ", submissions_file)
+        all_comments = list()
+
+        submissions_df = pd.read_csv(submissions_folder / submissions_file)
+        submissions_df = submissions_df.head(2)    # TODO take first n rows only for faster testing
+        # submissions_df["id"].apply(lambda submission: load_comments(submission))
+        submissions_df.apply(lambda row: load_comments(row), axis=1)
+        comments_df = pd.DataFrame(all_comments)
+
+        submissions_file_name = (submissions_folder / submissions_file).stem   # remove the file extension
+        comments_df.to_csv(OUT_DATA / f"{submissions_file_name}_comments.csv", index=False)
+        print("\n#########################\n"
+              f"Finished with submissions file {submissions_file}"
+              "\n#########################\n")
+
+
 # ! nach neuem Pricing (seit 1. Juli) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
 if __name__ == "__main__":
     # extracted_submissions = extract_submissions_from(["cyberpunkgame"])
-    get_reddit_data_for_games()
+    # get_reddit_data_for_games()
+    get_comments_for_extracted_submissions()

@@ -20,13 +20,11 @@ from redditwarp.http.util.json_loading import load_json_from_response
 
 def extract_comments_for_submission(submission, only_top_level=False):
     print(f"Number of Comments: {submission.num_comments}\n")
-
-    # set comment limit
-    submission.comment_limit = 15  # TODO
-    # submission.comment_sort = "new"  # change comment sort order
-
     extracted_comments = list()
     already_done = set()
+
+    # submission.comment_limit = 15  # set comment limit
+    submission.comment_sort = "new"  # set comment sort order  # apparently not working correctly on reddit side :(
 
     if only_top_level:
         # #####################################
@@ -48,8 +46,14 @@ def extract_comments_for_submission(submission, only_top_level=False):
         if comment.id in already_done:
             continue
 
-        print("Comment {0} by {1}\n".format(i, comment.author))
-        extract_relevant_comment_content(comment, already_done, extracted_comments)
+        try:
+            # print("Comment {0} by {1}\n".format(i, comment.author))
+            extract_relevant_comment_content(comment, already_done, extracted_comments)
+        except Exception as e:
+            print(f"ERROR when trying to extract comment: {e}")
+            print("Waiting for a few seconds ...")
+            time.sleep(10)
+
         already_done.add(comment.id)
 
     return extracted_comments
@@ -59,20 +63,24 @@ def extract_relevant_comment_content(comment, existing_comments: set, out_data: 
     comment_content = re.sub(r"\s+", " ", comment.body)
     post_time = datetime.fromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')
     post_time_with_timezone = datetime.strptime(post_time + "+0000", '%Y-%m-%d %H:%M:%S' + '%z')
-    # The ID of the parent comment (prefixed with t1_). If it is a top-level comment, this returns the submission ID
-    # instead (prefixed with t3_).
-    comment_parent_id = comment.parentId
+
+    # parent = comment.parent()   # either the submission or another comment
+    # print(parent.id)
+    # submission_instance = comment.submission
+    # subreddit = comment.subreddit
+    # subreddit_name = subreddit.name
 
     # get the user information of the comment author
     user_info = get_user_information(comment.author)
 
     existing_comments.add(comment.name)
     out_data.append({
-        "id": comment.id, "author": comment.author, "content": comment_content,
-        "upvotes": comment.score, "parent": comment_parent_id, "subreddit": comment.subreddit_id,
-        "created_at": comment.created_utc, "created_at_formatted": post_time_with_timezone,
-        "num_replies": len(comment.replies), "url": comment.permalink,
-        "author_id": user_info["id"], "author_name": user_info["username"],
+        "id": f"t1_{comment.id}", "content": comment_content, "subreddit": None,
+        "upvote_score": comment.score, "created_at": post_time_with_timezone,
+        "original_post_date": None, "comment_url": comment.permalink, "original_post_url": None,
+        "original_post_author": None, "original_post_author_id": None,
+        # "parent_id": comment.parent_id, "num_replies": len(comment.replies),
+        "author_name": user_info["username"], "author_id": user_info["id"],
         "author_created_at": user_info["created_at"], "author_created_at_formatted": user_info["created_at_formatted"],
         "author_is_suspended": user_info["is_suspended"], "author_is_mod": user_info["is_mod"],
         "author_is_employee": user_info["is_employee"], "author_link_karma": user_info["link_karma"],

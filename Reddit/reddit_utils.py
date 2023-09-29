@@ -33,6 +33,9 @@ def get_user_information(redditor):
         "is_mod": None, "is_employee": None, "link_karma": None, "comment_karma": None
     }
 
+    if redditor is None:
+        return user_info_dict
+
     # Suspended/banned accounts will only return the name and is_suspended attributes !
     user_info_available = True
     try:
