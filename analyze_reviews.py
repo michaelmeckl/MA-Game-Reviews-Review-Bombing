@@ -170,6 +170,19 @@ def analyze_review(review: pd.Series):
     # analyze_reviewer()
 
 
+def start_analysis():
+    """
+    with open(DATA_FOLDER / "steam" / "steam_reviews_timeseries_Cyberpunk_2077.json", "r") as f:
+        steam_graph_data = json.load(f)
+    analyze_steam_review_graph(steam_graph_data)
+    """
+
+    review_df = pd.read_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv")
+    review_df.apply(lambda row: analyze_review(row), axis=1)
+    # review_df["profanity_in_percent"] = predict_prob(review_df["review"]) * 100
+    # print(review_df)
+
+
 def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacritic: pd.DataFrame,
                                      game_info_steam: pd.DataFrame, game_info_metacritic: pd.DataFrame):
     """
@@ -197,10 +210,13 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
 
     # drop unnecessary columns
     combined_df = combined_df.drop(columns=["review_id", "rating_positive", "created_at", "last_updated", "author_id",
-                                            "comment_count", "platform", "profile_visibility", "author_country_code",
-                                            "profile_url", "game_id", "title", "game_title", "price_euro"],
+                                            "comment_count", "platform", "profile_visibility", "profile_url",
+                                            "game_id", "game_title", "price_euro"],
                                    axis=1)
-    combined_df.insert(0, "Game", ["Cyberpunk 2077"] * len(combined_df))  # add the game name as a new column
+    # add the game name as a new column at the start
+    # combined_df.insert(0, "Game", combined_df.pop('title'))
+    game_name = combined_df.at[0, "title"]
+    combined_df.insert(0, "Game", [game_name] * len(combined_df))
     return combined_df
 
 
@@ -223,25 +239,66 @@ def prepare_data():
                           81950472, 81949288, 81958813]
     steam_review_data = utils.remove_linebreaks_from_pd_cells(steam_review_data, column_name="content")
     filtered_steam = steam_review_data.loc[steam_review_data["review_id"].isin(test_steam_reviews)]
+    # alternatively select a few rows randomly
+    # steam_review_data = steam_review_data.sample(n=10, random_state=1)
     print(filtered_steam)
     print("\n######################\n")
 
     combined_review_df = combine_metacritic_steam_reviews(filtered_steam, filtered_metacritic,
                                                           steam_general_game_info, metacritic_game_info)
-    combined_review_df.to_csv("combined_steam_metacritic_df.csv", index=False)
+    combined_review_df.to_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv", index=False)
+
+
+def get_combined_data_borderlands():
+    steam_review_data = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_Borderlands_2.csv")
+    steam_general_game_info = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_Borderlands_2.csv")
+    metacritic_review_data = pd.read_csv(DATA_FOLDER / "metacritic" / "user_reviews_pc_borderlands-2.csv")
+    metacritic_game_info = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_borderlands-2.csv")
+
+    # take only very negative ratings
+    negative_metacritic_review_data = metacritic_review_data[metacritic_review_data["rating"] < 3]
+    filtered_metacritic = negative_metacritic_review_data.sample(n=10, random_state=1)
+    filtered_steam = steam_review_data.sample(n=10, random_state=1)
+    filtered_steam = utils.remove_linebreaks_from_pd_cells(filtered_steam, column_name="content")
+
+    combined_review_df = combine_metacritic_steam_reviews(filtered_steam, filtered_metacritic,
+                                                          steam_general_game_info, metacritic_game_info)
+    return combined_review_df
+
+
+def get_combined_data_march_2022():
+    steam_review_data_1 = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_The_Witcher_3_Wild_Hunt.csv",
+                                      nrows=100)
+    steam_general_game_info_1 = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_The_Witcher_3_Wild_Hunt.csv")
+    metacritic_review_data_1 = pd.read_csv(DATA_FOLDER / "metacritic" / "user_reviews_pc_the-witcher-3-wild-hunt.csv")
+    metacritic_game_info_1 = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_the-witcher-3-wild-hunt.csv")
+    steam_review_data_1 = utils.remove_linebreaks_from_pd_cells(steam_review_data_1, column_name="content")
+    combined_review_df_1 = combine_metacritic_steam_reviews(steam_review_data_1, metacritic_review_data_1,
+                                                            steam_general_game_info_1, metacritic_game_info_1)
+
+    steam_review_data_2 = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_GWENT_The_Witcher_Card_Game.csv")
+    steam_general_game_info_2 = pd.read_csv(
+        DATA_FOLDER / "steam" / "steam_general_info_GWENT_The_Witcher_Card_Game.csv")
+    metacritic_review_data_2 = pd.read_csv(
+        DATA_FOLDER / "metacritic" / "user_reviews_pc_gwent-the-witcher-card-game.csv")
+    metacritic_game_info_2 = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_gwent-the-witcher-card-game.csv")
+    # sample_size_steam = 10 if len(steam_review_data_2) > 10 else len(steam_review_data_2)
+    steam_review_data_2 = utils.remove_linebreaks_from_pd_cells(steam_review_data_2, column_name="content")
+    combined_review_df_2 = combine_metacritic_steam_reviews(steam_review_data_2, metacritic_review_data_2,
+                                                            steam_general_game_info_2, metacritic_game_info_2)
+
+    combined_review_df = pd.concat([combined_review_df_1, combined_review_df_2])
+    combined_review_df_sample = combined_review_df.sample(n=100, random_state=1)
+    return combined_review_df_sample
 
 
 if __name__ == "__main__":
     enable_max_pandas_display_size()
     # prepare_data()
+    # start_analysis()
 
     """
-    with open(DATA_FOLDER / "steam" / "steam_reviews_timeseries_Cyberpunk_2077.json", "r") as f:
-        steam_graph_data = json.load(f)
-    analyze_steam_review_graph(steam_graph_data)
+    df = get_combined_data_borderlands()
+    tag = "_Borderlands_new"
+    df.to_csv(f"combined_steam_metacritic_df{tag}.csv", index=False)
     """
-
-    review_df = pd.read_csv("combined_steam_metacritic_df.csv")
-    review_df.apply(lambda row: analyze_review(row), axis=1)
-    # review_df["profanity_in_percent"] = predict_prob(review_df["review"]) * 100
-    # print(review_df)

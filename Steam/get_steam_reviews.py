@@ -444,17 +444,17 @@ def load_reviews_for_games():
         # "Metro Exodus": ("15-02-2020", "28-02-2020"),
         # "Overwatch® 2": ("10-08-2023", "30-08-2023"),
         # "Firewatch": ("12-09-2017", "20-09-2017"),
-        "GWENT: The Witcher Card Game": ("01-03-2022", "15-03-2022"),
-        "Thronebreaker: The Witcher Tales": ("01-03-2022", "15-03-2022"),
-        "The Witcher: Enhanced Edition": ("01-03-2022", "15-03-2022"),  # ID 20900
-        "The Witcher 2: Assassins of Kings Enhanced Edition": ("01-03-2022", "15-03-2022"),
-        "The Witcher 3: Wild Hunt": ("01-03-2022", "15-03-2022"),
-        "Frostpunk": ("24-02-2022", "15-03-2022"),
-        "S.T.A.L.K.E.R.: Shadow of Chernobyl": ("01-03-2022", "01-04-2022"),  # ID 4500
-        "S.T.A.L.K.E.R.: Call of Pripyat": ("01-03-2022", "01-04-2022"),
-        "S.T.A.L.K.E.R.: Clear Sky": ("01-03-2022", "01-04-2022"),  # ID 20510
-        # "The Elder Scrolls V: Skyrim": (),
-        # "Grand Theft Auto V": (),   # ID 271590 (there exists another entry with the same name which is empty)
+        # "GWENT: The Witcher Card Game": ("01-03-2022", "15-03-2022"),
+        # "Thronebreaker: The Witcher Tales": ("01-03-2022", "15-03-2022"),
+        # "The Witcher: Enhanced Edition": ("01-03-2022", "15-03-2022"),  # ID 20900
+        # "The Witcher 2: Assassins of Kings Enhanced Edition": ("01-03-2022", "15-03-2022"),
+        # "The Witcher 3: Wild Hunt": ("01-03-2022", "15-03-2022"),
+        # "Frostpunk": ("24-02-2022", "15-03-2022"),
+        # "S.T.A.L.K.E.R.: Shadow of Chernobyl": ("01-03-2022", "01-04-2022"),  # ID 4500
+        # "S.T.A.L.K.E.R.: Call of Pripyat": ("01-03-2022", "01-04-2022"),
+        # "S.T.A.L.K.E.R.: Clear Sky": ("01-03-2022", "01-04-2022"),  # ID 20510
+        "The Elder Scrolls V: Skyrim": (),
+        "Grand Theft Auto V": (),   # ID 271590 (there exists another entry with the same name which is empty)
     }
 
     if os.path.exists(APP_LIST_FILE):

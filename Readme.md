@@ -130,7 +130,7 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
     controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen 
     "Cyberpunk 2077, Metro Exodus, Borderlands (3), Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review 
-    Bombing
+    Bombing (und die davon betroffenen Spiele wie die Witcher- oder S.T.A.L.K.E.R-Serie)
   * Tweets zu spezifischen Queries für die Spiele "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und 
     Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
 

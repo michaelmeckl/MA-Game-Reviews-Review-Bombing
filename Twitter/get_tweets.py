@@ -307,6 +307,28 @@ def get_tweets_tweety():
             # "Cyberpunk 2077 review since:2022-03-01 until:2022-04-01",
             # "Cyberpunk 2077 review since:2023-01-01 until:2023-02-01",
         ],
+        "Witcher": [
+            'Witcher review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
+            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Gwent": [
+            '(Gwent OR Thronebreaker) review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR '
+            'controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "STALKER": [
+            '("STALKER" OR "S.T.A.L.K.E.R") review (bomb OR bombs OR bombing OR boycott OR boycotting OR '
+            'controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR '
+            'hate)',
+        ],
+        "Frostpunk": [
+            'Frostpunk review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
+            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "CDPR": [
+            '("CD Projekt Red" OR "CD Project Red" OR CDPR) review (bomb OR bombs OR bombing OR boycott OR boycotting '
+            'OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR '
+            'hate)',
+        ],
         "Ukraine_Russia_ReviewBomb": [
             '(russia OR ukraine) AND review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR '
             'controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
