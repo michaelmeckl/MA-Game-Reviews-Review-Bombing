@@ -208,6 +208,12 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
     # merge the reviews and the general info for the game
     combined_df = merged_reviews_df.merge(merged_game_info_df, on=[merge_column], how='outer')
 
+    # TODO drop more ?
+    """
+    die meisten Metadaten sind nicht so wirklich hilfreich, nur Review-Datum, Spiel-Releasedatum, Autor-Infos (z.B. 
+    Account-Erstelldatum, Infos zur Menge an Reviews & gespielten Spielen, Freunden, ob Spiel kostenlos bekommen / 
+    über Steam bekommen, ...), Metacritic-Rating und Steam-Playtime-Infos für die Konsistency und RB-Zugehörigkeit
+    """
     # drop unnecessary columns
     combined_df = combined_df.drop(columns=["review_id", "rating_positive", "created_at", "last_updated", "author_id",
                                             "comment_count", "platform", "profile_visibility", "profile_url",

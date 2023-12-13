@@ -104,12 +104,21 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * Firewatch
     * Overwatch 2
     * Cyberpunk 2077
-      * 09.12.2020 - 16.12.2020 (46820 Reviews)  &  01.03.2022 - 13.03.2022 (4977 Reviews)
+      * 09.12.2020 - 16.12.2020 (46820 Reviews)  &  01.03.2022 - 13.03.2022 (4977 negative Reviews)
       * 01.01.2023 - 31.01.2023
       * 17.12.2020 - 02.01.2021  &  8.06.2023 - 19.06.2023 (bei diesen nur eingeschränkte review time bis 1h)
   * negative User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
+  Review-Histogramm-Daten + allgemeine Infos zu den Spielen:
+    * The Elder Scrolls V: Skyrim & Skyrim Special Edition
+    * Fallout 4
+    * Grand Theft Auto V (hier bei language nur "english, german" statt "all", da sonst zu viele)
+    * Total War: ROME II - Emperor Edition
+    * Mortal Kombat 11
+    * Assassin's Creed Unity (hier stattdessen nur die positiven User Reviews, da positives Review Bombing)
+  * negative & positive User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
     Review-Histogramm-Daten + allgemeine Infos zu den Spielen aus dem Russland-Ukraine-Review Bombing 
     (S.T.A.L.K.E.R-Serie, Witcher 1 & 2 & 3, Gwent, Thronebreaker und Frostpunk)
+  
 * **Metacritic:**
   * allgemeine Informationen + 407 UserReviews zu Hogwarts Legacy im Zeitraum 7.02.2023 - 21.02.2023
   * allgemeine Informationen + alle PC - UserReviews zu den Spielen "Metro 2033, Metro: Last Light, Metro 2033 Redux, 
@@ -119,13 +128,22 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
       01.03.2022 - 31.03.2022 und 01.01.2023 - 31.01.2023
   * allgemeine Informationen + alle PC - UserReviews + zugehörige User Informationen zu den Spielen aus dem 
     Russland-Ukraine-Review Bombing aus dem Zeitraum 24.02.2022 - 31.03.2022 (S.T.A.L.K.E.R-Serie, Witcher 1 
-    (& Enhanced Edition) & 2 & 3, Gwent, Thronebreaker und Frostpunk)
+    (& 1 Enhanced Edition) & 2 & 3 (& 3 Complete Edition), Gwent, Thronebreaker und Frostpunk)
+  * allgemeine Informationen + alle PC - UserReviews + zugehörige User Informationen zu 
+    * "The Elder Scrolls V: Skyrim" aus dem Zeitraum 23.04.2015 - 01.05.2015
+    * "Grand Theft Auto V" aus dem Zeitraum 14.06.2017 - 31.07.2017
+    * "The Elder Scrolls V: Skyrim Special Edition" und "Fallout 4" aus dem Zeitraum 29.08.2017 - 01.12.2017
+    * "Total War: Rome II" aus dem Zeitraum 20.09.2018 - 31.10.2018
+    * "Mortal Kombat 11" aus dem Zeitraum 22.04.2019 - 01.05.2019
+    * "Assassin's Creed Unity" aus dem Zeitraum 19.04.2019 - 31.05.2019
+  
 * **Reddit:**
   * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
     Spielen "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing
   * Submissions & Kommentare mit zugehörigen User Informationen für spezifische Queries für die Spiele "Cyberpunk 2077, 
     Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für 
     Queries & Zeiträume, s. Code; manchmal auch Ergebnisse mehrerer Queries kombiniert)
+  
 * **Twitter:**
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
     controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen 

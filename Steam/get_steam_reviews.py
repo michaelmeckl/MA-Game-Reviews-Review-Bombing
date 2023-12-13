@@ -428,7 +428,7 @@ def get_steam_user_reviews(app_id, requests_session, next_cursor, current_num_re
 def load_reviews_for_games():
     # load steam user reviews for certain games
     # specify the timeperiod to extract reviews from or use 'None' to specify no time period
-    # the end date is NOT included! (i.e. for end date 21.01 the actual end date is 20.01)
+    # the end date is NOT included! (i.e. for end date 21-01 the actual end date is 20-01)
     game_dict = {
         # "Hogwarts Legacy": ("06-02-2023", None),
         # "Cyberpunk 2077": ("09-12-2020", "17-12-2020"),
@@ -443,18 +443,23 @@ def load_reviews_for_games():
         # "Metro: Last Light Redux": ("28-01-2019", "14-02-2019"),
         # "Metro Exodus": ("15-02-2020", "28-02-2020"),
         # "Overwatch® 2": ("10-08-2023", "30-08-2023"),
-        # "Firewatch": ("12-09-2017", "20-09-2017"),
+        # "Firewatch": ("12-09-2017", "01-10-2017"),
         # "GWENT: The Witcher Card Game": ("01-03-2022", "15-03-2022"),
         # "Thronebreaker: The Witcher Tales": ("01-03-2022", "15-03-2022"),
         # "The Witcher: Enhanced Edition": ("01-03-2022", "15-03-2022"),  # ID 20900
         # "The Witcher 2: Assassins of Kings Enhanced Edition": ("01-03-2022", "15-03-2022"),
-        # "The Witcher 3: Wild Hunt": ("01-03-2022", "15-03-2022"),
+        # "The Witcher 3: Wild Hunt": ("01-03-2022", "17-03-2022"),
         # "Frostpunk": ("24-02-2022", "15-03-2022"),
         # "S.T.A.L.K.E.R.: Shadow of Chernobyl": ("01-03-2022", "01-04-2022"),  # ID 4500
         # "S.T.A.L.K.E.R.: Call of Pripyat": ("01-03-2022", "01-04-2022"),
         # "S.T.A.L.K.E.R.: Clear Sky": ("01-03-2022", "01-04-2022"),  # ID 20510
-        "The Elder Scrolls V: Skyrim": (),
-        "Grand Theft Auto V": (),   # ID 271590 (there exists another entry with the same name which is empty)
+        # "The Elder Scrolls V: Skyrim": ("23-04-2015", "01-05-2015"),  # ID 72850
+        # "The Elder Scrolls V: Skyrim Special Edition": ("20-09-2017", "01-12-2017"),  # ID 489830
+        # "Fallout 4": ("29-08-2017", "01-12-2017"),  # ID 377160
+        # "Grand Theft Auto V": ("14-06-2017", "01-07-2017"),  # ID 271590 (there is another empty entry for this title)
+        # "Total War: ROME II - Emperor Edition": ("22-09-2018", "31-10-2018"),
+        # "Mortal Kombat 11": ("22-04-2019", "01-05-2019"),
+        # "Assassin's Creed Unity": ("19-04-2019", "01-05-2019"),  # here only positive reviews (was a positive RB!)
     }
 
     if os.path.exists(APP_LIST_FILE):

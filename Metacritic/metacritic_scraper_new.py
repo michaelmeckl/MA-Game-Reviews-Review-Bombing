@@ -42,20 +42,30 @@ games_to_scrape = {
     # "metro-2033-redux": [PLATFORM.PC.value],
     # "metro-2033": [PLATFORM.PC.value],
     # "overwatch-2": [PLATFORM.PC.value],
-    "gwent-the-witcher-card-game": [PLATFORM.PC.value],
-    "thronebreaker-the-witcher-tales": [PLATFORM.PC.value],
-    "the-witcher": [PLATFORM.PC.value],
-    "the-witcher-enhanced-edition": [PLATFORM.PC.value],
-    "the-witcher-2-assassins-of-kings": [PLATFORM.PC.value],
-    "the-witcher-3-wild-hunt": [PLATFORM.PC.value],
-    "s-t-a-l-k-e-r-shadow-of-chernobyl": [PLATFORM.PC.value],
-    "s-t-a-l-k-e-r-call-of-pripyat": [PLATFORM.PC.value],
-    "s-t-a-l-k-e-r-clear-sky": [PLATFORM.PC.value],
-    "frostpunk": [PLATFORM.PC.value],
+    # "gwent-the-witcher-card-game": [PLATFORM.PC.value],
+    # "thronebreaker-the-witcher-tales": [PLATFORM.PC.value],
+    # "the-witcher": [PLATFORM.PC.value],
+    # "the-witcher-enhanced-edition": [PLATFORM.PC.value],
+    # "the-witcher-2-assassins-of-kings": [PLATFORM.PC.value],
+    # "the-witcher-3-wild-hunt": [PLATFORM.PC.value],
+    # "the-witcher-3-wild-hunt-complete-edition": [PLATFORM.PC.value],
+    # "s-t-a-l-k-e-r-shadow-of-chernobyl": [PLATFORM.PC.value],
+    # "s-t-a-l-k-e-r-call-of-pripyat": [PLATFORM.PC.value],
+    # "s-t-a-l-k-e-r-clear-sky": [PLATFORM.PC.value],
+    # "frostpunk": [PLATFORM.PC.value],
+    # "the-elder-scrolls-v-skyrim": [PLATFORM.PC.value],
+    # "the-elder-scrolls-v-skyrim-special-edition": [PLATFORM.PC.value],
+    # "fallout-4": [PLATFORM.PC.value],
+    # "grand-theft-auto-v": [PLATFORM.PC.value],
+    # "total-war-rome-ii": [PLATFORM.PC.value],
+    # "mortal-kombat-11": [PLATFORM.PC.value],
+    # "assassins-creed-unity": [PLATFORM.PC.value],
 }
 
-since = "24-02-2022"  # "start date", i.e. the oldest date
-until = "31-03-2022"  # "end date", i.e. the most recent date (inclusive!)
+# since = "24-02-2022"  # "start date", i.e. the oldest date
+# until = "31-03-2022"  # "end date", i.e. the most recent date (inclusive!)
+since = None
+until = None
 
 headers = {'User-agent': 'Mozilla/5.0'}
 
