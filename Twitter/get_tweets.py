@@ -247,56 +247,6 @@ def extract_tweets_loop(app: Twitter, query: str, csv_file_path: str):
 
 
 def get_tweets_tweety():
-    """
-    # currently: 1 day before and 2 weeks after release OR 1 week after a special event
-    games = {
-        "Hogwarts Legacy": [
-            'Hogwarts Legacy review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers'
-            ' OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam'
-            ' OR hate)',
-            '"Hogwarts Legacy" since:2023-02-06 until:2023-02-22',  # pre-order already 7.02 instead of 10.02
-        ],
-        "Cyberpunk 2077": [
-            'Cyberpunk 2077 review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
-            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
-            "Cyberpunk 2077 since:2020-12-09 until:2020-12-25",
-            "Cyberpunk 2077 since:2022-03-02 until:2022-03-31",
-            "Cyberpunk 2077 since:2023-01-02 until:2023-01-10",
-        ],
-        "Elden Ring": [
-            'Elden Ring review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
-            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
-            "Elden Ring since:2022-11-01 until:2022-11-30",
-        ],
-        "Ghostwire Tokyo": [
-            'Ghostwire Tokyo review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy'
-            ' OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate) OR denuvo',
-            "Ghostwire Tokyo since:2023-04-11 until:2023-04-19",
-        ],
-        "The Last of Us Part II": [
-            '"The Last of Us" (2 OR "Part II" OR "Part 2") review (bomb OR bombs OR bombing OR boycott OR boycotting'
-            ' OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR'
-            ' hate) since:2020-06-19',
-            '"The Last of Us" (2 OR "Part II" OR "Part 2") since:2020-06-18 until:2020-07-04',
-        ],
-        "Borderlands": [
-            'Borderlands review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
-            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
-            'Borderlands review since:2019-04-03 until:2019-04-11',
-        ],
-        "Titan Souls": [
-            'Titan Souls review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
-            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
-            '"Titan Souls" since:2015-04-01 until:2015-04-30',
-        ],
-        "Kunai": [
-            'Kunai review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR'
-            ' manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
-            "Kunai game since:2020-02-06 until:2020-02-28",
-        ],
-    }
-    """
-
     # the until - date is always exclusive! (i.e. the day after)
     # general queries for review bombing and fake reviews
     games_general = {
@@ -351,6 +301,34 @@ def get_tweets_tweety():
             'Overwatch 2 review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR '
             'manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
         ],
+        "The Elder Scrolls V Skyrim": [
+            'Skyrim review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR '
+            'controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Bethesda Creation Club": [
+            '(Skyrim OR "Fallout 4" OR "creation club") AND review (bomb OR bombs OR bombing OR boycott OR boycotting '
+            'OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR '
+            'hate)',
+        ],
+        "Grand Theft Auto V": [
+            '("Grand Theft Auto V" OR "Grand Theft Auto 5" OR GTA5 OR GTAV) AND review (bomb OR bombs OR bombing OR '
+            'boycott OR boycotting OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR '
+            'sabotaging OR spam OR hate)',
+        ],
+        "Total War Rome II": [
+            '("Total War Rome" OR "Rome II" OR TW:RII) AND review (bomb OR bombs OR bombing OR boycott OR boycotting '
+            'OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR '
+            'hate)',
+        ],
+        "Mortal Kombat 11": [
+            '("Mortal Kombat 11" OR MK11) AND review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers '
+            'OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
+        "Assassins Creed Unity": [
+            '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND review (bomb OR '
+            'bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR manipulate OR manipulation OR '
+            'fake OR sabotage OR sabotaging OR spam OR hate)',
+        ],
     }
 
     # queries specifically for certain review bombings
@@ -383,12 +361,35 @@ def get_tweets_tweety():
             'Firewatch (DCMA OR pewdiepie) since:2017-09-10 until:2017-11-01',
         ],
         "Overwatch 2": [
-            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtranscation) since:2023-08-10 '
+            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtransaction) since:2023-08-10 '
             'until:2023-09-01',
-            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtranscation) since:2022-10-04 '
+            '"Overwatch 2" (promise OR shutdown OR greed OR monetization OR microtransaction) since:2022-10-04 '
             'until:2022-11-01',
             '"Overwatch 2" (review (bomb OR bombs OR bombing)) since:2023-08-10 until:2023-09-01',
             '"Overwatch 2" (review (bomb OR bombs OR bombing)) since:2022-10-04 until:2022-11-01',
+        ],
+        "The Elder Scrolls V Skyrim": [
+            'Skyrim ("paid mod" OR bethesda OR greed) since:2015-04-22 until:2015-05-23',
+        ],
+        "Bethesda Creation Club": [
+            '(Skyrim OR "Fallout 4") AND ("creation club" OR "paid mod" OR bethesda OR greedy) since:2017-08-27 '
+            'until:2017-12-01',
+        ],
+        "Grand Theft Auto V": [
+            '("Grand Theft Auto V" OR "Grand Theft Auto 5" OR GTA5 OR GTAV) AND (openiv OR ban OR "cease-and-desist" '
+            'OR mod OR "take-two" OR "take 2") since:2017-06-13 until:2017-07-14',
+        ],
+        "Total War Rome II": [
+            '("Total War Rome" OR "Rome II" OR TW:RII) AND (accurate OR accuracy OR "female general" OR feminist '
+            'OR agenda) since:2018-09-21 until:2018-11-01',
+        ],
+        "Mortal Kombat 11": [
+            '("Mortal Kombat 11" OR MK11) AND (microtransaction OR sjw OR propaganda OR woke OR ending) '
+            'since:2019-04-21 until:2019-05-22',
+        ],
+        "Assassins Creed Unity": [
+            '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND ("notre-dame" OR '
+            'fire OR donation OR positive) since:2019-04-19 until:2019-05-20',
         ],
     }
 
@@ -400,7 +401,7 @@ def get_tweets_tweety():
     app.connect()
 
     use_single_query = False
-    use_specific_queries = False
+    use_specific_queries = True
     #################################################################
 
     if use_single_query:

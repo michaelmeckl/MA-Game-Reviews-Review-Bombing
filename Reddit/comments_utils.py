@@ -24,7 +24,7 @@ def extract_comments_for_submission(submission, only_top_level=False):
     already_done = set()
 
     # submission.comment_limit = 15  # set comment limit
-    submission.comment_sort = "new"  # set comment sort order  # apparently not working correctly on reddit side :(
+    submission.comment_sort = "new"  # set comment sort order  # apparently not working correctly on reddit's side :(
 
     if only_top_level:
         # #####################################

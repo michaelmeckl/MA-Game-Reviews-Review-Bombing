@@ -226,7 +226,8 @@ def search_submissions(query: str, subreddits: list[str] = None, limit=None, sin
     return all_submissions
 
 
-def get_submissions_for_game(game, subreddits, query_subreddit, query_all, start_date=None, end_date=None):
+def get_submissions_for_game(game, subreddits, query_subreddit, query_all, is_specific_query, start_date=None,
+                             end_date=None):
     print(f"\nSearching submissions from reddit for game \"{game}\" ...")
 
     extracted_submissions = search_submissions(query=query_subreddit, since=start_date, until=end_date,
@@ -251,10 +252,11 @@ def get_submissions_for_game(game, subreddits, query_subreddit, query_all, start
         merged_df = pd.concat([df, df_all], join="outer").drop_duplicates(subset=['id'], keep='first').reset_index(
             drop=True)
         # merged_df = df.merge(df_all, how="outer", on="id")
-        save_reddit_data(merged_df, out_path=OUT_DATA / f"merged_reddit_submissions_{game}.csv")
+        save_reddit_data(merged_df,
+                         OUT_DATA / f"merged_reddit_submissions_{'' if is_specific_query else 'general_'}{game}.csv")
 
 
-def get_comments_for_game(game, subreddits, query, start_date=None, end_date=None):
+def get_comments_for_game(game, subreddits, query, is_specific_query, start_date=None, end_date=None):
     print(f"\nSearching comments from reddit for game \"{game}\" ...")
 
     dataframes = []
@@ -269,7 +271,7 @@ def get_comments_for_game(game, subreddits, query, start_date=None, end_date=Non
         dataframes.append(comments_df)
 
     df_all = pd.concat(dataframes, join="outer").drop_duplicates(subset=['id'], keep='first').reset_index(drop=True)
-    df_all.to_csv(OUT_DATA / f"merged_reddit_comments_{game}.csv", index=False)
+    df_all.to_csv(OUT_DATA / f"merged_reddit_comments_{'' if is_specific_query else 'general_'}{game}.csv", index=False)
     # TODO search r/all for comments as well ?
 
 
@@ -289,52 +291,11 @@ def get_reddit_data_for_games():
     default_query_comments = 'ReviewBomb OR "review bombing"'
     # default_query_comments = 'review AND (good OR bad OR negative OR positive OR hate)'   # alternative
 
-    use_game_specific_query = False  # whether to use the default queries above or the game specific ones
+    use_game_specific_query = True  # whether to use the default queries above or the game specific ones
     #################################################################
 
     def get_all_query(game_name: str):
         return f'{game_name} AND ({default_query})'
-
-    """
-    games = {
-        "Hogwarts Legacy": {
-            "name": '"Hogwarts Legacy"',
-            "subreddits": ["HarryPotterGame", "hogwartslegacyJKR", "HogwartsLegacyGaming"],
-            "start_date": "06-02-2023",
-            "end_date": "22-02-2023",
-        },
-        "Elden Ring": {
-            "name": '"Elden Ring"',
-            "subreddits": ["Eldenring"],
-            "start_date": None,
-            "end_date": None,
-        },
-        "Ghostwire Tokyo": {
-            "name": '"Ghostwire Tokyo"',
-            "subreddits": ["GhostwireTokyo"],
-            "start_date": None,
-            "end_date": None,
-        },
-        "The Last of Us Part II": {
-            "name": '"The Last of Us" (2 OR "Part II" OR "Part 2")',
-            "subreddits": ["TheLastOfUs2", "thelastofus", "TheLastOfUs_Original"],
-            "start_date": None,
-            "end_date": None,
-        },
-        "Titan Souls": {
-            "name": '"Titan Souls"',
-            "subreddits": ["TitanSouls"],
-            "start_date": None,
-            "end_date": None,
-        },
-        "Kunai": {
-            "name": 'Kunai',
-            "subreddits": ["Kunaithegame"],
-            "start_date": None,
-            "end_date": None,
-        },
-    }
-    """
 
     games = {
         "ukraine_russia_review_bombing": {
@@ -345,7 +306,7 @@ def get_reddit_data_for_games():
             "start_date": "24-02-2022", "end_date": "01-05-2022",
             "query_subreddit": '(review OR support OR sales) AND (ukraine OR russia)',
             "query_comments": '(ReviewBomb OR "review bombing" OR review OR support OR sales) AND (ukraine OR russia)',
-            # query_all is usually the name AND query_subreddit
+            # query_all is usually: name AND query_subreddit
             "query_all": '(ukraine OR russia) AND (ReviewBomb OR "review bombing" OR game review) AND ((review OR '
                          'support OR sales) AND (ukraine OR russia))',
         },
@@ -395,6 +356,57 @@ def get_reddit_data_for_games():
                               "microtranscation)",
             "query_all": '"Overwatch 2" AND (promise OR shutdown OR greed OR monetization OR microtranscation)',
         },
+        "The Elder Scrolls V Skyrim": {
+            "name": "Skyrim",
+            "subreddits": ["ElderScrolls", "skyrim"],
+            "start_date": "22-04-2015", "end_date": None,  # "23-05-2015",
+            "query_subreddit": '"paid mod"',
+            "query_comments": '"paid mod"',
+            "query_all": 'Skyrim AND ("paid mod")',
+        },
+        "bethesda_creation_club": {
+            "name": '(Skyrim OR "Fallout 4" OR "creation club")',
+            "subreddits": ["BethesdaGameStudios", "BethesdaSoftworks", "ElderScrolls", "skyrim", "Fallout", "fo4"],
+            "start_date": "27-08-2017", "end_date": None,  # "01-12-2017",
+            "query_subreddit": '"paid mod" OR "creation club" OR bethesda',
+            "query_comments": '"paid mod" OR "creation club" OR bethesda',
+            "query_all": '(Skyrim OR "Fallout 4" OR "creation club") AND ("paid mod" OR "creation club" OR bethesda)',
+        },
+        "Grand Theft Auto V": {
+            "name": '("Grand Theft Auto V" OR "Grand Theft Auto 5" OR GTA5 OR GTAV)',
+            "subreddits": ["GTA", "GTAV", "GrandTheftAutoV"],
+            "start_date": "13-06-2017", "end_date": None,  # "14-07-2017",
+            "query_subreddit": 'openiv OR ban OR "cease-and-desist" OR mod OR "take-two" OR "take 2"',
+            "query_comments": "openiv OR mod",
+            "query_all": '("Grand Theft Auto V" OR "Grand Theft Auto 5" OR GTA5 OR GTAV) AND (openiv OR ban OR '
+                         '"cease-and-desist" OR mod OR "take-two" OR "take 2")',
+        },
+        "Total War Rome II": {
+            "name": '("Total War Rome" OR "Rome II" OR TW:RII)',
+            "subreddits": ["totalwar", "RomeTotalWar"],
+            "start_date": "21-09-2018", "end_date": None,  # "01-11-2018",
+            "query_subreddit": 'accurate OR accuracy OR "female general" OR feminist OR agenda',
+            "query_comments": "female (accuracy OR agenda)",
+            "query_all": '("Total War Rome" OR "Rome II" OR TW:RII) AND (accurate OR accuracy OR "female general" OR '
+                         'feminist OR agenda)',
+        },
+        "Mortal Kombat 11": {
+            "name": '(Mortal Kombat 11 OR MK11)',
+            "subreddits": ["MortalKombat", "mk11", "MortalKombat11"],
+            "start_date": "21-04-2019", "end_date": None,  # "22-05-2019",
+            "query_subreddit": 'microtransaction OR sjw OR propaganda OR woke OR ending',
+            "query_comments": "sjw woke",
+            "query_all": '(Mortal Kombat 11 OR MK11) AND (microtransaction OR sjw OR propaganda OR woke OR ending)',
+        },
+        "Assassins Creed Unity": {
+            "name": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity")',
+            "subreddits": ["assassinscreed", "acunity"],
+            "start_date": "19-04-2019", "end_date": None,  # "20-05-2019",
+            "query_subreddit": 'unity AND ("notre-dame" OR fire OR positive)',
+            "query_comments": 'unity AND ("notre-dame" OR fire OR positive)',
+            "query_all": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND ('
+                         '"notre-dame" OR fire OR positive)',
+        },
     }
 
     for game in games:
@@ -415,9 +427,10 @@ def get_reddit_data_for_games():
             start_date = end_date = None   # for general query use no time period because results are only a few anyway
 
         print(f"Getting submissions for game \"{game}\" with all_query \"{query_all}\"...")
-        get_submissions_for_game(game, subreddits, query_subreddit, query_all, start_date, end_date)
+        get_submissions_for_game(game, subreddits, query_subreddit, query_all, use_game_specific_query, start_date,
+                                 end_date)
         print(f"{'-' * 50}")
-        get_comments_for_game(game, subreddits, query_comments, start_date, end_date)
+        get_comments_for_game(game, subreddits, query_comments, use_game_specific_query, start_date, end_date)
         print(f"\nFinished with game {game}\n######################################\n")
         time.sleep(2)
 
@@ -455,7 +468,7 @@ def get_comments_for_extracted_submissions():
         all_comments = list()
 
         submissions_df = pd.read_csv(submissions_folder / submissions_file)
-        submissions_df = submissions_df.head(2)    # TODO take first n rows only for faster testing
+        # submissions_df = submissions_df.head(2)    # take first n rows only for faster testing
         # submissions_df["id"].apply(lambda submission: load_comments(submission))
         submissions_df.apply(lambda row: load_comments(row), axis=1)
         comments_df = pd.DataFrame(all_comments)
@@ -470,5 +483,5 @@ def get_comments_for_extracted_submissions():
 # ! nach neuem Pricing (seit 1. Juli) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
 if __name__ == "__main__":
     # extracted_submissions = extract_submissions_from(["cyberpunkgame"])
-    # get_reddit_data_for_games()
-    get_comments_for_extracted_submissions()
+    get_reddit_data_for_games()
+    # get_comments_for_extracted_submissions()

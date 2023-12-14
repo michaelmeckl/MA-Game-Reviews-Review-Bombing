@@ -139,18 +139,26 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
   
 * **Reddit:**
   * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
-    Spielen "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing
-  * Submissions & Kommentare mit zugehörigen User Informationen für spezifische Queries für die Spiele "Cyberpunk 2077, 
-    Metro Exodus, Borderlands 3, Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für 
-    Queries & Zeiträume, s. Code; manchmal auch Ergebnisse mehrerer Queries kombiniert)
+    Spielen *Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch, Overwatch 2, The Elder Scrolls V: Skyrim, 
+    Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda 
+    Creation Club - Review Bombing (Skyrim & Fallout 4) und das Russland-Ukraine-Review Bombing
+  * Submissions & Kommentare mit zugehörigen User Informationen für spezifische Queries für die Spiele *Cyberpunk 2077, 
+    Metro Exodus, Borderlands 3, Firewatch und Overwatch 2, The Elder Scrolls V: Skyrim, Grand Theft Auto V, Total 
+    War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing 
+    (Skyrim & Fallout 4) sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code; manchmal 
+    auch Ergebnisse mehrerer Queries kombiniert)
   
 * **Twitter:**
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
     controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen 
-    "Cyberpunk 2077, Metro Exodus, Borderlands (3), Firewatch und Overwatch 2" sowie für das Russland-Ukraine-Review 
-    Bombing (und die davon betroffenen Spiele wie die Witcher- oder S.T.A.L.K.E.R-Serie)
-  * Tweets zu spezifischen Queries für die Spiele "Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und 
-    Overwatch 2" sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
+    *Cyberpunk 2077, Metro Exodus, Borderlands (3), Firewatch und Overwatch 2, The Elder Scrolls V: Skyrim, 
+    Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda 
+    Creation Club - Review Bombing (Skyrim & Fallout 4) sowie für das Russland-Ukraine-Review Bombing (und die davon 
+    betroffenen Spiele wie die Witcher- oder S.T.A.L.K.E.R-Serie)
+  * Tweets zu spezifischen Queries für die Spiele *Cyberpunk 2077, Metro Exodus, Borderlands 3, Firewatch und 
+    Overwatch 2, The Elder Scrolls V: Skyrim, Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und 
+    Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing (Skyrim & Fallout 4) sowie für 
+    das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
 
 * **Old Data:**
   * **Reddit:**
