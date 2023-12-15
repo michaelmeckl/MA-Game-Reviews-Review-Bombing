@@ -382,6 +382,10 @@ def get_tweets_tweety():
         "Total War Rome II": [
             '("Total War Rome" OR "Rome II" OR TW:RII) AND (accurate OR accuracy OR "female general" OR feminist '
             'OR agenda) since:2018-09-21 until:2018-11-01',
+            '("Total War Rome" OR "Rome II" OR TW:RII) AND (accurate OR accuracy OR "female general" OR "female '
+            'spawn" OR feminist OR agenda OR politic) since:2018-09-21 until:2018-11-01',
+            '("Total War Rome" OR "Rome II" OR TW:RII) AND (accurate OR accuracy OR "female general" OR "female '
+            'spawn" OR feminist OR agenda)',
         ],
         "Mortal Kombat 11": [
             '("Mortal Kombat 11" OR MK11) AND (microtransaction OR sjw OR propaganda OR woke OR ending) '
