@@ -460,6 +460,9 @@ def load_reviews_for_games():
         # "Total War: ROME II - Emperor Edition": ("22-09-2018", "31-10-2018"),
         # "Mortal Kombat 11": ("22-04-2019", "01-05-2019"),
         # "Assassin's Creed Unity": ("19-04-2019", "01-05-2019"),  # here only positive reviews (was a positive RB!)
+        # "Crusader Kings II": ("19-10-2019", "01-11-2019"),
+        # "The Long Dark": ("02-03-2020", "01-05-2020"),
+        # "SUPERHOT VR": ("21-07-2021", "18-09-2021"),
     }
 
     if os.path.exists(APP_LIST_FILE):

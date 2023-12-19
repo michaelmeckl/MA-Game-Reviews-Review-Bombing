@@ -60,6 +60,9 @@ games_to_scrape = {
     # "total-war-rome-ii": [PLATFORM.PC.value],
     # "mortal-kombat-11": [PLATFORM.PC.value],
     # "assassins-creed-unity": [PLATFORM.PC.value],
+    # "crusader-kings-ii": [PLATFORM.PC.value],
+    # "the-long-dark": [PLATFORM.PC.value],
+    # "superhot-vr": [PLATFORM.PC.value],
 }
 
 # since = "24-02-2022"  # "start date", i.e. the oldest date

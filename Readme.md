@@ -107,6 +107,9 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
       * 09.12.2020 - 16.12.2020 (46820 Reviews)  &  01.03.2022 - 13.03.2022 (4977 negative Reviews)
       * 01.01.2023 - 31.01.2023
       * 17.12.2020 - 02.01.2021  &  8.06.2023 - 19.06.2023 (bei diesen nur eingeschränkte review time bis 1h)
+  * negative & positive User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
+    Review-Histogramm-Daten + allgemeine Infos zu den Spielen aus dem Russland-Ukraine-Review Bombing 
+    (S.T.A.L.K.E.R-Serie, Witcher 1 & 2 & 3, Gwent, Thronebreaker und Frostpunk)
   * negative User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
   Review-Histogramm-Daten + allgemeine Infos zu den Spielen:
     * The Elder Scrolls V: Skyrim & Skyrim Special Edition
@@ -115,10 +118,10 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * Total War: ROME II - Emperor Edition
     * Mortal Kombat 11
     * Assassin's Creed Unity (hier stattdessen nur die positiven User Reviews, da positives Review Bombing)
-  * negative & positive User Reviews (keine min/max review time, language "all") + zugehörige User Informationen + 
-    Review-Histogramm-Daten + allgemeine Infos zu den Spielen aus dem Russland-Ukraine-Review Bombing 
-    (S.T.A.L.K.E.R-Serie, Witcher 1 & 2 & 3, Gwent, Thronebreaker und Frostpunk)
-  
+    * Crusader Kings II
+    * The Long Dark
+    * Superhot VR
+
 * **Metacritic:**
   * allgemeine Informationen + 407 UserReviews zu Hogwarts Legacy im Zeitraum 7.02.2023 - 21.02.2023
   * allgemeine Informationen + alle PC - UserReviews zu den Spielen "Metro 2033, Metro: Last Light, Metro 2033 Redux, 
@@ -136,6 +139,9 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * "Total War: Rome II" aus dem Zeitraum 20.09.2018 - 31.10.2018
     * "Mortal Kombat 11" aus dem Zeitraum 22.04.2019 - 01.05.2019
     * "Assassin's Creed Unity" aus dem Zeitraum 19.04.2019 - 31.05.2019
+    * "Crusader Kings II" aus dem Zeitraum 01.10.2019 - 01.12.2019
+    * "The Long Dark" aus dem Zeitraum 01.03.2020 - 01.06.2020
+    * "Superhot VR" aus dem gesamten Zeitraum
   
 * **Reddit:**
   * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
@@ -147,6 +153,7 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing 
     (Skyrim & Fallout 4) sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code; manchmal 
     auch Ergebnisse mehrerer Queries kombiniert)
+    * **TODO:** auch noch Daten für "Crusader Kings II", "The Long Dark" und "Superhot VR" ?
   
 * **Twitter:**
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
@@ -159,6 +166,7 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     Overwatch 2, The Elder Scrolls V: Skyrim, Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und 
     Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing (Skyrim & Fallout 4) sowie für 
     das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
+    * **TODO:** auch noch Daten für "Crusader Kings II", "The Long Dark" und "Superhot VR" ?
 
 * **Old Data:**
   * **Reddit:**
