@@ -11,6 +11,7 @@ import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from enum import Enum
+from useful_code_from_other_projects.utils import convert_to_int
 
 
 ##################### Global Variables #####################
@@ -63,6 +64,7 @@ games_to_scrape = {
     # "crusader-kings-ii": [PLATFORM.PC.value],
     # "the-long-dark": [PLATFORM.PC.value],
     # "superhot-vr": [PLATFORM.PC.value],
+    # "no-mans-sky": [PLATFORM.PC.value],
 }
 
 # since = "24-02-2022"  # "start date", i.e. the oldest date
@@ -75,49 +77,19 @@ headers = {'User-agent': 'Mozilla/5.0'}
 ############################################################
 
 
-def scrape_general_game_information(requests_session, game: str, out_data: dict):
+def scrape_general_game_information(requests_session, game: str, platform: str, out_data: dict):
     """
     Scrape general game information
     """
-    metacritic_url = f"https://www.metacritic.com/game/{game}/"
-    response = requests_session.get(metacritic_url, headers=headers)
-    soup = BeautifulSoup(response.text, 'lxml')
+    metacritic_main_url = f"https://www.metacritic.com/game/{game}/"
+    metacritic_user_reviews_url = f"https://www.metacritic.com/game/{game}/user-reviews/?platform={platform}"
+    metacritic_critic_reviews_url = f"https://www.metacritic.com/game/{game}/critic-reviews/?platform={platform}"
 
-    score_info = soup.find("div", class_="c-productHero_scoreInfo")
+    # get game release date
     try:
-        user_score_regex = re.compile("User score")
-        critic_score_regex = re.compile("Metascore")
-        critic_score = score_info.find("div", title=critic_score_regex).find("span").text
-        user_score = score_info.find("div", title=user_score_regex).find("span").text
-    except Exception as e:
-        print(f"ERROR: {e}")
-        critic_score = ""
-        user_score = ""
+        response = requests_session.get(metacritic_main_url, headers=headers)
+        soup = BeautifulSoup(response.text, 'lxml')
 
-    print(f"Critic Score: {critic_score}")
-    print(f"User Score: {user_score}")
-    out_data["critic_score"].append(critic_score)
-    out_data["user_score"].append(user_score)
-
-    num_ratings = ""
-    try:
-        reviews_total_elements = soup.findAll("span", class_="c-ScoreCard_reviewsTotal")
-        for el in reviews_total_elements:
-            user_reviews_el = el.find("a", href=re.compile(r"user-reviews"))
-            if user_reviews_el is not None:
-                num_user_reviews_text = user_reviews_el.find("span").text
-                num_user_ratings_regex = re.compile(r"([0-9]+[.,]*[0-9]+)")
-                # extract the number from the string
-                num_ratings = re.search(num_user_ratings_regex, num_user_reviews_text).group(1)
-                num_ratings = num_ratings.replace(",", "").replace(".", "")   # remove the delimiter
-                break
-    except Exception as e:
-        print(f"ERROR: {e}")
-
-    print(f"Number of User Ratings: {num_ratings}")
-    out_data["num_user_ratings"].append(num_ratings)
-
-    try:
         game_release_date_container = soup.find("div", class_="c-gameDetails_ReleaseDate")
         game_release_date = game_release_date_container.findAll("span")[1].text
         formatted_release_date = datetime.strptime(game_release_date, '%b %d, %Y').strftime('%d.%m.%Y')
@@ -127,6 +99,77 @@ def scrape_general_game_information(requests_session, game: str, out_data: dict)
 
     print(f"Release Date: {formatted_release_date}")
     out_data["release_date"].append(formatted_release_date)
+
+    # get critic score for the given platform
+    try:
+        response = requests_session.get(metacritic_critic_reviews_url, headers=headers)
+        soup = BeautifulSoup(response.text, 'lxml')
+        critic_score_container = soup.find("div", class_="c-siteReviewScore")
+        critic_score = critic_score_container.findChild("span").text
+    except Exception as e:
+        print(f"ERROR: {e}")
+        critic_score = ""
+
+    print(f"Critic Score: {critic_score}")
+    out_data["critic_score"].append(critic_score)
+
+    # get user score and score distribution for the given platform
+    response = requests_session.get(metacritic_user_reviews_url, headers=headers)
+    soup = BeautifulSoup(response.text, 'lxml')
+    score_card = soup.find("div", class_="c-scoreCardOverview")
+    try:
+        user_score_container = score_card.find("div", class_="c-siteReviewScore")
+        user_score = user_score_container.findChild("span").text
+    except Exception as e:
+        print(f"ERROR: {e}")
+        user_score = ""
+
+    print(f"User Score: {user_score}")
+    out_data["user_score"].append(user_score)
+
+    user_rating_distribution = {}
+    num_user_ratings = ""
+    try:
+        rating_distribution_el = score_card.find("div", class_="c-scoreCount_container")
+        distribution_entries = rating_distribution_el.findAll("div", class_="c-scoreCount_count")
+        # the first one is "Positive", then "Mixed" and "Negative"
+        rating_distribution_count_pos = distribution_entries[0].findChild()  # we only want the first child element
+        rating_distribution_count_mix = distribution_entries[1].findChild()
+        rating_distribution_count_neg = distribution_entries[2].findChild()
+        user_rating_distribution["Positive"] = rating_distribution_count_pos.text
+        user_rating_distribution["Mixed"] = rating_distribution_count_mix.text
+        user_rating_distribution["Negative"] = rating_distribution_count_neg.text
+
+        # calculate the number of user ratings by adding them up
+        num_user_ratings = convert_to_int(rating_distribution_count_pos.text) + convert_to_int(
+            rating_distribution_count_mix.text) + convert_to_int(rating_distribution_count_neg.text)
+    except Exception as e:
+        print(f"ERROR: {e}")
+
+    print(f"Number of User Ratings: {num_user_ratings}")
+    out_data["num_user_ratings"].append(num_user_ratings)
+    out_data["user_score_distribution"].append(user_rating_distribution)
+
+    # old version that scrapes from the metacritic's main page below (but the new Metacritic website does not seem to
+    # allow to see different platform scores and values there directly; only shows the highest rated there instead)
+    """
+    num_user_ratings = ""
+    try:
+        reviews_total_elements = soup.findAll("span", class_="c-ScoreCard_reviewsTotal")
+        for el in reviews_total_elements:
+            user_reviews_el = el.find("a", href=re.compile(r"user-reviews"))
+            if user_reviews_el is not None:
+                num_user_reviews_text = user_reviews_el.find("span").text
+                num_user_ratings_regex = re.compile(r"([0-9]+[.,]*[0-9]+)")
+                # extract the number from the string
+                num_user_ratings = re.search(num_user_ratings_regex, num_user_reviews_text).group(1)
+                num_user_ratings = num_user_ratings.replace(",", "").replace(".", "")   # remove the delimiter
+                break
+    except Exception as e:
+        print(f"ERROR: {e}")
+
+    print(f"Number of User Ratings: {num_user_ratings}")
+    out_data["num_user_ratings"].append(num_user_ratings)
 
     try:
         user_rating_distribution = {}
@@ -149,6 +192,7 @@ def scrape_general_game_information(requests_session, game: str, out_data: dict)
         user_rating_distribution = {}
 
     out_data["user_score_distribution"].append(user_rating_distribution)
+    """
 
 
 def scrape_game_description(requests_session, game: str):
@@ -190,8 +234,9 @@ def scrape_user_profile(username: str, user_dict: dict):
         user_dict["author_num_game_reviews"].append("")
     """
 
+    review_score_distribution = {}
+    num_game_reviews = 0
     try:
-        review_score_distribution = {}
         score_distribution_el = main_section.find("div", class_="c-scoreCount_container u-grid")
         distribution_entries = score_distribution_el.findAll("div", class_="c-scoreCount_count")
         # the first one is "Positive", then "Mixed" and "Negative"
@@ -201,16 +246,14 @@ def scrape_user_profile(username: str, user_dict: dict):
         review_score_distribution["Positive"] = score_distribution_count_pos.text
         review_score_distribution["Mixed"] = score_distribution_count_mix.text
         review_score_distribution["Negative"] = score_distribution_count_neg.text
-        user_dict["author_review_distribution"].append(review_score_distribution)
 
         # calculate the number of game reviews for this user by adding them up
-        num_game_reviews = int(score_distribution_count_pos.text) + int(score_distribution_count_mix.text) + int(
-            score_distribution_count_neg.text)
+        num_game_reviews = convert_to_int(score_distribution_count_pos.text) + convert_to_int(
+            score_distribution_count_mix.text) + convert_to_int(score_distribution_count_neg.text)
     except Exception as e:
         print(f"ERROR: {e}")
-        user_dict["author_review_distribution"].append({})
-        num_game_reviews = 0
 
+    user_dict["author_review_distribution"].append(review_score_distribution)
     user_dict["author_num_game_reviews"].append(num_game_reviews)
 
     # for compatibility reasons:
@@ -350,7 +393,7 @@ def scrape_metacritic():
                                 'author_average_score': [], 'author_review_distribution': []}
 
             # scrape the non-review related information first
-            scrape_general_game_information(requests_session, game, game_info_dict)
+            scrape_general_game_information(requests_session, game, platform, game_info_dict)
             game_description = scrape_game_description(requests_session, game)
             game_info_dict["game_description"].append(game_description)
 

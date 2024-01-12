@@ -86,6 +86,22 @@ def parse_date(original_date):
     return new_date
 
 
+def convert_to_int(x):
+    """
+    Useful for parsing Metacritic, as bigger numbers are abbreviated like 1.5k instead of 1500 for example.
+    This method converts it correctly.
+    """
+    if type(x) == int:
+        return x
+    if 'k' in x:
+        if len(x) > 1:
+            converted = float(x.replace('k', '')) * 1000
+            return int(converted)
+        return 1000
+    else:
+        return int(x)
+
+
 def write_json_to_file(data, filepath):
     with open(filepath, "w") as f:
         json.dump(data, f, indent=4)

@@ -431,6 +431,7 @@ def load_reviews_for_games():
     # the end date is NOT included! (i.e. for end date 21-01 the actual end date is 20-01)
     game_dict = {
         # "Hogwarts Legacy": ("06-02-2023", None),
+        # "Hogwarts Legacy": ("11-02-2023", "22-02-2023"),
         # "Cyberpunk 2077": ("09-12-2020", "17-12-2020"),
         # "Cyberpunk 2077": ("01-03-2022", "14-03-2022"),
         # "Cyberpunk 2077": ("01-01-2023", "01-02-2023"),
@@ -463,6 +464,7 @@ def load_reviews_for_games():
         # "Crusader Kings II": ("19-10-2019", "01-11-2019"),
         # "The Long Dark": ("02-03-2020", "01-05-2020"),
         # "SUPERHOT VR": ("21-07-2021", "18-09-2021"),
+        # "No Man's Sky": ("12-08-2016", "20-08-2016"),
     }
 
     if os.path.exists(APP_LIST_FILE):

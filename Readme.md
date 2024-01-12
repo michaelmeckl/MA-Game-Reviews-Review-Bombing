@@ -121,6 +121,8 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * Crusader Kings II
     * The Long Dark
     * Superhot VR
+    * Hogwarts Legacy (nur vom 11. - 21.02, auch wenn Release schon am 07.02 war, da sonst zu viele Reviews in den ersten Tagen)
+    * No Man's Sky (nur vom 12. - 19.08, auch wenn Release schon am 09.08 war, da sonst zu viele Reviews in den ersten Tagen)
 
 * **Metacritic:**
   * allgemeine Informationen + 407 UserReviews zu Hogwarts Legacy im Zeitraum 7.02.2023 - 21.02.2023
@@ -142,6 +144,8 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * "Crusader Kings II" aus dem Zeitraum 01.10.2019 - 01.12.2019
     * "The Long Dark" aus dem Zeitraum 01.03.2020 - 01.06.2020
     * "Superhot VR" aus dem gesamten Zeitraum
+    * "Hogwarts Legacy" aus dem Zeitraum 07.02.2023 - 01.03.2023
+    * "No Man's Sky" aus dem Zeitraum 09.08.2016 - 01.09.2016
   
 * **Reddit:**
   * Submissions & Kommentare mit zugehörigen User Informationen für die Default - Queries (s. Code) zu den 
