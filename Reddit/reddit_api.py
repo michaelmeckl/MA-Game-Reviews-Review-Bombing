@@ -401,7 +401,7 @@ def get_reddit_data_for_games():
         "Assassins Creed Unity": {
             "name": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity")',
             "subreddits": ["assassinscreed", "acunity"],
-            "start_date": "19-04-2019", "end_date": None,  # "20-05-2019",
+            "start_date": "17-04-2019", "end_date": None,  # "20-05-2019",
             "query_subreddit": 'unity AND ("notre-dame" OR fire OR positive)',
             "query_comments": 'unity AND ("notre-dame" OR fire OR positive)',
             "query_all": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND ('

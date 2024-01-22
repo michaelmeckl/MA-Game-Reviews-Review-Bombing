@@ -191,3 +191,10 @@ def compare_pandas_dataframes(df_1: pd.DataFrame, df_2: pd.DataFrame, merge_colu
         df_1_2_overlap.to_csv(f"{df_1_name}-{df_2_name}-overlap.csv", index=False)
 
     return df_1_2_overlap
+
+
+def concat_generators(*iterables):
+    # Concatenates an arbitrary number of generators (note: this returns the output for each generator in order!).
+    # See https://stackoverflow.com/a/47592164
+    for iterable in iterables:
+        yield from iterable

@@ -5,6 +5,8 @@ __pycache__/
 
 .idea
 data_for_analysis/
+data_for_analysis_cleaned/
+data_for_labelstudio/
 Steam/steam_review_data/
 Steam/Steam-Games-Scraper-main/
 Metacritic/metacritic_data/

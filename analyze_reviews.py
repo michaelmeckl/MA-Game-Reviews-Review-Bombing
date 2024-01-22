@@ -199,8 +199,9 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
 
     # rename columns so the same content from both dataframes ends up in the same column
     reviews_steam = reviews_steam.rename(
-        columns={"content": "review", "created_at_formatted": "review_date", "useful_score": "helpful_votes",
-                 "author_num_reviews": "author_num_game_reviews", "author_username": "username"})
+        columns={"content": "review", "created_at_formatted": "review_date", "rating_positive": "steam_rating_positive",
+                 "useful_score": "helpful_votes", "author_num_reviews": "author_num_game_reviews",
+                 "author_username": "username"})
     game_info_steam = game_info_steam.rename(columns={"short_description": "game_description"})
 
     merged_reviews_df = pd.concat([reviews_steam, reviews_metacritic], axis=0, ignore_index=True)
@@ -208,14 +209,8 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
     # merge the reviews and the general info for the game
     combined_df = merged_reviews_df.merge(merged_game_info_df, on=[merge_column], how='outer')
 
-    # TODO drop more ?
-    """
-    die meisten Metadaten sind nicht so wirklich hilfreich, nur Review-Datum, Spiel-Releasedatum, Autor-Infos (z.B. 
-    Account-Erstelldatum, Infos zur Menge an Reviews & gespielten Spielen, Freunden, ob Spiel kostenlos bekommen / 
-    über Steam bekommen, ...), Metacritic-Rating und Steam-Playtime-Infos für die Konsistency und RB-Zugehörigkeit
-    """
     # drop unnecessary columns
-    combined_df = combined_df.drop(columns=["review_id", "rating_positive", "created_at", "last_updated", "author_id",
+    combined_df = combined_df.drop(columns=["review_id", "created_at", "last_updated", "author_id",
                                             "comment_count", "platform", "profile_visibility", "profile_url",
                                             "game_id", "game_title", "price_euro"],
                                    axis=1)
@@ -228,7 +223,7 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
 
 def prepare_data():
     # load metacritic and steam reviews
-    steam_review_data = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_Cyberpunk 2077_12_2020_06_2023.csv")
+    steam_review_data = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_Cyberpunk_2077_12_2020_06_2023.csv")
     steam_general_game_info = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_Cyberpunk_2077.csv")
     metacritic_review_data = pd.read_csv(
         DATA_FOLDER / "metacritic" / "filtered_metacritic_user_reviews_pc_cyberpunk-2077.csv")
