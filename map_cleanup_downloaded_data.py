@@ -107,11 +107,11 @@ game_names_mapping = {
         "game_name_display": "Borderlands",
     },
     "borderlands GOTY.csv": {
-        "game": "Borderlands",  # TODO add GOTY here as well for mapping ?
+        "game": "Borderlands",
         "game_name_display": "Borderlands GOTY",
     },
     "borderlands GOTY enhanced.csv": {
-        "game": "Borderlands",  # TODO add GOTY here as well ?
+        "game": "Borderlands",
         "game_name_display": "Borderlands GOTY Enhanced",
     },
     "borderlands 2.csv": {
@@ -290,8 +290,6 @@ def add_rb_information_to_game_files(rb_incident_name):
     Sub_Folder = OUTPUT_FOLDER / rb_incident_name
     if not Sub_Folder.is_dir():
         Sub_Folder.mkdir()
-    # TODO comment in later
-    """
     else:
         print("WARNING: Subfolder already exists!")
         answer = input(f"Do you want to overwrite the existing folder for \"{rb_incident_name}\"? [y/n]\n")
@@ -300,7 +298,6 @@ def add_rb_information_to_game_files(rb_incident_name):
             Sub_Folder.mkdir()
         else:
             return
-    """
 
     rb_information = review_bombing_incidents[rb_incident_name]
     games_title_terms = rb_information["games_title_terms"]

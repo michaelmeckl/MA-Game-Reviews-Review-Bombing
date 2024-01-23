@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import math
 import pathlib
 import pprint
 import shutil
@@ -9,6 +9,7 @@ import pandas as pd
 from sentiment_analysis_and_nlp.nlp_utils import detect_language
 from useful_code_from_other_projects.utils import enable_max_pandas_display_size
 from transformers import AutoTokenizer
+from datasets import Dataset
 
 
 DATA_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis_cleaned"
@@ -77,9 +78,21 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
                                             "author_real_name", "username"],
                                    axis=1)
 
-    # metacritic_rating = np.where(combined_df["rating"] < 3, "Nicht empfohlen", "Empfohlen")
-    # combined_df.insert(2, "metacritic_rating", metacritic_rating)
-    return combined_df
+    # add a new column for label studio that contains the Metacritic score if it is a Metacritic review or the
+    # "Recommended" / "Not recommended" label if it is a Steam review
+    combined_rating_display = np.where(combined_df["source"] == "Steam",
+                                       np.where(combined_df["steam_rating_positive"], "Empfohlen", "Nicht empfohlen"),
+                                       combined_df["rating"].astype('Int64').astype("str") + " von 10")
+    combined_df.insert(8, "combined_rating_display", combined_rating_display)
+
+    # also add a column that combines both the metacritic and the steam rating into one
+    combined_rating = np.where(combined_df["source"] == "Steam", combined_df["combined_rating_display"],
+                               np.where(combined_df["rating"] < 4, "Nicht empfohlen", "Empfohlen"))
+    combined_df.insert(8, "combined_rating", combined_rating)
+
+    # remove completely empty rows
+    combined_df_new = combined_df.dropna(how="all")
+    return combined_df_new
 
 
 def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pathlib.Path):
@@ -129,37 +142,85 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
     combined_review_df.to_csv(Sub_Folder / f"combined_review_df_{rb_incident_name}.csv", index=False)
 
 
-def remove_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
+def remove_short_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
     # remove reviews with only one word/token (as they are most likely useless or at least too hard to interpret
     # correctly) as well as reviews with more than 512 tokens (as models such as BERT would have to truncate them
     # because of their character limit)
     # see https://stackoverflow.com/questions/72395380/how-to-drop-sentences-that-are-too-long-in-huggingface
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    tokenized_review = tokenizer.tokenize(dataframe["review"])
+    dataset = Dataset.from_pandas(dataframe)
+    checkpoint = "bert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
-    # TODO
-    if (len(tokenized_review) > 512) | (len(tokenized_review) < 2):
-        print(f"Review \"{tokenized_review}\" ({len(tokenized_review)}) was too long or short and therefore removed!")
+    # minimum is 4 instead of 2 because the tokenizer adds two additional tokens (a start and end token) automatically
+    min_tokens = 4
+    # max input size for "bert-base-uncased" is 512:
+    max_tokens = tokenizer.max_model_input_sizes[checkpoint]
+
+    def tokenize_function(df):
+        return tokenizer(df["review"])
+
+    tokenized_datasets = dataset.map(tokenize_function, batched=True)
+    print(f"Num rows before: {len(tokenized_datasets)}")
+    tokenized_datasets = tokenized_datasets.filter(lambda df: min_tokens <= len(df['input_ids']) <= max_tokens)
+    print(f"Num rows after removing too long or too short reviews: {len(tokenized_datasets)}")
+
+    filtered_df = tokenized_datasets.to_pandas()
+    filtered_df = filtered_df.drop(columns=["token_type_ids", "attention_mask"], axis=1)  # "input_ids",
+    return filtered_df
 
 
-def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=10, random_seed=42):
-    # see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas/44115314
+def apply_random_sampling(review_data: pd.DataFrame, num_samples=25, random_seed=42):
     target_sample_size = min(len(review_data.index), num_samples)
     randomly_sampled_reviews = review_data.sample(n=target_sample_size, random_state=random_seed)  # random sampling
+    return randomly_sampled_reviews
 
-    # TODO stratify per source platform, i.e. steam and metacritic
-    # target_column = "source"
 
-    # TODO stratify per game of this review bombing incident
-    # target_column = "game_name_display"
+def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_seed=42):
+    # see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas/44115314
+    #################################
+    print("\n#################################\nReview Dataframe - Overview:")
+    for column_name in ["source", "game_name_display", "combined_rating"]:
+        print(f"\nColumn: {review_data[column_name].value_counts()}")
+        ratio = review_data[column_name].value_counts(normalize=True)
+        print(f"ratio_percentage: {ratio.round(4) * 100}")
 
-    # TODO only works for steam, for Metacritic it would be "rating" (should probably add another column
-    #  "rating_positive" (depending on "rating") as well for metacritic so both could be used the same here)
-    # target_column = "steam_rating_positive"
-    # stratified_sample = review_data.groupby(target_column, group_keys=False).apply(lambda x: x.sample(n=target_sample_size, random_state=random_seed))
+    grouped_ratio = review_data.value_counts(["game_name_display", "source", "combined_rating"])
+    print(f"\nGrouped Ratio: {grouped_ratio}")
+    print("\n#################################\n")
+    #################################
 
-    # random shuffle the stacked data, see https://stackoverflow.com/a/71948677
-    randomly_sampled_reviews = randomly_sampled_reviews.sample(frac=1)
+    # stratify per game of this review bombing incident first
+    # then stratify per source platform, i.e. steam and metacritic
+    # then stratify positive / negative reviews
+
+    # get the sample_size by taking the smallest group length after grouping
+    sample_size = min(min(grouped_ratio), num_samples)
+    # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
+    sample_size_per_group = math.ceil(sample_size / grouped_ratio.size)
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
+        lambda x: x.sample(n=sample_size_per_group, random_state=random_seed))
+
+    # stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False)\
+    #     .apply(lambda x: x.sample(frac=num_samples/len(review_data), random_state=random_seed))
+
+    # use stratified sampling with target sample size: https://stackoverflow.com/a/54722093
+    # not working correctly:
+    """
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
+        lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
+    """
+
+    # TODO also groupby and stratify by "review_date" to make sure that the selected reviews are somewhat evenly
+    #  distributed across the entire review bombing timespan instead of only the first 2 or 3 days ?
+
+    if "__index_level_0__" in stratified_sample:
+        stratified_sample = stratified_sample.drop(columns=["__index_level_0__"], axis=1)
+
+    stratified_grouped_ratio = stratified_sample.value_counts(["game_name_display", "source", "combined_rating"])
+    print(f"\nGrouped Ratio after sampling: {stratified_grouped_ratio}")
+
+    # random shuffle the stacked data at the end, see https://stackoverflow.com/a/71948677
+    randomly_sampled_reviews = stratified_sample.sample(frac=1).reset_index(drop=True)
     return randomly_sampled_reviews
 
 
@@ -167,20 +228,17 @@ def select_reviews_for_label_studio(review_dataframe: pd.DataFrame):
     # remove reviews not written in english; unfortunately, this seems to remove some very short english reviews or
     # reviews with many links as well
     english_review_dataframe = review_dataframe[review_dataframe["review"].apply(lambda x: detect_language(x)).eq('en')]
+    print(f"Removed {len(review_dataframe) - len(english_review_dataframe)} non-english reviews")
 
-    # only take reviews that contain at least 2-3 tokens and no more than 512 tokens (because of BERT token limit)
-    # TODO
-    # filtered_review_dataframe = remove_long_reviews(english_review_dataframe)
+    # remove all rows with duplicate reviews to make sure all reviews annotated in label studio will be different
+    no_duplicates_review_dataframe = english_review_dataframe.drop_duplicates(subset=["review"])
+    print(f"Removed {len(english_review_dataframe) - len(no_duplicates_review_dataframe)} rows with duplicate reviews")
 
-    # add a new column that contains the Metacritic score if it is a Metacritic review or the
-    # "Recommended" / "Not recommended" label if it is a Steam review
-    combined_rating = np.where(english_review_dataframe["source"] == "Steam",
-                               np.where(english_review_dataframe["steam_rating_positive"], "Empfohlen", "Nicht empfohlen"),
-                               english_review_dataframe["rating"].astype('Int64').astype("str") + " von 10")
-    english_review_dataframe.insert(8, "combined_rating", combined_rating)
+    # only take reviews that contain at least 2 tokens and no more than 512 tokens (because of BERT token limit)
+    filtered_review_dataframe = remove_short_long_reviews(no_duplicates_review_dataframe)
 
     # take subset with stratified sampling
-    sampled_review_dataframe = apply_stratified_sampling(english_review_dataframe)
+    sampled_review_dataframe = apply_stratified_sampling(filtered_review_dataframe)
     return sampled_review_dataframe
 
 
@@ -207,5 +265,4 @@ if __name__ == "__main__":
 
     combined_review_dataframe = pd.read_csv(label_studio_data_path / f"combined_review_df_{review_bombing_name}.csv")
     sampled_review_df = select_reviews_for_label_studio(combined_review_dataframe)
-    # save the final selected reviews in the output folder
     sampled_review_df.to_csv(label_studio_data_path / f"label_studio_df_{review_bombing_name}.csv", index=False)
