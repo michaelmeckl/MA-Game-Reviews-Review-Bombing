@@ -197,20 +197,10 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_
     """
 
     """
-    if num_samples <= min(grouped_ratio):
-        # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
-        sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)
-        strat_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
-            lambda x: x.sample(n=sample_size_per_group, random_state=random_seed))
-    else:
-        # get the sample_size by taking the smallest group length after grouping or the wanted num_samples if they
-        # are less
-        sample_size = min(min(grouped_ratio), num_samples)
-        sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
-            lambda x: x.sample(n=sample_size, random_state=random_seed))
-        fraction = min(num_samples / len(sample), 1)
-        strat_sample = sample.groupby(["game_name_display", "source", "combined_rating"], group_keys=False) \
-            .apply(lambda x: x.sample(frac=fraction, random_state=random_seed))
+    # use stratified sampling with target sample size: https://stackoverflow.com/a/54722093
+    # not working correctly:
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
+        lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
     """
 
     def sample_func(x):
@@ -221,13 +211,6 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_
     sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)  # ceil to make sure we have at least 1
     stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"],
                                             group_keys=False).apply(lambda x: sample_func(x))
-
-    """
-    # use stratified sampling with target sample size: https://stackoverflow.com/a/54722093
-    # not working correctly:
-    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
-        lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
-    """
 
     # TODO also groupby and stratify by "review_date" to make sure that the selected reviews are somewhat evenly
     #  distributed across the entire review bombing timespan instead of only the first 2 or 3 days ?
