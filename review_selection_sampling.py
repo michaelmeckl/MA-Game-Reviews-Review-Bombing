@@ -68,7 +68,7 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
                                             "author_id", "comment_count", "platform", "profile_visibility",
                                             "profile_url", "game_id", "game_title", "price_euro",
                                             # the following are not useful for the annotation study in label studio:
-                                            "game", "review_bombing_incident", "weighted_score", "developers",
+                                            "review_bombing_incident", "weighted_score", "developers",
                                             "publishers", "detailed_description", "title", "author_review_distribution",
                                             "user_score_distribution", "user_score", "critic_score", "num_user_ratings",
                                             "author_num_game_reviews", "author_average_score", "unhelpful_votes",
@@ -129,7 +129,7 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
         use_very_positive_reviews = True
 
     if use_very_negative_reviews and use_very_positive_reviews:
-        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 3) & (
+        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 3) | (
                 metacritic_reviews["rating"] > 8)]
     elif use_very_positive_reviews:
         filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] > 8]
@@ -189,23 +189,42 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_
     print("\n#################################\n")
     #################################
 
-    # stratify per game of this review bombing incident first
-    # then stratify per source platform, i.e. steam and metacritic
-    # then stratify positive / negative reviews
+    # This would be correctly stratified, but since there are a lot fewer Metacritic reviews than Steam reviews (and
+    # often one game has far more reviews than another), we need to make sure the classes are somewhat balanced
+    """
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False) \
+        .apply(lambda x: x.sample(frac=min(num_samples / len(review_data), 1), random_state=random_seed))
+    """
 
-    # get the sample_size by taking the smallest group length after grouping
-    sample_size = min(min(grouped_ratio), num_samples)
+    """
+    if num_samples <= min(grouped_ratio):
+        # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
+        sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)
+        strat_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
+            lambda x: x.sample(n=sample_size_per_group, random_state=random_seed))
+    else:
+        # get the sample_size by taking the smallest group length after grouping or the wanted num_samples if they
+        # are less
+        sample_size = min(min(grouped_ratio), num_samples)
+        sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
+            lambda x: x.sample(n=sample_size, random_state=random_seed))
+        fraction = min(num_samples / len(sample), 1)
+        strat_sample = sample.groupby(["game_name_display", "source", "combined_rating"], group_keys=False) \
+            .apply(lambda x: x.sample(frac=fraction, random_state=random_seed))
+    """
+
+    def sample_func(x):
+        N = min(len(x), sample_size_per_group)
+        return x.sample(n=N, random_state=random_seed)
+
     # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
-    sample_size_per_group = math.ceil(sample_size / grouped_ratio.size)
-    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
-        lambda x: x.sample(n=sample_size_per_group, random_state=random_seed))
+    sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)  # ceil to make sure we have at least 1
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"],
+                                            group_keys=False).apply(lambda x: sample_func(x))
 
-    # stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False)\
-    #     .apply(lambda x: x.sample(frac=num_samples/len(review_data), random_state=random_seed))
-
+    """
     # use stratified sampling with target sample size: https://stackoverflow.com/a/54722093
     # not working correctly:
-    """
     stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False).apply(
         lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
     """
