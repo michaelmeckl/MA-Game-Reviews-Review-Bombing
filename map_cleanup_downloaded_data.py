@@ -510,7 +510,7 @@ if __name__ == "__main__":
 
     # for rb_name in review_bombing_incidents:
     #     add_rb_information_to_game_files(rb_name)
-    review_bombing_name = "Mortal-Kombat-11"
+    review_bombing_name = "Assassins-Creed-Unity"
     add_rb_information_to_game_files(review_bombing_name)
 
     # map_tweet_data()

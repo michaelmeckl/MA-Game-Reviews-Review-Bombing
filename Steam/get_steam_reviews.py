@@ -363,7 +363,7 @@ def get_steam_user_reviews(app_id, requests_session, next_cursor, current_num_re
     purchase_type = "all"  # steam, non_steam_purchase, all
     num_per_page = 100  # default is 20, max is 100
     sort = "recent"  # recent, updated, all
-    # TODO only search for reviews written in under 2 hours of playtime ? (i.e. refund duration)
+    # only search for reviews written in under 2 hours of playtime ? (i.e. refund duration)
     playtime_min = "0"  # playtime in hours; 0 can either mean 0 hours or no limit (when used as max)
     playtime_max = "0"
     # default date is "-1", which means no specific start / end date
@@ -378,7 +378,7 @@ def get_steam_user_reviews(app_id, requests_session, next_cursor, current_num_re
                   # "day_range": f"{day_range}",
                   "start_date": f"{start_date}", "end_date": f"{end_date}", "date_range_type": "include",
                   "filter": f"{sort}",
-                  # TODO filter language?
+                  # filter language?
                   "language": "all",   # "german,english"
                   "review_type": f"{review_type}",
                   "purchase_type": f"{purchase_type}",
@@ -430,7 +430,6 @@ def load_reviews_for_games():
     # specify the timeperiod to extract reviews from or use 'None' to specify no time period
     # the end date is NOT included! (i.e. for end date 21-01 the actual end date is 20-01)
     game_dict = {
-        # "Hogwarts Legacy": ("06-02-2023", None),
         # "Hogwarts Legacy": ("11-02-2023", "22-02-2023"),
         # "Cyberpunk 2077": ("09-12-2020", "17-12-2020"),
         # "Cyberpunk 2077": ("01-03-2022", "14-03-2022"),

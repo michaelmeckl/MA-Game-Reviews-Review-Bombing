@@ -135,14 +135,14 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     Russland-Ukraine-Review Bombing aus dem Zeitraum 24.02.2022 - 31.03.2022 (S.T.A.L.K.E.R-Serie, Witcher 1 
     (& 1 Enhanced Edition) & 2 & 3 (& 3 Complete Edition), Gwent, Thronebreaker und Frostpunk)
   * allgemeine Informationen + alle PC - UserReviews + zugehörige User Informationen zu 
-    * "The Elder Scrolls V: Skyrim" aus dem Zeitraum 23.04.2015 - 01.05.2015
-    * "Grand Theft Auto V" aus dem Zeitraum 14.06.2017 - 31.07.2017
-    * "The Elder Scrolls V: Skyrim Special Edition" und "Fallout 4" aus dem Zeitraum 29.08.2017 - 01.12.2017
-    * "Total War: Rome II" aus dem Zeitraum 20.09.2018 - 31.10.2018
-    * "Mortal Kombat 11" aus dem Zeitraum 22.04.2019 - 01.05.2019
-    * "Assassin's Creed Unity" aus dem Zeitraum 19.04.2019 - 31.05.2019
-    * "Crusader Kings II" aus dem Zeitraum 01.10.2019 - 01.12.2019
-    * "The Long Dark" aus dem Zeitraum 01.03.2020 - 01.06.2020
+    * "The Elder Scrolls V: Skyrim" aus dem Zeitraum 23.04.2015 - 31.07.2015
+    * "Grand Theft Auto V" aus dem Zeitraum 14.06.2017 - 01.10.2017
+    * "The Elder Scrolls V: Skyrim Special Edition" und "Fallout 4" aus dem Zeitraum 29.08.2017 - 01.01.2018
+    * "Total War: Rome II" aus dem Zeitraum 20.09.2018 - 31.12.2018
+    * "Mortal Kombat 11" aus dem Zeitraum 22.04.2019 - 01.09.2019
+    * "Assassin's Creed Unity" aus dem Zeitraum 17.04.2019 - 31.10.2019
+    * "Crusader Kings II" aus dem Zeitraum 01.10.2019 - 31.12.2019
+    * "The Long Dark" aus dem Zeitraum 01.03.2020 - 31.12.2020
     * "Superhot VR" aus dem gesamten Zeitraum
     * "Hogwarts Legacy" aus dem Zeitraum 07.02.2023 - 01.03.2023
     * "No Man's Sky" aus dem Zeitraum 09.08.2016 - 01.09.2016
