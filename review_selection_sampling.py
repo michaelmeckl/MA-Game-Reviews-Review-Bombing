@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 import pandas as pd
 from sentiment_analysis_and_nlp.nlp_utils import detect_language
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size
+from useful_code_from_other_projects.utils import enable_max_pandas_display_size, check_if_date_in_range
 from transformers import AutoTokenizer
 from datasets import Dataset
 
@@ -95,7 +95,8 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
     return combined_df_new
 
 
-def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pathlib.Path):
+def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pathlib.Path, metacritic_rb_start: str,
+                                         metacritic_rb_end: str):
     print(f"Selecting reviews for \"{rb_incident_name}\" from path {data_folder} ...\n")
     # create a subfolder for this review bombing incident if it doesn't exist yet
     Sub_Folder = OUTPUT_FOLDER / rb_incident_name
@@ -129,12 +130,19 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
         use_very_positive_reviews = True
 
     if use_very_negative_reviews and use_very_positive_reviews:
-        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 3) | (
+        # TODO take < 4 instead of < 3 to get more reviews ?
+        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 4) | (
                 metacritic_reviews["rating"] > 8)]
     elif use_very_positive_reviews:
         filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] > 8]
     else:
-        filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] < 3]
+        filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] < 4]
+
+    # make sure the metacritic reviews are all in the time range of the corresponding review bombing incident (steam
+    # reviews are already retrieved correctly from Steam)
+    filtered_metacritic_review_data = filtered_metacritic_review_data[
+        filtered_metacritic_review_data["review_date"].apply(
+            lambda review_date: check_if_date_in_range(review_date, metacritic_rb_start, metacritic_rb_end)).eq(True)]
 
     # combine all steam and metacritic data into one csv file with all the relevant information
     combined_review_df = combine_metacritic_steam_reviews(steam_reviews, filtered_metacritic_review_data, steam_info,
@@ -143,7 +151,7 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
 
 
 def remove_short_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
-    # remove reviews with only one word/token (as they are most likely useless or at least too hard to interpret
+    # remove reviews with less than 3 tokens (as they are most likely useless or at least too hard to interpret
     # correctly) as well as reviews with more than 512 tokens (as models such as BERT would have to truncate them
     # because of their character limit)
     # see https://stackoverflow.com/questions/72395380/how-to-drop-sentences-that-are-too-long-in-huggingface
@@ -151,8 +159,9 @@ def remove_short_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
     checkpoint = "bert-base-uncased"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
-    # minimum is 4 instead of 2 because the tokenizer adds two additional tokens (a start and end token) automatically
-    min_tokens = 4
+    # TODO use spacy instead to check for at least 2 words instead of tokens ? and remove punctuation first
+    # minimum is 5 instead of 3 because the tokenizer adds two additional tokens (a start and end token) automatically
+    min_tokens = 5
     # max input size for "bert-base-uncased" is 512:
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
 
@@ -175,7 +184,7 @@ def apply_random_sampling(review_data: pd.DataFrame, num_samples=25, random_seed
     return randomly_sampled_reviews
 
 
-def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_seed=42):
+def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=250, random_seed=42):
     # see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas/44115314
     #################################
     print("\n#################################\nReview Dataframe - Overview:")
@@ -189,6 +198,7 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=25, random_
     print("\n#################################\n")
     #################################
 
+    # TODO would this way of sampling be better overall for larger num_samples ? Test and compare!
     # This would be correctly stratified, but since there are a lot fewer Metacritic reviews than Steam reviews (and
     # often one game has far more reviews than another), we need to make sure the classes are somewhat balanced
     """
@@ -250,20 +260,35 @@ if __name__ == "__main__":
         OUTPUT_FOLDER.mkdir()
 
     review_bombing_incidents = {
+        "Assassins-Creed-Unity": DATA_FOLDER / "Assassins-Creed-Unity",
+        # "Bethesda-Creation-Club": DATA_FOLDER / "Bethesda-Creation-Club",
         "Borderlands-Epic-Exclusivity": DATA_FOLDER / "Borderlands-Epic-Exclusivity",
-        "Ukraine-Russia-Conflict": DATA_FOLDER / "Ukraine-Russia-Conflict",
+        # "Crusader-Kings-II-Deus-Vult": DATA_FOLDER / "Crusader-Kings-II-Deus-Vult",
         "Firewatch": DATA_FOLDER / "Firewatch",
+        "GrandTheftAutoV-OpenIV": DATA_FOLDER / "GrandTheftAutoV-OpenIV",
+        "Metro-Epic-Exclusivity": DATA_FOLDER / "Metro-Epic-Exclusivity",
+        "Mortal-Kombat-11": DATA_FOLDER / "Mortal-Kombat-11",
+        # "Overwatch-2": DATA_FOLDER / "Overwatch-2",
+        # "Skyrim-Paid-Mods": DATA_FOLDER / "Skyrim-Paid-Mods",
+        # "Superhot-VR": DATA_FOLDER / "Superhot-VR",
+        "The-Long-Dark-GeForce-Now": DATA_FOLDER / "The-Long-Dark-GeForce-Now",
+        "TotalWar-Rome-II": DATA_FOLDER / "TotalWar-Rome-II",
+        "Ukraine-Russia-Conflict": DATA_FOLDER / "Ukraine-Russia-Conflict",
     }
 
+    ###### the start and end date of the review bombing must be updated for every review bombing incident! ######
+    # see the dictionary at the top of the "map_cleanup_downloaded_data.py" file
+    metacritic_start_date = "24.02.2022"
+    metacritic_end_date = "16.04.2022"
+
     ###### the name here needs to be updated for different review bombing incidents, see dictionary above ######
-    review_bombing_name = "Borderlands-Epic-Exclusivity"
-    # review_bombing_name = "Firewatch"
+    review_bombing_name = "Ukraine-Russia-Conflict"
     data_path = review_bombing_incidents[review_bombing_name]
     label_studio_data_path = OUTPUT_FOLDER / f"{review_bombing_name}"
 
     combine_data_first = False
     if combine_data_first:
-        create_combined_data_for_rb_incident(review_bombing_name, data_path)
+        create_combined_data_for_rb_incident(review_bombing_name, data_path, metacritic_start_date, metacritic_end_date)
 
     combined_review_dataframe = pd.read_csv(label_studio_data_path / f"combined_review_df_{review_bombing_name}.csv")
     sampled_review_df = select_reviews_for_label_studio(combined_review_dataframe)

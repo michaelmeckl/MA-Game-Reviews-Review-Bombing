@@ -86,6 +86,17 @@ def parse_date(original_date):
     return new_date
 
 
+def check_if_date_in_range(date: str, date_start: str, date_end: str):
+    """
+    Checks if a given date is in the time span between the provided start and end date (both inclusive).
+    """
+    parsed_date = parser.parse(date, dayfirst=True)
+    parsed_start_date = parser.parse(date_start, dayfirst=True)
+    parsed_end_date = parser.parse(date_end, dayfirst=True)
+    is_in_range = True if (parsed_start_date <= parsed_date) & (parsed_date <= parsed_end_date) else False
+    return is_in_range
+
+
 def convert_to_int(x):
     """
     Useful for parsing Metacritic, as bigger numbers are abbreviated like 1.5k instead of 1500 for example.
