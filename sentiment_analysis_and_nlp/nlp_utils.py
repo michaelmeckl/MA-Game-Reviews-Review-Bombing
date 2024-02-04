@@ -12,10 +12,13 @@ from nltk.stem import PorterStemmer, SnowballStemmer, WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
 from rake_nltk import Rake
 import spacy
+import spacy_fastlang  # noqa: F401 # pylint: disable=unused-import
 import pandas as pd
-from langdetect import detect, LangDetectException
+from langdetect import detect, LangDetectException, DetectorFactory, detect_langs
 from textblob import TextBlob
 
+# make langdetect deterministic, see https://pypi.org/project/langdetect/
+DetectorFactory.seed = 0
 
 _SOME_ALPHA_RE = re.compile(r'[A-Za-z]+')
 _ONLY_ALPHA_RE = re.compile(r'^[A-Za-z]*$')
@@ -339,4 +342,33 @@ def detect_language(x):
     try:
         return detect(x)
     except (LangDetectException, TypeError):
+        return 'unknown'
+
+
+def detect_contains_english(x):
+    try:
+        languages = detect_langs(x)
+        print(f"\nDetected languages \"{languages}\" for text: \"{x}\"")
+        return True if 'en' in languages else False
+    except (LangDetectException, TypeError):
+        return False
+
+
+def setup_spacy_language_detection():
+    # setup spacy language detector
+    spacy_en = spacy.load("en_core_web_sm")
+    spacy_en.add_pipe("language_detector")
+    return spacy_en
+
+
+def detect_language_spacy(x, spacy_nlp):
+    # a bit less restrictive than lang_detect above but where lang_detect removes too much, spacy_fastlang includes
+    # some obvious non-english texts as well ...
+    try:
+        doc = spacy_nlp(x)
+        # noinspection PyProtectedMember
+        detected_language = doc._.language
+        return detected_language
+    except Exception as e:
+        print(f"Error while trying to detect language with Spacy: {e}")
         return 'unknown'
