@@ -140,7 +140,7 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     * "The Elder Scrolls V: Skyrim Special Edition" und "Fallout 4" aus dem Zeitraum 29.08.2017 - 01.01.2018
     * "Total War: Rome II" aus dem Zeitraum 20.09.2018 - 31.12.2018
     * "Mortal Kombat 11" aus dem Zeitraum 22.04.2019 - 01.09.2019
-    * "Assassin's Creed Unity" aus dem Zeitraum 17.04.2019 - 31.10.2019
+    * "Assassin's Creed Unity" aus dem Zeitraum 16.04.2019 - 30.11.2019
     * "Crusader Kings II" aus dem Zeitraum 01.10.2019 - 31.12.2019
     * "The Long Dark" aus dem Zeitraum 01.03.2020 - 31.12.2020
     * "Superhot VR" aus dem gesamten Zeitraum

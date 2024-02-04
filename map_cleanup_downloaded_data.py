@@ -19,19 +19,21 @@ OUTPUT_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis_cleaned"
 
 ###############################################################################
 review_bombing_incidents = {
-    # "Skyrim-Paid-Mods": {
-    #     "games_title_terms": ["*skyrim", "*Skyrim"],
-    #     "social_media_title_terms": [],
-    #     "affected_games": "The Elder Scrolls V: Skyrim",
-    #     "review_bomb_type": "negativ",
-    #     "review_bomb_reason": 'Die Entwickler versuchten bezahlte Mods ("paid mods") in Skyrim\'s Steam-Workshop '
-    #                           'einzuführen, d.h. kostenpflichtige Zusatzinhalte, die direkt über Steam für das Spiel '
-    #                           'heruntergeladen werden konnten. Allerdings sollten dabei nur 25 % der Einnahmen an '
-    #                           'die Entwickler der Mods gehen und der Rest an Bethesda und Valve (der Firma hinter '
-    #                           'Steam). Da das von vielen Spielern als Versuch gesehen wurde, Gewinn aus der Arbeit '
-    #                           'anderer zu schlagen, hinterließen einige negative Reviews für Skyrim.',
-    #     "review_bomb_time": "23. April 2015 - Ende April 2015",
-    # },
+    "Skyrim-Paid-Mods": {
+        "games_title_terms": ["*skyrim", "*Skyrim"],
+        "social_media_title_terms": [],
+        "affected_games": "The Elder Scrolls V: Skyrim",
+        "review_bomb_type": "negativ",
+        "review_bomb_reason": 'Die Entwickler "Bethesda" versuchten bezahlte Mods für Skyrim im Steam-Workshop '
+                              'einzuführen, d.h. kostenpflichtige Zusatzinhalte, die direkt über Steam für das Spiel '
+                              'heruntergeladen werden konnten. Allerdings sollten dabei nur 25 % der Einnahmen an '
+                              'die Entwickler der Mods gehen und der Rest an Bethesda und Valve (der Firma hinter '
+                              'Steam). Da das von vielen Spielern als Versuch der Entwickler gesehen wurde, '
+                              'von der Arbeit der Modder selbst zu profitieren, und viele der Meinung '
+                              'waren, Mods sollten grundsätzlich kostenlos sein, hinterließen einige negative '
+                              'Reviews für Skyrim.',
+        "review_bomb_time": "23. April 2015 - Ende April 2015",
+    },
     "GrandTheftAutoV-OpenIV": {
         "games_title_terms": ["*grand-theft-auto-v", "*Grand_Theft_Auto_V"],
         "social_media_title_terms": [],
@@ -59,20 +61,20 @@ review_bombing_incidents = {
                               'Warrior" (SJW), oder behaupteten sie würden Zensur unterstützen.',
         "review_bomb_time": "12. September 2017 - Anfang Oktober 2017",
     },
-    # "Bethesda-Creation-Club": {
-    #     "games_title_terms": ["*skyrim-special-edition", "*Skyrim_Special_Edition", "*fallout-4", "*Fallout_4"],
-    #     "social_media_title_terms": [],
-    #     "affected_games": "Fallout 4 und The Elder Scrolls V: Skyrim Special Edition",
-    #     "review_bomb_type": "negativ",
-    #     "review_bomb_reason": 'Der Grund war die Einführung von Bethesda\'s "Creation Club", einem direkt in das '
-    #                           'Spiel eingebauten Shop für kuratierte Mods und Mikrotransaktionen, Ende August 2017 in'
-    #                           ' Fallout 4 und einige Woche später in der Special Edition von Skyrim. Da einige der '
-    #                           'dort angebotenen Inhalte bereits vorher kostenlos anderweitig verfügbar waren und , '
-    #                           'das Ganze von vielen nur als einen Versuch der Entwickler gesehen wurde, um von der '
-    #                           'Arbeit unabhängiger Modder selbst mit zu profitieren, führte das zu einer großen '
-    #                           'Anzahl an negativen Reviews für die beiden Spiele.',
-    #     "review_bomb_time": "Beginn 29.08.2017 (Fallout 4), bzw. 26.09.2017 (Skyrim Special Edition) - November 2017",
-    # },
+    "Bethesda-Creation-Club": {
+        "games_title_terms": ["*skyrim-special-edition", "*Skyrim_Special_Edition", "*fallout-4", "*Fallout_4"],
+        "social_media_title_terms": [],
+        "affected_games": "Fallout 4 und The Elder Scrolls V: Skyrim Special Edition",
+        "review_bomb_type": "negativ",
+        "review_bomb_reason": 'Der Grund war die Einführung von Bethesda\'s "Creation Club", einem direkt in das '
+                              'Spiel eingebauten Shop für kuratierte Mods und Mikrotransaktionen, Ende August 2017 in'
+                              ' Fallout 4 und einige Woche später in der Special Edition von Skyrim. Da einige der '
+                              'dort angebotenen Inhalte bereits vorher kostenlos anderweitig verfügbar waren und , '
+                              'das Ganze von vielen nur als einen Versuch der Entwickler gesehen wurde, um von der '
+                              'Arbeit unabhängiger Modder selbst mit zu profitieren, führte das zu einer großen '
+                              'Anzahl an negativen Reviews für die beiden Spiele.',
+        "review_bomb_time": "Beginn 29.08.2017 (Fallout 4), bzw. 26.09.2017 (Skyrim Special Edition) - November 2017",
+    },
     "TotalWar-Rome-II": {
         "games_title_terms": ["*total-war-rome-ii", "*Total_War_ROME_II_Emperor_Edition"],
         "social_media_title_terms": [],
@@ -141,22 +143,22 @@ review_bombing_incidents = {
                               'früheren Teilen der Serie.',
         "review_bomb_time": "23. April 2019 - Ende Mai 2019",
     },
-    # "Crusader-Kings-II-Deus-Vult": {
-    #     "games_title_terms": ["*crusader-kings-ii", "*Crusader_Kings_II"],
-    #     "social_media_title_terms": [],
-    #     "affected_games": "Crusader Kings II",
-    #     "review_bomb_type": "negativ",
-    #     "review_bomb_reason": 'Ursache war die falsche Berichterstattung über ein Interview mit den Entwicklern '
-    #                           'über den zukünftigen 3. Teil der "Crusader Kings" - Serie: laut der Berichterstattung '
-    #                           'äußerten die Entwickler ("Paradox"), dass sie Begriffe wie "Deus Vult" aufgrund ihrer '
-    #                           'rassistischen Konnotationen nicht in den neuen Teil, Crusader Kings III, '
-    #                           'einbauen wollten (später stellte sich heraus, dass das so in dem Interview nie gesagt '
-    #                           'wurde). Bei einer Spiele-Serie mit historischem Kontext, die auch andere kontroverse '
-    #                           'Themen, u.a. Krieg oder Vergewaltigung, darstellte, kam das bei einigen in der '
-    #                           'Community nicht gut an, weshalb bei dem damals aktuellen 2. Teil sehr viele negative '
-    #                           'Reviews mit Bezug auf "Deus Vult" hinterlassen wurden.',
-    #     "review_bomb_time": "19. Oktober - Ende Oktober 2019",
-    # },
+    "Crusader-Kings-II-Deus-Vult": {
+        "games_title_terms": ["*crusader-kings-ii", "*Crusader_Kings_II"],
+        "social_media_title_terms": [],
+        "affected_games": "Crusader Kings II",
+        "review_bomb_type": "negativ",
+        "review_bomb_reason": 'Ursache war die falsche Berichterstattung über ein Interview mit den Entwicklern '
+                              'über den zukünftigen 3. Teil der "Crusader Kings" - Serie: laut der Berichterstattung '
+                              'äußerten die Entwickler ("Paradox"), dass sie Begriffe wie "Deus Vult" aufgrund ihrer '
+                              'rassistischen Konnotationen nicht in den neuen Teil, Crusader Kings III, '
+                              'einbauen wollten (später stellte sich heraus, dass das so in dem Interview nie gesagt '
+                              'wurde). Bei einer Spiele-Serie mit historischem Kontext, die auch andere kontroverse '
+                              'Themen, u.a. Krieg oder Vergewaltigung, darstellte, kam das bei einigen in der '
+                              'Community nicht gut an, weshalb bei dem damals aktuellen 2. Teil sehr viele negative '
+                              'Reviews mit Bezug auf "Deus Vult" hinterlassen wurden.',
+        "review_bomb_time": "19. Oktober - Ende Oktober 2019",
+    },
     "The-Long-Dark-GeForce-Now": {
         "games_title_terms": ["*the-long-dark", "*The_Long_Dark"],
         "social_media_title_terms": [],
@@ -169,18 +171,18 @@ review_bombing_incidents = {
                               'wurden und negative Reviews für das Spiel hinterlassen wurden.',
         "review_bomb_time": "02. März - April 2020",
     },
-    # "Superhot-VR": {
-    #     "games_title_terms": ["*superhot-vr", "*SUPERHOT_VR"],
-    #     "social_media_title_terms": [],
-    #     "affected_games": "Superhot VR",
-    #     "review_bomb_type": "negativ",
-    #     "review_bomb_reason": 'Superhot VR erhielt ein Update, mit dem alle Szenen aus dem Spiel entfernt wurden, '
-    #                           'in denen die Spielerfigur sich selbst verletzt oder tötet. Die Entwickler "Superhot '
-    #                           'Team" erklärten, diese Szenen hätten "keinen Platz" im Spiel. Einige waren über das '
-    #                           'Entfernen von Content enttäuscht und bezeichneten die Aktion als "Zensur" und '
-    #                           '"verweichlicht" oder beschwerten sich über die angebliche "Wokeness" der Entwickler.',
-    #     "review_bomb_time": "21. Juli - Ende Juli 2021",
-    # },
+    "Superhot-VR": {
+        "games_title_terms": ["*superhot-vr", "*SUPERHOT_VR"],
+        "social_media_title_terms": [],
+        "affected_games": "Superhot VR",
+        "review_bomb_type": "negativ",
+        "review_bomb_reason": 'Superhot VR erhielt ein Update, mit dem alle Szenen aus dem Spiel entfernt wurden, '
+                              'in denen die Spielerfigur sich selbst verletzt oder tötet. Die Entwickler "Superhot '
+                              'Team" erklärten, diese Szenen hätten "keinen Platz" im Spiel. Einige waren über das '
+                              'Entfernen von Content enttäuscht und bezeichneten die Aktion als "Zensur" und '
+                              '"verweichlicht" oder beschwerten sich über die angebliche "Wokeness" der Entwickler.',
+        "review_bomb_time": "21. Juli - Ende Juli 2021",
+    },
     "Ukraine-Russia-Conflict": {
         "games_title_terms": ["*cyberpunk-2077", "*cyberpunk-2077_03_2022", "*Cyberpunk_2077",
                               "*Cyberpunk_2077_03_2022", "*witcher*", "*frostpunk", "*S_T_A_L_K_E_R*",
@@ -201,21 +203,21 @@ review_bombing_incidents = {
                               "heraushalten sollten.",
         "review_bomb_time": "24. Februar 2022 - Anfang April 2022",
     },
-    # "Overwatch-2": {
-    #     "games_title_terms": ["*overwatch-2", "*Overwatch_2"],
-    #     "social_media_title_terms": [],
-    #     "affected_games": "Overwatch 2",
-    #     "review_bomb_type": "negativ",
-    #     "review_bomb_reason": 'Auslöser war der Steam-Release von Overwatch 2 (auf Metacritic wurde das Spiel schon '
-    #                           '2022 veröffentlicht), bei dem das Spiel innerhalb von zwei Tagen zum am schlechtest '
-    #                           'bewerteten Spiel auf Steam wurde. Overwatch 2 war für viele Spieler eine große '
-    #                           'Enttäuschung und eine Ansammlung von gebrochenen Versprechen, da versprochene Inhalte '
-    #                           'von Entwickler "Blizzard" nachträglich wieder storniert wurden, '
-    #                           'viele Mikrotransaktionen und nur wenig neue Inhalte im Vergleich zum Vorgänger '
-    #                           'enthalten waren. Zudem wurde mit dem Start von Overwatch 2 das erste Overwatch '
-    #                           'abgeschaltet, was langjährige Spieler des ersten Teils verärgerte.',
-    #     "review_bomb_time": "11. August 2023 - September 2023",
-    # },
+    "Overwatch-2": {
+        "games_title_terms": ["*overwatch-2", "*Overwatch_2"],
+        "social_media_title_terms": [],
+        "affected_games": "Overwatch 2",
+        "review_bomb_type": "negativ",
+        "review_bomb_reason": 'Auslöser war der Steam-Release von Overwatch 2 (auf Metacritic wurde das Spiel schon '
+                              '2022 veröffentlicht), bei dem das Spiel innerhalb von zwei Tagen zum am schlechtest '
+                              'bewerteten Spiel auf Steam wurde. Overwatch 2 war für viele Spieler eine große '
+                              'Enttäuschung und eine Ansammlung von gebrochenen Versprechen, da versprochene Inhalte '
+                              'von Entwickler "Blizzard" nachträglich wieder storniert wurden, '
+                              'viele Mikrotransaktionen und nur wenig neue Inhalte im Vergleich zum Vorgänger '
+                              'enthalten waren. Zudem wurde mit dem Start von Overwatch 2 das erste Overwatch '
+                              'abgeschaltet, was langjährige Spieler des ersten Teils verärgerte.',
+        "review_bomb_time": "11. August 2023 - September 2023",
+    },
 }
 
 

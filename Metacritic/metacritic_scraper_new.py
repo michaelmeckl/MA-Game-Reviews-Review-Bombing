@@ -65,6 +65,7 @@ games_to_scrape = {
     # "the-long-dark": [PLATFORM.PC.value],
     # "superhot-vr": [PLATFORM.PC.value],
     # "no-mans-sky": [PLATFORM.PC.value],
+    # "doom-eternal": [PLATFORM.PC.value],
 }
 
 # since = "24-02-2022"  # "start date", i.e. the oldest date
