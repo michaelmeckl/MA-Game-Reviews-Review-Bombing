@@ -348,8 +348,11 @@ def detect_language(x):
 def detect_contains_english(x):
     try:
         languages = detect_langs(x)
-        print(f"\nDetected languages \"{languages}\" for text: \"{x}\"")
-        return True if 'en' in languages else False
+        # print(f"\nDetected languages \"{languages}\" for text: \"{x}\"")
+        for lang_el in languages:
+            if lang_el.lang == "en":
+                return True
+        return False
     except (LangDetectException, TypeError):
         return False
 
@@ -361,13 +364,17 @@ def setup_spacy_language_detection():
     return spacy_en
 
 
-def detect_language_spacy(x, spacy_nlp):
+# noinspection PyProtectedMember
+def detect_language_spacy(x, spacy_nlp, min_probability_score=0.3):
     # a bit less restrictive than lang_detect above but where lang_detect removes too much, spacy_fastlang includes
     # some obvious non-english texts as well ...
     try:
         doc = spacy_nlp(x)
-        # noinspection PyProtectedMember
         detected_language = doc._.language
+        # make sure the probability score is high enough for the found english reviews
+        if detected_language == "en":
+            if doc._.language_score < min_probability_score:
+                return "unknown"
         return detected_language
     except Exception as e:
         print(f"Error while trying to detect language with Spacy: {e}")
