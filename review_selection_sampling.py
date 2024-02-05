@@ -296,14 +296,14 @@ def apply_random_sampling(review_data: pd.DataFrame, num_samples=25, random_seed
 
 
 # 334 reviews required for 6 incidents to get 2000 Reviews overall  => choose either 350 or 400 for num_samples!
-# 350 reviews ? => 2100 reviews for 6 incidents
-def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=400, random_seed=42):
+def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=410, random_seed=42):
     show_dataframe_statistics(review_data)
-    grouped_ratio = review_data.value_counts(["game_name_display", "source", "combined_rating"])
-    print(f"\nGrouped Ratio: {grouped_ratio}")
+
+    # add a new column for a combined review_date in the datetime format (to make sure all dates match each other)
+    review_data["review_date_datetime"] = pd.to_datetime(review_data["review_date"], dayfirst=True,
+                                                         format='mixed').apply(lambda x: x.strftime('%d.%m.%Y'))
 
     # see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas/44115314
-    # TODO would this way of sampling be better overall for larger num_samples ? Test and compare!
     # This would be correctly stratified, but since there are a lot fewer Metacritic reviews than Steam reviews (and
     # often one game has far more reviews than another), we need to make sure the classes are somewhat balanced
     """
@@ -318,29 +318,64 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=400, random
         lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
     """
 
+    # failed version number 3:
+    """
     def sample_func(x):
+        # x is the group df (i.e. if there are 500 steam and 100 metacritic reviews, x would contain 500 and then 100)
         N = min(len(x), sample_size_per_group)
         return x.sample(n=N, random_state=random_seed)
 
+    grouped_ratio = review_data.value_counts(["game_name_display", "source"])
     # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
     sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)  # ceil to make sure we have at least 1
     stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"],
                                             group_keys=False).apply(lambda x: sample_func(x))
+    """
 
-    # TODO also groupby and stratify by "review_date" to make sure that the selected reviews are somewhat evenly
-    #  distributed across the entire review bombing timespan instead of only the first 2 or 3 days ?
-    #   -> calculate diff between first and last entry (newest and oldest date) and split the range into evenly sized
-    #   bins ??
-    #  or apply actual stratified sampling here: make sure to take reviews from the entire span but keep ratios
+    # Calculate the number of rows to sample for each 'game_name_display' value
+    # Use math.ceil to make sure we have at least 1
+    sample_size_per_game = math.ceil(num_samples / review_data['game_name_display'].nunique())
+    # Calculate the number of rows to sample for each 'source' value
+    # sample_size_per_source = math.ceil(num_samples / review_data['source'].nunique())
 
-    if "__index_level_0__" in stratified_sample:
-        stratified_sample = stratified_sample.drop(columns=["__index_level_0__"], axis=1)
+    # Perform the stratified sampling first on game_name_display and source to make sure we get roughly the same
+    # amount of each of the values in both columns (or all in one group if there are very few in this group; mostly for
+    # "Metacritic")
+    # TODO although we still don't really get a roughly even "source" distribution in the result ...
+    sampled_df = review_data.groupby(['game_name_display', 'source'], group_keys=False).apply(
+        lambda x: x.sample(n=sample_size_per_game, replace=False, random_state=random_seed) if len(
+            x) > sample_size_per_game else x).reset_index(drop=True)
 
-    stratified_grouped_ratio = stratified_sample.value_counts(["game_name_display", "source", "combined_rating"])
-    print(f"\nGrouped Ratio after sampling: {stratified_grouped_ratio}")
+    # alternative:
+    """
+    grouped_ratio = review_data.value_counts(["game_name_display", "source", 'combined_rating', 'review_date_datetime'])
+    sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)
+    sampled_df_v1 = review_data.groupby(["game_name_display", "source", 'combined_rating', 'review_date_datetime'],
+                                        group_keys=False).apply(
+        lambda x: x.sample(n=sample_size_per_group, replace=False, random_state=random_seed) if len(
+            x) > sample_size_per_group else x).reset_index(drop=True)
+    """
+
+    # Then stratify the columns 'combined_rating' and 'review_date_datetime' to the number of wanted samples
+    #  => to make sure that the selected reviews are somewhat evenly distributed across the entire review bombing
+    #  timespan instead of only the first 2 or 3 days and across the different ratings
+    sampled_df_stratified = sampled_df.groupby(['combined_rating', 'review_date_datetime'], group_keys=False).apply(
+        lambda x: x.sample(frac=min(num_samples / len(sampled_df), 1), random_state=random_seed).reset_index(drop=True))
+
+    debug = True
+    if debug:
+        stratified_grouped_ratio = sampled_df_stratified.value_counts(["game_name_display", "source"])
+        print(f"\nGrouped Ratio sampled_df_stratified after sampling: {stratified_grouped_ratio}")
+
+        stratified_grouped_ratio_all = sampled_df_stratified.value_counts(
+            ["game_name_display", "source", "combined_rating", "review_date_datetime"])
+        print(f"\nGrouped Ratio sampled_df_stratified-all after sampling: {stratified_grouped_ratio_all}")
+
+    if "__index_level_0__" in sampled_df_stratified:
+        sampled_df_stratified = sampled_df_stratified.drop(columns=["__index_level_0__"], axis=1)
 
     # random shuffle the stacked data at the end, see https://stackoverflow.com/a/71948677
-    randomly_sampled_reviews = stratified_sample.sample(frac=1).reset_index(drop=True)
+    randomly_sampled_reviews = sampled_df_stratified.sample(frac=1).reset_index(drop=True)
     return randomly_sampled_reviews
 
 
@@ -385,7 +420,7 @@ if __name__ == "__main__":
         combined_review_dataframe = pd.read_csv(label_studio_data_path / f"combined_review_df_{review_bombing_name}.csv")
         preprocess_reviews_for_label_studio(combined_review_dataframe, review_bombing_name)
 
-    select_reviews_for_label_studio = False
+    select_reviews_for_label_studio = True
     if select_reviews_for_label_studio:
         preprocessed_dataframe = pd.read_csv(label_studio_data_path / f"preprocessed_review_df_{review_bombing_name}.csv")
         # take subset via stratified sampling
