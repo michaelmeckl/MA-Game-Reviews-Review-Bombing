@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import math
 import pathlib
-import pprint
 import shutil
 import string
 import numpy as np
@@ -161,7 +160,7 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
     combined_review_df.to_csv(Sub_Folder / f"combined_review_df_{rb_incident_name}.csv", index=False)
 
 
-def remove_short_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
+def remove_short_long_reviews(dataframe: pd.DataFrame, rb_name: str) -> pd.DataFrame:
     # remove reviews with less than 2 words (as they are most likely useless or at least too hard to interpret
     # correctly) as well as reviews with more than 512 tokens (as models such as BERT would have to truncate them
     # because of their character limit)
@@ -187,13 +186,14 @@ def remove_short_long_reviews(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataset = Dataset.from_pandas(filtered_dataframe)
     checkpoint = "bert-base-uncased"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    # minimum is 5 instead of 3 because the tokenizer adds two additional tokens (a start and end token) automatically
+    # use 5 as minimum instead of 3 because the tokenizer adds two additional tokens (a start & end token) automatically
     # min_tokens = 5
     # max input size for "bert-base-uncased" is 512:
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
 
     def tokenize_function(df):
         return tokenizer(df["review"])
+        # return tokenizer(df["review"], truncation=True)
 
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
     num_rows_before = len(tokenized_datasets)
@@ -270,11 +270,17 @@ def preprocess_reviews_for_label_studio(review_dataframe: pd.DataFrame, rb_name:
     english_review_dataframe = filter_non_english_reviews(review_dataframe, rb_name)
 
     # remove all rows with duplicate reviews to make sure all reviews annotated in label studio will be different
-    no_duplicates_review_dataframe = english_review_dataframe.drop_duplicates(subset=["review"])
+    # add lowercase column for the comparison so reviews "good game" and "Good Game" are still considered duplicates!
+    english_review_dataframe["review_case_insensitive"] = english_review_dataframe["review"].astype(str).str.lower()
+    no_duplicates_review_dataframe = english_review_dataframe.drop_duplicates(subset=["review_case_insensitive"])
+    no_duplicates_review_dataframe = no_duplicates_review_dataframe.drop(columns=["review_case_insensitive"], axis=1)
     print(f"Removed {len(english_review_dataframe) - len(no_duplicates_review_dataframe)} rows with duplicate texts")
 
     # only take reviews that contain at least 2 words and no more than 512 tokens (because of BERT token limit)
-    filtered_review_dataframe = remove_short_long_reviews(no_duplicates_review_dataframe)
+    filtered_review_dataframe = remove_short_long_reviews(no_duplicates_review_dataframe, rb_name)
+
+    if "__index_level_0__" in filtered_review_dataframe:
+        filtered_review_dataframe = filtered_review_dataframe.drop(columns=["__index_level_0__"], axis=1)
 
     filtered_review_dataframe.to_csv(label_studio_data_path / f"preprocessed_review_df_{review_bombing_name}.csv",
                                      index=False)
@@ -295,9 +301,20 @@ def apply_random_sampling(review_data: pd.DataFrame, num_samples=25, random_seed
     return randomly_sampled_reviews
 
 
-# 334 reviews required for 6 incidents to get 2000 Reviews overall  => choose either 350 or 400 for num_samples!
-def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=410, random_seed=42):
+def sample_func(x, sample_size, random_seed=42):
+    # x is the group df (i.e. if there are 500 steam and 100 metacritic reviews, x would contain 500 and then 100)
+    N = min(len(x), sample_size)
+    return x.sample(n=N, replace=False, random_state=random_seed)
+
+
+# 334 reviews required for 6 incidents to get 2000 Reviews overall  => choose either 360 or 390 for num_samples to
+# have a bit over 2000, just in case!
+def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=390, random_seed=42):
     show_dataframe_statistics(review_data)
+
+    # due to rounding the sampling process can yield a bit more or a bit less than num_samples, so we add a bit of
+    # puffer to make sure we always get enough (and randomly drop the rows that are too many at the end)
+    num_samples_padded = num_samples + 20
 
     # add a new column for a combined review_date in the datetime format (to make sure all dates match each other)
     review_data["review_date_datetime"] = pd.to_datetime(review_data["review_date"], dayfirst=True,
@@ -307,8 +324,8 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=410, random
     # This would be correctly stratified, but since there are a lot fewer Metacritic reviews than Steam reviews (and
     # often one game has far more reviews than another), we need to make sure the classes are somewhat balanced
     """
-    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"], group_keys=False) \
-        .apply(lambda x: x.sample(frac=min(num_samples / len(review_data), 1), random_state=random_seed))
+    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating", 
+                                             "review_date_datetime"], group_keys=False).apply(lambda x: x.sample(frac=min(num_samples / len(review_data), 1), random_state=random_seed))
     """
 
     """
@@ -318,52 +335,61 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=410, random
         lambda x: x.sample(frac=int(np.rint(num_samples * len(x) / len(review_data))), random_state=42))
     """
 
-    # failed version number 3:
+    # another failed attempt:
     """
-    def sample_func(x):
-        # x is the group df (i.e. if there are 500 steam and 100 metacritic reviews, x would contain 500 and then 100)
-        N = min(len(x), sample_size_per_group)
-        return x.sample(n=N, random_state=random_seed)
-
     grouped_ratio = review_data.value_counts(["game_name_display", "source"])
     # divide by the group size and round up to get approximately the wanted num_samples stratified by grouping
-    sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)  # ceil to make sure we have at least 1
-    stratified_sample = review_data.groupby(["game_name_display", "source", "combined_rating"],
-                                            group_keys=False).apply(lambda x: sample_func(x))
+    sample_size_per_group = math.ceil(num_samples_padded / grouped_ratio.size)  # ceil to make sure we have at least 1
+    stratified_sample = review_data.groupby(["game_name_display", "source"],
+                                            group_keys=False).apply(lambda x: sample_func(x, sample_size_per_group))
+
+    stratified_sample_ = stratified_sample.groupby(['combined_rating', 'review_date_datetime'],
+                                                    group_keys=False).apply(
+        lambda x: x.sample(frac=min(num_samples_padded / len(stratified_sample), 1), random_state=random_seed).reset_index(
+            drop=True))
     """
 
     # Calculate the number of rows to sample for each 'game_name_display' value
     # Use math.ceil to make sure we have at least 1
-    sample_size_per_game = math.ceil(num_samples / review_data['game_name_display'].nunique())
+    sample_size_per_game = math.ceil(num_samples_padded / review_data['game_name_display'].nunique())
     # Calculate the number of rows to sample for each 'source' value
-    # sample_size_per_source = math.ceil(num_samples / review_data['source'].nunique())
+    # sample_size_per_source = math.ceil(num_samples_padded / review_data['source'].nunique())
 
     # Perform the stratified sampling first on game_name_display and source to make sure we get roughly the same
     # amount of each of the values in both columns (or all in one group if there are very few in this group; mostly for
     # "Metacritic")
     # TODO although we still don't really get a roughly even "source" distribution in the result ...
-    sampled_df = review_data.groupby(['game_name_display', 'source'], group_keys=False).apply(
-        lambda x: x.sample(n=sample_size_per_game, replace=False, random_state=random_seed) if len(
-            x) > sample_size_per_game else x).reset_index(drop=True)
-
-    # alternative:
-    """
-    grouped_ratio = review_data.value_counts(["game_name_display", "source", 'combined_rating', 'review_date_datetime'])
-    sample_size_per_group = math.ceil(num_samples / grouped_ratio.size)
-    sampled_df_v1 = review_data.groupby(["game_name_display", "source", 'combined_rating', 'review_date_datetime'],
-                                        group_keys=False).apply(
-        lambda x: x.sample(n=sample_size_per_group, replace=False, random_state=random_seed) if len(
-            x) > sample_size_per_group else x).reset_index(drop=True)
-    """
+    sampled_df = review_data.groupby(["game_name_display", "source"], group_keys=False).apply(
+        lambda x: sample_func(x, sample_size_per_game)).reset_index(drop=True)
 
     # Then stratify the columns 'combined_rating' and 'review_date_datetime' to the number of wanted samples
     #  => to make sure that the selected reviews are somewhat evenly distributed across the entire review bombing
     #  timespan instead of only the first 2 or 3 days and across the different ratings
     sampled_df_stratified = sampled_df.groupby(['combined_rating', 'review_date_datetime'], group_keys=False).apply(
-        lambda x: x.sample(frac=min(num_samples / len(sampled_df), 1), random_state=random_seed).reset_index(drop=True))
+        lambda x: x.sample(frac=min(num_samples_padded / len(sampled_df), 1), random_state=random_seed).reset_index(drop=True))
+
+    # alternative:
+    """
+    grouped_ratio_v1 = review_data.value_counts(["source", "game_name_display"])
+    sample_size_per_group_v1 = math.ceil(num_samples_padded / grouped_ratio_v1.size)
+    sampled_df_v1 = review_data.groupby(["source", "game_name_display", 'combined_rating', 'review_date_datetime'],
+                                        group_keys=False).apply(
+        lambda x: x.sample(n=sample_size_per_group_v1, replace=False, random_state=random_seed) if len(
+            x) > sample_size_per_group_v1 else x).reset_index(drop=True)
+
+    sampled_df_v1_stratified = sampled_df_v1.groupby(['combined_rating', 'review_date_datetime'],
+                                                     group_keys=False).apply(
+        lambda x: x.sample(frac=min(num_samples_padded / len(sampled_df_v1), 1), random_state=random_seed).reset_index(
+            drop=True))
+    """
 
     debug = True
     if debug:
+        print("\n#################################\nOverview - sampled_df_stratified")
+        for column_name in ["source", "game_name_display"]:
+            print(f"\nColumn: {sampled_df_stratified[column_name].value_counts()}")
+        print("\n#################################\n")
+
         stratified_grouped_ratio = sampled_df_stratified.value_counts(["game_name_display", "source"])
         print(f"\nGrouped Ratio sampled_df_stratified after sampling: {stratified_grouped_ratio}")
 
@@ -371,12 +397,164 @@ def apply_stratified_sampling(review_data: pd.DataFrame, num_samples=410, random
             ["game_name_display", "source", "combined_rating", "review_date_datetime"])
         print(f"\nGrouped Ratio sampled_df_stratified-all after sampling: {stratified_grouped_ratio_all}")
 
-    if "__index_level_0__" in sampled_df_stratified:
-        sampled_df_stratified = sampled_df_stratified.drop(columns=["__index_level_0__"], axis=1)
-
     # random shuffle the stacked data at the end, see https://stackoverflow.com/a/71948677
     randomly_sampled_reviews = sampled_df_stratified.sample(frac=1).reset_index(drop=True)
+
+    # make sure we return only num_samples as the actual sampled value can be a bit more due to rounding (i.e.
+    # sample exactly num_samples again)
+    # if num_samples < len(randomly_sampled_reviews):
+    #     randomly_sampled_reviews = randomly_sampled_reviews.sample(n=num_samples, random_state=random_seed)
     return randomly_sampled_reviews
+
+
+def apply_stratified_sampling_v2(review_data: pd.DataFrame, num_samples=390, random_seed=42):
+    show_dataframe_statistics(review_data)
+    num_samples_padded = num_samples + 20
+    review_data["review_date_datetime"] = pd.to_datetime(review_data["review_date"], dayfirst=True,
+                                                         format='mixed').apply(lambda x: x.strftime('%d.%m.%Y'))
+
+    sample_size_per_game = math.ceil(num_samples_padded / review_data['game_name_display'].nunique())
+    sample_size_per_source = math.ceil(num_samples_padded / review_data['source'].nunique())
+
+    # use a different sampling strategy if we have more than 1 game for the given review bombing incident
+    if review_data['game_name_display'].nunique() > 1:
+        # this doesn't split the games well but at least it keeps the complete metacritic source number (or which
+        # source has fewer rows)
+        sampled_df = review_data.groupby(['game_name_display', 'source'], group_keys=False).apply(
+            lambda x: sample_func(x, sample_size_per_source)).reset_index(drop=True)
+        print("\n#################################\nOverview - sampled_df")
+        for column_name in ["source", "game_name_display"]:
+            print(f"\nColumn: {sampled_df[column_name].value_counts()}")
+        print("\n#################################\n")
+
+        # split the sampled_df by source in two dataframe, so they can be sampled separately
+        steam_df = sampled_df[(sampled_df['source'] == 'Steam')]
+        metacritic_df = sampled_df[(sampled_df['source'] == 'Metacritic')]
+
+        # calculate the new num_samples so that they are either evenly distributed or if one has too few rows for
+        # that, at least make sure the wanted number is reached by filling up with the other
+        if (len(steam_df) >= num_samples_padded) & (len(metacritic_df) >= num_samples_padded):
+            new_num_samples_steam = math.ceil(num_samples_padded / 2)
+            new_num_samples_metacritic = math.ceil(num_samples_padded / 2)
+        elif len(steam_df) < num_samples_padded:
+            new_num_samples_steam = len(steam_df)
+            new_num_samples_metacritic = num_samples_padded - len(steam_df)
+        else:
+            new_num_samples_steam = num_samples_padded - len(metacritic_df)
+            new_num_samples_metacritic = len(metacritic_df)
+
+        # stratify sample both dataframes the same way to the desired num_samples for each
+        sampled_steam_df = steam_df.groupby(['game_name_display', 'combined_rating', 'review_date_datetime'],
+                                            group_keys=False).apply(
+            lambda x: x.sample(frac=min(new_num_samples_steam / len(steam_df), 1), random_state=random_seed))
+        print("\n#################################\nOverview - sampled_steam_df")
+        for column_name in ["source", "game_name_display"]:
+            print(f"\nColumn: {sampled_steam_df[column_name].value_counts()}")
+        print("\n#################################\n")
+
+        sampled_metacritic_df = metacritic_df.groupby(['game_name_display', 'combined_rating', 'review_date_datetime'],
+                                                      group_keys=False).apply(
+            lambda x: x.sample(frac=min(new_num_samples_metacritic / len(metacritic_df), 1), random_state=random_seed))
+        print("\n#################################\nOverview - sampled_metacritic_df")
+        for column_name in ["source", "game_name_display"]:
+            print(f"\nColumn: {sampled_metacritic_df[column_name].value_counts()}")
+        print("\n#################################\n")
+
+        # combine the steam and metacritic dataframes into one again
+        stratified_sample = pd.concat([sampled_steam_df, sampled_metacritic_df], ignore_index=True)
+
+    else:
+        sampled_df = review_data.groupby(["source"], group_keys=False).apply(
+            lambda x: sample_func(x, sample_size_per_game)).reset_index(drop=True)
+
+        stratified_sample = sampled_df.groupby(['combined_rating', 'review_date_datetime'], group_keys=False).apply(
+            lambda x: x.sample(frac=min(num_samples_padded / len(sampled_df), 1),
+                               random_state=random_seed).reset_index(drop=True))
+
+    debug = True
+    if debug:
+        show_dataframe_statistics(stratified_sample)
+
+        stratified_grouped_ratio = stratified_sample.value_counts(["game_name_display", "source"])
+        print(f"\nGrouped Ratio sampled_df_stratified after sampling: {stratified_grouped_ratio}")
+
+        stratified_grouped_ratio_all = stratified_sample.value_counts(
+            ["game_name_display", "source", "combined_rating", "review_date_datetime"])
+        print(f"\nGrouped Ratio sampled_df_stratified-all after sampling: {stratified_grouped_ratio_all}")
+
+    randomly_sampled_reviews = stratified_sample.sample(frac=1).reset_index(drop=True)
+
+    # randomly_sampled_reviews = randomly_sampled_reviews.sample(n=num_samples, random_state=random_seed)
+    return randomly_sampled_reviews
+
+
+def improve_ukraine_russia_rb_sample():
+    # do some additional sampling for the Ukraine-Russia-RB (as this did not work very good with the methods above)
+    # and had to be sampled separately in order to distribute games and sources somewhat equally
+    review_bombing = "Ukraine-Russia-Conflict"
+    samples = 500
+    df_games_strat = pd.read_csv(OUTPUT_FOLDER / review_bombing / f"label_studio_df_{review_bombing}-games-strat.csv")
+    df_source_strat = pd.read_csv(OUTPUT_FOLDER / review_bombing / f"label_studio_df_{review_bombing}-source-strat.csv")
+
+    # we proportionally sample each (already sampled) df by the other group, i.e. the df that already has a somewhat
+    # equal distribution of the games ('df_games_strat') is sampled by 'source' while the df that already has a somewhat
+    # equal distribution of the source ('df_source_strat') is sampled by 'game_name_display';
+    # afterwards both are combined and duplicates removed => this way we achieve an even distribution for both groups
+
+    sample_size_source = math.ceil(samples / df_games_strat['source'].nunique())
+    # sample_size_group = math.ceil(samples / df_games_strat.value_counts(["game_name_display", "source"]).size)
+    df_games_strat_sample = df_games_strat.groupby(["source"], group_keys=False).apply(
+        lambda x: sample_func(x, sample_size_source)).reset_index(drop=True)
+
+    sample_size_game = math.ceil(samples / df_source_strat['game_name_display'].nunique())
+    df_source_strat_sample = df_source_strat.groupby(["game_name_display"], group_keys=False).apply(
+        lambda x: sample_func(x, sample_size_game)).reset_index(drop=True)
+
+    # df_source_strat_sample_2 = df_source_strat.groupby(["game_name_display", 'source'], group_keys=False).apply(
+    #     lambda x: func(x, sample_size_game)).reset_index(drop=True)
+
+    combined_lb_df = pd.concat([df_games_strat_sample, df_source_strat_sample], ignore_index=True)
+    # remove duplicates that were introduced by combining both dataframes
+    combined_lb_df["review_case_insensitive"] = combined_lb_df["review"].astype(str).str.lower()
+    no_duplicates_combined_df = combined_lb_df.drop_duplicates(subset=["review_case_insensitive"])
+    no_duplicates_combined_df = no_duplicates_combined_df.drop(columns=["review_case_insensitive"], axis=1)
+    print(f"Removed {len(combined_lb_df) - len(no_duplicates_combined_df)} rows with duplicate texts")
+
+    show_dataframe_statistics(no_duplicates_combined_df)
+
+    # random shuffle again just to make sure they are REALLY randomly distributed
+    no_duplicates_combined_df = no_duplicates_combined_df.sample(frac=1).reset_index(drop=True)
+    no_duplicates_combined_df.to_csv(OUTPUT_FOLDER / review_bombing / f"combined_label_studio_df_{review_bombing}.csv",
+                                     index=False)
+
+
+def sample_for_label_studio(rb_name: str, num_samples=390, random_seed=42):
+    # sample to exact num_samples while paying attention to some conditions
+    edited_label_studio_df = pd.read_csv(OUTPUT_FOLDER / rb_name / f"label_studio_df_{rb_name}.csv")
+    show_dataframe_statistics(edited_label_studio_df)
+
+    # make sure that for the Borderlands, Skyrim and Firewatch - RBs no metacritic reviews are removed while randomly
+    # dropping rows! (since they already have far less metacritic reviews anyway)
+    if rb_name in ["Borderlands-Epic-Exclusivity", "Skyrim-Paid-Mods", "Firewatch"]:
+        num_metacritic = len(edited_label_studio_df[(edited_label_studio_df['source'] == 'Metacritic')])
+        num_steam = len(edited_label_studio_df[(edited_label_studio_df['source'] == 'Steam')])
+        if num_steam >= num_samples:
+            num_to_remove = num_metacritic
+        else:
+            num_to_remove = num_metacritic - (num_samples - num_steam)
+
+        # only drop random rows where source == "Steam"
+        label_studio_reviews = edited_label_studio_df.drop(
+            edited_label_studio_df[edited_label_studio_df['source'] == "Steam"].sample(n=num_to_remove,
+                                                                                       random_state=random_seed).index)
+    else:
+        label_studio_reviews = edited_label_studio_df.sample(n=num_samples, random_state=random_seed)
+
+    print("\n#################################\nOverview - label_studio_reviews")
+    for column_name in ["source", "game_name_display"]:
+        print(f"\nColumn: {label_studio_reviews[column_name].value_counts()}")
+    print("\n#################################\n")
+    label_studio_reviews.to_csv(OUTPUT_FOLDER / rb_name / f"final_label_studio_df_{rb_name}.csv", index=False)
 
 
 if __name__ == "__main__":
@@ -420,9 +598,16 @@ if __name__ == "__main__":
         combined_review_dataframe = pd.read_csv(label_studio_data_path / f"combined_review_df_{review_bombing_name}.csv")
         preprocess_reviews_for_label_studio(combined_review_dataframe, review_bombing_name)
 
-    select_reviews_for_label_studio = True
+    select_reviews_for_label_studio = False
     if select_reviews_for_label_studio:
         preprocessed_dataframe = pd.read_csv(label_studio_data_path / f"preprocessed_review_df_{review_bombing_name}.csv")
+        # use the manually edited file (i.e. checked if the reviews are actually usable in the study) file for ac unity
+        # preprocessed_dataframe = pd.read_csv(label_studio_data_path / f"edited_preprocessed_review_df_{review_bombing_name}.csv")
+
         # take subset via stratified sampling
-        sampled_review_df = apply_stratified_sampling(preprocessed_dataframe)
+        # sampled_review_df = apply_stratified_sampling(preprocessed_dataframe)
+        sampled_review_df = apply_stratified_sampling_v2(preprocessed_dataframe)
         sampled_review_df.to_csv(label_studio_data_path / f"label_studio_df_{review_bombing_name}.csv", index=False)
+
+    # improve_ukraine_russia_rb_sample()
+    # sample_for_label_studio(review_bombing_name)
