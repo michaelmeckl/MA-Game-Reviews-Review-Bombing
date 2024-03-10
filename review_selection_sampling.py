@@ -272,6 +272,8 @@ def preprocess_reviews_for_label_studio(review_dataframe: pd.DataFrame, rb_name:
     # remove all rows with duplicate reviews to make sure all reviews annotated in label studio will be different
     # add lowercase column for the comparison so reviews "good game" and "Good Game" are still considered duplicates!
     english_review_dataframe["review_case_insensitive"] = english_review_dataframe["review"].astype(str).str.lower()
+    english_review_dataframe["review_case_insensitive"] = english_review_dataframe[
+        'review_case_insensitive'].str.replace(r'[^\w+\s+]', '', regex=True)
     no_duplicates_review_dataframe = english_review_dataframe.drop_duplicates(subset=["review_case_insensitive"])
     no_duplicates_review_dataframe = no_duplicates_review_dataframe.drop(columns=["review_case_insensitive"], axis=1)
     print(f"Removed {len(english_review_dataframe) - len(no_duplicates_review_dataframe)} rows with duplicate texts")

@@ -16,6 +16,39 @@ from sentiment_analysis_and_nlp.nlp_utils import detect_language
 from useful_code_from_other_projects import utils
 
 
+# TODO only for testing:
+example_reviews_hogwarts_legacy = [
+    "Hairy Pot",
+    "Denuvo = 0, you pay to play a worse version of the game and that's a 0 dc the game",
+    "Disgusted the see that the entire story of this game is just antisemitic myths and conspiracies with the names switched out.",
+    "The stupid propaganda ruined this game , it would be nice if they stop forcing those gay characters in every game , studios are scared to get canceled...",
+    "Brilliant. Impressive attention to details. Immersive open world, so many things to do around. So many things to discover. We are so lucky to have it during out timelines",
+    "I cannot believe that the creators of Hogwarts Legacy and JK Rowling would do something so controversial. It is entirely unacceptable in 2023 to have these view and they deserve all the hate they get. I will be refunding this game and boycotting it to spread awareness. It is inhumane and downright demeaning that they make you play as british person"
+]
+
+example_reviews_cyberpunk = [
+    "My advice…… never play cyberpunk….. search up the games issues on the internet and find out y’all’s self",
+    "Shallow piece of garbage",
+    "Wo bist du, wenn die USA und NATO andere Länder eindringen",
+    "Verbrauchertäuschung und Doppelmoral in der Politik, widerlich.",
+    "play this if your brain is made of slime and you look ugly af",
+    "uhhh i dunno i just got here",
+    "it's worst game ever not just because of bugs. but gamplay mechanic, AI, npc,s all are worst.revewers got paid for sure",
+    "I am sorry CDPR but single player and RPG games in general are alive and well. Dont even think about moving in to online services games for easy cash grabs while proving garbage games to your followers"
+]
+
+example_posts = ["Review bombed? The game is not working properly? What are they thinking???",
+                 "You see how quick they are to make videos and articles whenever fanboys review bomb a game. Yet are silent when an outlet like Wire essentially does the same by giving Hogwarts Legacy a 1/10.",
+                 "I'm just shocked game journos didn't review bomb Hogwarts Legacy",
+                 "Remember when these guys tried to 'review bomb' Hogwarts Legacy? How did that turn out?",
+                 "Hogwart's Legacy is a special case on account of the huge backlash the game is getting simply because it is part of J.K. Rowling's franchise",
+                 "Star Wars haters will probably review bomb Survivor cause they're toxic, Sony haters will review bomb Spider-Man 2",
+                 "Review bombing is disgusting. That being said, this isn't a review bombing, the game is literally almost unplayable",
+                 "**People are now Review Bombing Cyberpunk cause it won Labor of Love",
+                 "Why is the game being review bombed once again?",
+                 "Trolls Review Bomb Cyberpunk 2077 After Devs Speak Out Against Russia’s Invasion Of Ukraine"]
+
+
 def test_tokenization(input_text: list[str] = None, checkpoint="distilbert-base-uncased-finetuned-sst-2-english"):
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
@@ -81,37 +114,6 @@ def test_sentiment_analysis(df: pd.DataFrame, model_checkpoint="distilbert-base-
     print(df.head())
 
 
-# TODO only for testing:
-example_reviews_hogwarts_legacy = ["Hairy Pot",
-                                   "Denuvo = 0, you pay to play a worse version of the game and that's a 0 dc the game",
-                                   "Disgusted the see that the entire story of this game is just antisemitic myths and conspiracies with the names switched out.",
-                                   "The stupid propaganda ruined this game , it would be nice if they stop forcing those gay characters in every game , studios are scared to get canceled...",
-                                   "Brilliant. Impressive attention to details. Immersive open world, so many things to do around. So many things to discover. We are so lucky to have it during out timelines",
-                                   "I cannot believe that the creators of Hogwarts Legacy and JK Rowling would do something so controversial. It is entirely unacceptable in 2023 to have these view and they deserve all the hate they get. I will be refunding this game and boycotting it to spread awareness. It is inhumane and downright demeaning that they make you play as british person"
-                                   ]
-example_reviews_cyberpunk = [
-    "My advice…… never play cyberpunk….. search up the games issues on the internet and find out y’all’s self",
-    "Shallow piece of garbage",
-    "Wo bist du, wenn die USA und NATO andere Länder eindringen",
-    "Verbrauchertäuschung und Doppelmoral in der Politik, widerlich.",
-    "play this if your brain is made of slime and you look ugly af",
-    "uhhh i dunno i just got here",
-    "it's worst game ever not just because of bugs. but gamplay mechanic, AI, npc,s all are worst.revewers got paid for sure",
-    "I am sorry CDPR but single player and RPG games in general are alive and well. Dont even think about moving in to online services games for easy cash grabs while proving garbage games to your followers"
-]
-
-example_posts = ["Review bombed? The game is not working properly? What are they thinking???",
-                 "You see how quick they are to make videos and articles whenever fanboys review bomb a game. Yet are silent when an outlet like Wire essentially does the same by giving Hogwarts Legacy a 1/10.",
-                 "I'm just shocked game journos didn't review bomb Hogwarts Legacy",
-                 "Remember when these guys tried to 'review bomb' Hogwarts Legacy? How did that turn out?",
-                 "Hogwart's Legacy is a special case on account of the huge backlash the game is getting simply because it is part of J.K. Rowling's franchise",
-                 "Star Wars haters will probably review bomb Survivor cause they're toxic, Sony haters will review bomb Spider-Man 2",
-                 "Review bombing is disgusting. That being said, this isn't a review bombing, the game is literally almost unplayable",
-                 "**People are now Review Bombing Cyberpunk cause it won Labor of Love",
-                 "Why is the game being review bombed once again?",
-                 "Trolls Review Bomb Cyberpunk 2077 After Devs Speak Out Against Russia’s Invasion Of Ukraine"]
-
-
 def load_example_data():
     reviews_file = pathlib.Path(
         __file__).parent / "data_for_analysis" / "steam" / "steam_user_reviews_Hogwarts_Legacy_old.csv"
@@ -172,7 +174,8 @@ def convert_to_huggingface_dataset(data):
 
 def test_imdb_tutorial():
     num_rows = 100
-    reviews_file = pathlib.Path(__file__).parent.parent / "data_for_analysis" / "steam" / "steam_user_reviews_Hogwarts_Legacy_old.csv"
+    reviews_file = pathlib.Path(
+        __file__).parent.parent / "data_for_analysis" / "steam" / "steam_user_reviews_Hogwarts_Legacy_old.csv"
     df = pd.read_csv(reviews_file, nrows=num_rows)
 
     # add new label column, not used at the moment
@@ -182,7 +185,7 @@ def test_imdb_tutorial():
     # result is {"False": [...]}
     # result = df.groupby('rating_positive')['content'].apply(list).to_dict()
 
-    train_data_len = int(num_rows * 0.8)   # 80 - 20 - split
+    train_data_len = int(num_rows * 0.8)  # 80 - 20 - split
 
     example_data = list(df['content'][:train_data_len])
     example_data.extend(example_reviews_hogwarts_legacy)
@@ -190,7 +193,7 @@ def test_imdb_tutorial():
 
     # create example train data
     # labeled_examples = [(False, el) for el in example_data]
-    labeled_train_dict = {"content": example_data, "label": [0]*len(example_data)}
+    labeled_train_dict = {"content": example_data, "label": [0] * len(example_data)}
     labeled_train_dict["content"].append("great game, really astonishing!")  # add one positive example
     labeled_train_dict["label"].append(1)
 
@@ -256,7 +259,7 @@ def test_imdb_tutorial():
     model.fit(x=tf_train_set, validation_data=tf_validation_set, epochs=3, callbacks=callback)
 
     # save the trained model locally (so it can be loaded later)
-    local_model_path = './model_test/'
+    local_model_path = 'model_test/'
     model.save_pretrained(local_model_path)
     tokenizer.save_pretrained(local_model_path)
 

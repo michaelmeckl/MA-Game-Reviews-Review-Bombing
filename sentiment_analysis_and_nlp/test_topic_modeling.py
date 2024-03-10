@@ -4,10 +4,8 @@
 import pathlib
 import pprint
 import re
-from collections import defaultdict
 import pandas as pd
 import spacy
-from transformers_test import example_reviews_hogwarts_legacy, example_posts
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.decomposition import LatentDirichletAllocation as LDA
@@ -220,5 +218,20 @@ def test_topic_modeling(use_option=2):
 
 
 if __name__ == "__main__":
+    example_reviews_hogwarts_legacy = [
+        "Hairy Pot",
+        "Denuvo = 0, you pay to play a worse version of the game and that's a 0 dc the game",
+        "Disgusted the see that the entire story of this game is just antisemitic myths and conspiracies with the "
+        "names switched out.",
+        "The stupid propaganda ruined this game , it would be nice if they stop forcing those gay characters in every "
+        "game , studios are scared to get canceled...",
+        "Brilliant. Impressive attention to details. Immersive open world, so many things to do around. So many "
+        "things to discover. We are so lucky to have it during out timelines",
+        "I cannot believe that the creators of Hogwarts Legacy and JK Rowling would do something so controversial. It "
+        "is entirely unacceptable in 2023 to have these view and they deserve all the hate they get. I will be "
+        "refunding this game and boycotting it to spread awareness. It is inhumane and downright demeaning that they "
+        "make you play as british person"
+    ]
+
     enable_max_pandas_display_size()
     test_topic_modeling()

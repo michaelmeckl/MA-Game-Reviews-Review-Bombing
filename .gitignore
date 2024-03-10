@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 .idea
+annotated_data/
 data_for_analysis/
 data_for_analysis_cleaned/
 data_for_labelstudio/
@@ -17,7 +18,7 @@ Reddit/reddit_data/
 Reddit/praw.ini
 
 sentiment_analysis_and_nlp/checkpoints/
-sentiment_analysis_and_nlp/model_test/
+classification/model_test/
 
 
 # Distribution / packaging
