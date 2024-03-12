@@ -5,7 +5,7 @@ import os
 import pathlib
 import pandas as pd
 from sentiment_analysis_and_nlp.nlp_utils import detect_language
-from useful_code_from_other_projects import utils
+from utils import utils
 
 
 def search_keywords(text: str, keywords: list[str]):

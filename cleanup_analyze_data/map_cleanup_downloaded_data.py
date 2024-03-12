@@ -6,15 +6,15 @@ import pathlib
 import re
 import shutil
 import pandas as pd
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size, concat_generators
+from utils.utils import enable_max_pandas_display_size, concat_generators
 
-DATA_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis"
+DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis"
 STEAM_DATA_FOLDER = DATA_FOLDER / "steam"
 METACRITIC_DATA_FOLDER = DATA_FOLDER / "metacritic"
 TWITTER_DATA_FOLDER = DATA_FOLDER / "tweets"
 REDDIT_DATA_FOLDER = DATA_FOLDER / "reddit"
 
-OUTPUT_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis_cleaned"
+OUTPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned"
 
 
 ###############################################################################

@@ -51,9 +51,7 @@ def some_pandas_examples():
 
     # add rows to dataframe by appending a dictionary
     # TODO does not work anymore in pandas v2.0+ since append is deprecated => use pd.concat([]) instead, see below
-    df_new = df.append({'Alter': {'Daniel': 27}, 'Studiengang': {'Daniel': 'MI'}}, ignore_index=True)
-    # or by converting a list to a pandas-Series
-    df_new = df.append(pd.Series([2345, 2, 650], index=df.columns), ignore_index=True)
+    # df_new = df.append({'Alter': {'Daniel': 27}, 'Studiengang': {'Daniel': 'MI'}}, ignore_index=True)
 
     # combine two dataframes
     example_array = np.arange(1, 51).reshape(5, 10)  # create matrix with 5 rows and 10 columns

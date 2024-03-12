@@ -3,7 +3,9 @@ Utilities specifically for classification, e.g. Transformers, Model Helpers, etc
 """
 import os
 import random
+from typing import List
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 import torch.backends.cudnn
 import torch.backends.cuda
@@ -35,7 +37,31 @@ def set_random_seed(seed: int = 42, is_pytorch: bool = True) -> None:
 
 
 def check_system_for_cuda(is_pytorch: bool = True):
+    print(torch.cuda.is_available())
     print(torch.backends.cuda.is_built())
     print(torch.backends.cudnn.is_available())
     print(torch.backends.cudnn.version())
     print(torch.backends.cudnn.enabled)
+
+
+def move_tensor_to_gpu(tensor) -> torch.Tensor:
+    # We move our tensor to the GPU if available
+    if torch.cuda.is_available():
+        tensor = tensor.to("cuda")
+    return tensor
+
+
+def get_pytorch_device() -> torch.device:
+    return torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
+
+def get_vocabularies(df: pd.DataFrame, categorical_columns: List):
+    """
+    Use the function like this:
+        categorical_features = ['uid', 'ugender', 'iid', 'igenre']
+        vocab_sizes = get_vocabularies(df, categorical_features)
+    """
+    vocab_sizes = {}
+    for cat in categorical_columns:
+        vocab_sizes[cat] = df[cat].max() + 1
+    return vocab_sizes

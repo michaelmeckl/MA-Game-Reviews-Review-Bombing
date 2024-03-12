@@ -5,11 +5,12 @@ import pathlib
 import time
 import os
 import pandas as pd
+# noinspection PyPackageRequirements
 from tweety import Twitter
 from tweety.filters import SearchFilters
 from tweety.types import Tweet
 import emoji
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size, compare_pandas_dataframes
+from utils.utils import enable_max_pandas_display_size, compare_pandas_dataframes
 import pprint
 # import requests
 # import snscrape.modules.twitter as sntwitter

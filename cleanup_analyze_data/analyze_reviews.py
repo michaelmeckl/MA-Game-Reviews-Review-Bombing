@@ -7,15 +7,14 @@ import pathlib
 from datetime import datetime
 import pandas as pd
 from sentiment_analysis_and_nlp.nlp_utils import split_into_sentences
-from useful_code_from_other_projects import utils
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size
+from utils import utils
 from profanity_check import predict, predict_prob
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from textstat import textstat
 from textblob import TextBlob, Word
 
-DATA_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis"
+DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis"
 
 
 def analyze_steam_review_graph(review_graph_data: dict):
@@ -294,7 +293,7 @@ def get_combined_data_march_2022():
 
 
 if __name__ == "__main__":
-    enable_max_pandas_display_size()
+    utils.enable_max_pandas_display_size()
     # prepare_data()
     # start_analysis()
 

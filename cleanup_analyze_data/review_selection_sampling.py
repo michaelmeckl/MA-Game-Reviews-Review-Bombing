@@ -9,13 +9,13 @@ import pandas as pd
 from nltk import word_tokenize
 from sentiment_analysis_and_nlp.nlp_utils import detect_language, detect_contains_english, \
     setup_spacy_language_detection, detect_language_spacy
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size, check_if_date_in_range
+from utils.utils import enable_max_pandas_display_size, check_if_date_in_range
 from transformers import AutoTokenizer
 from datasets import Dataset
 
 
-DATA_FOLDER = pathlib.Path(__file__).parent / "data_for_analysis_cleaned"
-OUTPUT_FOLDER = pathlib.Path(__file__).parent / "data_for_labelstudio"
+DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned"
+OUTPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_labelstudio"
 
 
 def load_data(path):
@@ -229,7 +229,7 @@ def filter_non_english_reviews(review_dataframe: pd.DataFrame, rb_name: str):
 
 """
 def test_different_language_detection_methods():
-    from useful_code_from_other_projects.utils import compare_pandas_dataframes
+    from utils.utils import compare_pandas_dataframes
 
     df = pd.read_csv(label_studio_data_path / f"combined_review_df_{review_bombing_name}.csv")
     spacy_en = setup_spacy_language_detection()

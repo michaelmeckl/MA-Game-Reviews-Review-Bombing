@@ -10,7 +10,7 @@ import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from enum import Enum
-from useful_code_from_other_projects.FPSMeasurer import timeit
+from utils.FPSMeasurer import timeit
 
 """
 IMPORTANT:

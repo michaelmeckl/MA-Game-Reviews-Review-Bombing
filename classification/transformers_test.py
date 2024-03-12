@@ -13,7 +13,7 @@ import tensorflow as tf
 import torch
 import pprint
 from sentiment_analysis_and_nlp.nlp_utils import detect_language
-from useful_code_from_other_projects import utils
+from utils import utils
 
 
 # TODO only for testing:

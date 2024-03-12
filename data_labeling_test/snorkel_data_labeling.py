@@ -8,14 +8,9 @@ import random
 import pandas as pd
 from typing import List
 from snorkel.preprocess import preprocessor
-from snorkel.labeling import LFAnalysis
 from textblob import TextBlob
-from analyze_reviews import combine_metacritic_steam_reviews
-from sentiment_analysis_and_nlp.nlp_utils import detect_language
-from useful_code_from_other_projects import utils
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.linear_model import LogisticRegression
+from cleanup_analyze_data.analyze_reviews import combine_metacritic_steam_reviews
+from utils import utils
 from snorkel.labeling import LabelingFunction, labeling_function
 from snorkel.labeling.model import LabelModel
 from snorkel.labeling import PandasLFApplier
@@ -175,7 +170,7 @@ def test_snorkel_data_labeling(unlabeled, labeled):
 
 
 if __name__ == "__main__":
-    enable_max_pandas_display_size()
+    utils.enable_max_pandas_display_size()
     random.seed(42)
 
     labeled_data = pd.read_csv("labeled_data.csv")

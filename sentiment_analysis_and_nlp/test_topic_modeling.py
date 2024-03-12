@@ -8,6 +8,7 @@ import pandas as pd
 import spacy
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+# noinspection PyPep8Naming
 from sklearn.decomposition import LatentDirichletAllocation as LDA
 from nltk.corpus import stopwords
 from gensim import corpora, models
@@ -15,8 +16,7 @@ from gensim.models import CoherenceModel
 from gensim.utils import simple_preprocess
 from gensim.parsing.preprocessing import STOPWORDS
 from bertopic import BERTopic
-
-from useful_code_from_other_projects.utils import enable_max_pandas_display_size
+from utils.utils import enable_max_pandas_display_size
 
 
 def num2word(d):
