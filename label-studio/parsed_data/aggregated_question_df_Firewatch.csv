@@ -1,0 +1,7 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Firewatch,is-review-bombing,310,192,31.07,79.2,100.0,33.33
+Firewatch,is-rating-game-related,321,181,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-game-content,380,122,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-developer-publisher,287,215,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-ideological,269,233,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-political,65,437,31.07,79.2,100.0,33.33

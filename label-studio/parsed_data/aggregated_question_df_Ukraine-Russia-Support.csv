@@ -1,0 +1,7 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Ukraine-Russia-Support,is-review-bombing,178,323,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,is-rating-game-related,324,177,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-game-content,354,147,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-developer-publisher,137,364,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-ideological,137,364,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-political,145,356,26.9,84.28,100.0,44.44

@@ -1,0 +1,37 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Skyrim - Paid Mods,is-review-bombing,503,48,40.63,73.03,100.0,44.44
+Skyrim - Paid Mods,is-rating-game-related,250,301,40.63,73.03,100.0,44.44
+Skyrim - Paid Mods,criticism-praise-game-content,263,288,40.63,73.03,100.0,44.44
+Skyrim - Paid Mods,criticism-praise-developer-publisher,397,154,40.63,73.03,100.0,44.44
+Skyrim - Paid Mods,criticism-praise-ideological,287,264,40.63,73.03,100.0,44.44
+Skyrim - Paid Mods,criticism-praise-political,4,547,40.63,73.03,100.0,44.44
+Assassin's Creed Unity,is-review-bombing,159,343,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,is-rating-game-related,395,107,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-game-content,414,88,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-developer-publisher,121,381,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-ideological,108,394,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-political,24,478,30.68,83.08,100.0,33.33
+Firewatch,is-review-bombing,310,192,31.07,79.2,100.0,33.33
+Firewatch,is-rating-game-related,321,181,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-game-content,380,122,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-developer-publisher,287,215,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-ideological,269,233,31.07,79.2,100.0,33.33
+Firewatch,criticism-praise-political,65,437,31.07,79.2,100.0,33.33
+Mortal Kombat 11,is-review-bombing,259,241,35.79,73.76,100.0,16.67
+Mortal Kombat 11,is-rating-game-related,391,109,35.79,73.76,100.0,16.67
+Mortal Kombat 11,criticism-praise-game-content,430,70,35.79,73.76,100.0,16.67
+Mortal Kombat 11,criticism-praise-developer-publisher,257,243,35.79,73.76,100.0,16.67
+Mortal Kombat 11,criticism-praise-ideological,225,275,35.79,73.76,100.0,16.67
+Mortal Kombat 11,criticism-praise-political,80,420,35.79,73.76,100.0,16.67
+Borderlands - Epic Store,is-review-bombing,317,184,28.59,77.36,100.0,16.67
+Borderlands - Epic Store,is-rating-game-related,233,268,28.59,77.36,100.0,16.67
+Borderlands - Epic Store,criticism-praise-game-content,284,217,28.59,77.36,100.0,16.67
+Borderlands - Epic Store,criticism-praise-developer-publisher,263,238,28.59,77.36,100.0,16.67
+Borderlands - Epic Store,criticism-praise-ideological,199,302,28.59,77.36,100.0,16.67
+Borderlands - Epic Store,criticism-praise-political,26,475,28.59,77.36,100.0,16.67
+Ukraine-Russia-Support,is-review-bombing,178,323,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,is-rating-game-related,324,177,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-game-content,354,147,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-developer-publisher,137,364,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-ideological,137,364,26.9,84.28,100.0,44.44
+Ukraine-Russia-Support,criticism-praise-political,145,356,26.9,84.28,100.0,44.44

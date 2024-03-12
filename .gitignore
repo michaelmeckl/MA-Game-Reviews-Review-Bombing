@@ -21,6 +21,9 @@ sentiment_analysis_and_nlp/checkpoints/
 sentiment_analysis_and_nlp/checkpoints.json
 classification/model_test/
 
+label-studio/MA-Pre-Fragebogen.csv
+label-studio/label_studio_api_key.env
+
 
 # Distribution / packaging
 .Python

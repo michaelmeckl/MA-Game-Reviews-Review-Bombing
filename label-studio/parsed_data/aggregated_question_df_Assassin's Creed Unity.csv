@@ -1,0 +1,7 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Assassin's Creed Unity,is-review-bombing,159,343,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,is-rating-game-related,395,107,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-game-content,414,88,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-developer-publisher,121,381,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-ideological,108,394,30.68,83.08,100.0,33.33
+Assassin's Creed Unity,criticism-praise-political,24,478,30.68,83.08,100.0,33.33
