@@ -9,6 +9,7 @@ import pandas as pd
 import tensorflow as tf
 import torch.backends.cudnn
 import torch.backends.cuda
+from torch import Tensor
 
 
 def set_random_seed(seed: int = 42, is_pytorch: bool = True) -> None:
@@ -37,7 +38,7 @@ def set_random_seed(seed: int = 42, is_pytorch: bool = True) -> None:
 
 
 def check_system_for_cuda(is_pytorch: bool = True):
-    print(torch.cuda.is_available())
+    print(torch.cuda.is_available())  # should be True
     print(torch.backends.cuda.is_built())
     print(torch.backends.cudnn.is_available())
     print(torch.backends.cudnn.version())
@@ -53,6 +54,14 @@ def move_tensor_to_gpu(tensor) -> torch.Tensor:
 
 def get_pytorch_device() -> torch.device:
     return torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
+
+def df_to_tensor(df: pd.DataFrame) -> Tensor:
+    """
+    Convert a pandas dataframe to a pytorch tensor
+    IMPORTANT: the dataframe must contain only numeric values!
+    """
+    return torch.from_numpy(df.values).to(get_pytorch_device())
 
 
 def get_vocabularies(df: pd.DataFrame, categorical_columns: List):

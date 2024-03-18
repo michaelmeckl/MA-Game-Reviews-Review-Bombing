@@ -7,7 +7,7 @@ import string
 import numpy as np
 import pandas as pd
 from nltk import word_tokenize
-from sentiment_analysis_and_nlp.nlp_utils import detect_language, detect_contains_english, \
+from sentiment_analysis_and_nlp.language_detection import detect_language, detect_contains_english, \
     setup_spacy_language_detection, detect_language_spacy
 from utils.utils import enable_max_pandas_display_size, check_if_date_in_range
 from transformers import AutoTokenizer

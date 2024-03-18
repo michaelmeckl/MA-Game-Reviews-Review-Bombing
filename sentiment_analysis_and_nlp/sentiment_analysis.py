@@ -4,7 +4,6 @@ import pprint
 import pandas as pd
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk import tokenize, FreqDist
-import nlp_utils
 
 
 # TODO test other sentiment analysis tools like TextBlob or even embedding-models like FLAIR too!

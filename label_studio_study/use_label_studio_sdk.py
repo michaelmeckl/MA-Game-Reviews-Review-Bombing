@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os
-import pprint
 import pathlib
 import pandas as pd
 from label_studio_sdk import Client
@@ -100,7 +99,7 @@ def get_already_annotated_tasks(project: Project, num_tasks_per_project, use_rev
     )
 
     if use_reviews_from_specific_annotators:
-        annotator_ids = [9627]  # TODO preferably not 17750
+        annotator_ids = [9627]
         # get all ids from the specified annotators by creating a filter item for each id and combining them with OR
         filter_annotators = construct_annotator_filter(annotator_ids)
         ids_for_annotators = project.get_tasks(filters=filter_annotators, only_ids=True)
@@ -149,23 +148,14 @@ def get_double_annotated_tasks(project: Project, num_tasks_per_project):
 def get_unassigned_tasks(project: Project, num_tasks_per_project):
     # find the next 'num_tasks_per_project' tasks in the project that are not yet assigned to an annotator (i.e. where
     # the annotator column is empty)
-    # TODO replace with this later again
-    """
-    Filters.item(
-        Column.annotators,
-        Operator.EMPTY,
-        Type.Unknown,
-        Filters.value(1)
-    )
-    """
     filter_unassigned = Filters.create(
         Filters.OR,
         [
             Filters.item(
-                Column.total_annotations,
-                Operator.EQUAL,
-                Type.Number,
-                Filters.value(0)
+                Column.annotators,
+                Operator.EMPTY,
+                Type.Unknown,
+                Filters.value(1)
             )
         ],
     )
@@ -335,8 +325,7 @@ if __name__ == "__main__":
     # the identifier of the user; this must always be updated!
     user_email = ""
 
-    # TODO die noch nicht annotierten nehmen (noch 20 pro Projekt)
-    assign_reviews(is_first_assignment=True, assign_to_once_annotated_tasks=False,
-                   assign_to_double_annotated_tasks=False)
+    # assign_reviews(is_first_assignment=True, assign_to_once_annotated_tasks=False,
+    #                assign_to_double_annotated_tasks=False)
 
     # export_reviews_from_projects(study_project_ids, export_format="CSV")

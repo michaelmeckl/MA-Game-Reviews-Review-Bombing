@@ -4,7 +4,7 @@
 import os
 import pathlib
 import pandas as pd
-from sentiment_analysis_and_nlp.nlp_utils import detect_language
+from sentiment_analysis_and_nlp.language_detection import detect_language
 from utils import utils
 
 

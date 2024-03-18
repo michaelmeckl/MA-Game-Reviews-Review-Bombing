@@ -1,42 +1,18 @@
 import re
 import string
-from string import punctuation
 import collections
 import itertools
-import nltk
-from nltk import bigrams
+from nltk import word_tokenize, RegexpTokenizer, bigrams, FreqDist
 from nltk.corpus import stopwords
-from nltk import word_tokenize, RegexpTokenizer
-from nltk.corpus import wordnet
-from nltk.stem import PorterStemmer, SnowballStemmer, WordNetLemmatizer
-from nltk.tokenize import TweetTokenizer
 from rake_nltk import Rake
-import spacy
-import spacy_fastlang  # noqa: F401 # pylint: disable=unused-import
 import pandas as pd
-from langdetect import detect, LangDetectException, DetectorFactory, detect_langs
 from textblob import TextBlob
 
-# make langdetect deterministic, see https://pypi.org/project/langdetect/
-DetectorFactory.seed = 0
 
 _SOME_ALPHA_RE = re.compile(r'[A-Za-z]+')
 _ONLY_ALPHA_RE = re.compile(r'^[A-Za-z]*$')
 
-punctuation_list = list(punctuation) + ['`', '’', '…']
-
-
-def download_nltk_data():
-    # only do this once at the beginning if these aren't installed yet!
-    nltk.download([
-        "stopwords",
-        "wordnet",
-        # "twitter_samples",
-        # "movie_reviews",
-        "averaged_perceptron_tagger",
-        "vader_lexicon",  # vader is a sentiment lexicon specifically for social media data
-        "punkt",
-    ])
+punctuation_list = list(string.punctuation) + ['`', '’', '…']
 
 
 def filter_paragraph(p):
@@ -95,63 +71,6 @@ def identify_low_effort(text):
     return label
 
 
-def stem_text(words: list[str]):
-    porter_stemmer = PorterStemmer()
-    stemmed_words = [porter_stemmer.stem(word=word) for word in words]
-    return stemmed_words
-
-
-def lemmatize_text(text):
-    """
-    Stemming might return a root word that is not an actual word whereas lemmatizing returns a root word that is an
-    actual word.
-    """
-    text = text.lower()
-    lemmatizer = WordNetLemmatizer()
-    words = text.split()
-    words = [lemmatizer.lemmatize(w) for w in words]
-    text = ' '.join(words)
-    return text
-
-
-def remove_stopwords(text):
-    stopwords = nltk.corpus.stopwords.words("english") + punctuation_list
-    words = [word for word in text if word.lower() not in stopwords]
-    return words
-
-
-def split_into_sentences(text):
-    sentences = nltk.tokenize.sent_tokenize(text, 'english')
-    new_sentences = [split_sent for sent in sentences for split_sent in sent.split("\n")]
-    return new_sentences
-
-
-def split_sentence_into_words(sentence, normalize=True):
-    # find all tokens and optionally stem them
-    tokens = re.findall(r'[^\s!,.?":;0-9]+', sentence.lower())
-    if normalize:
-        stemmer = SnowballStemmer('english')
-        normalized_tokens = [stemmer.stem(token) for token in tokens]
-        return normalized_tokens
-    else:
-        return tokens
-
-
-def split_text_into_words(text):
-    # there are probably better ways to do this; RegexpTokenizer also ignores punctuation compared to this for example
-    # see https://www.learndatasci.com/tutorials/sentiment-analysis-reddit-headlines-pythons-nltk/
-    return nltk.word_tokenize(text)
-
-
-def remove_unwanted_words(text):
-    word_list = split_text_into_words(text)
-    # remove stopwords
-    new_word_list = remove_stopwords(word_list)
-    # include only the words that are made up of letters with str.isalpha()
-    new_word_list = [word for word in new_word_list if word.isalpha()]
-    return new_word_list
-
-
 def normalize_text(text):
     text = text.lower()
     # remove html markup
@@ -179,12 +98,6 @@ def apply_text_preprocessing(df: pd.DataFrame, text_col: str):
     X = df[text_col].to_numpy()
     processed_column = list(map(preprocess_text, X))
     return processed_column
-
-
-def tokenize_tweets(text):
-    # uses NLTK's own tweet tokenizer to tokenize tweets
-    tokenizer = TweetTokenizer(reduce_len=True)
-    return tokenizer.tokenize(text)
 
 
 def remove_url(txt):
@@ -219,17 +132,15 @@ def get_most_frequent_words(text_list: list[str]):
     print(bigram_counts.most_common(20))
 
 
-def nltk_pos_tagger(nltk_tag):
-    if nltk_tag.startswith('J'):
-        return wordnet.ADJ
-    elif nltk_tag.startswith('V'):
-        return wordnet.VERB
-    elif nltk_tag.startswith('N'):
-        return wordnet.NOUN
-    elif nltk_tag.startswith('R'):
-        return wordnet.ADV
-    else:
-        return None
+def check_contains_most_frequent_words(document_words: list, all_documents):
+    all_words = FreqDist(word.lower() for word in all_documents)
+    word_features = list(all_words)[:500]  # 500 most frequent words
+
+    document_words = set(document_words)   # we convert it to a set because it is much faster than a list
+    features = {}
+    for word in word_features:
+        features[word] = (word in document_words)
+    return features
 
 
 def get_pos_tags(text: str):
@@ -244,58 +155,6 @@ def textblob_utils(text: str):
     print(blob.sentences)  # split into sentences
     lemmata = [word.lemmatize() for word in blob.words]
     print(lemmata)
-
-
-def check_contains_most_frequent_words(document_words: list, all_documents):
-    all_words = nltk.FreqDist(word.lower() for word in all_documents)
-    word_features = list(all_words)[:500]  # 500 most frequent words
-
-    document_words = set(document_words)   # we convert it to a set because it is much faster than a list
-    features = {}
-    for word in word_features:
-        features[word] = (word in document_words)
-    return features
-
-
-def is_token_allowed(token):
-    if not token or not token.string.strip() or token.is_stop or token.ispunct:
-        return False
-    return True
-
-
-def named_entity_recognition_with_spacy(input_text: str, spacy_nlp):
-    nlp_text = spacy_nlp(input_text)
-    # lemmatize the text with spacy first
-    complete_filtered_tokens = [
-        token.lemma_.strip().lower() for token in nlp_text if is_token_allowed(token)
-    ]
-    lemmatized_sentence = " ".join(complete_filtered_tokens)
-    print(f"Lemmatized Sentence: {lemmatized_sentence}")
-
-    # named entity recognition, TODO find out which others exist and which are useful for me
-    nlp_text = spacy_nlp(lemmatized_sentence)
-    for entity in nlp_text.ents:
-        if entity.label_ == "ORG":
-            print("(Organization)", entity.text)
-        elif entity.label_ == "PERSON":
-            print("(Person)", entity.text)
-        elif entity.label_ == "GPE":
-            print("(Geographical location)", entity.text)
-        elif entity.label_ == "EVENT":
-            print("(Event)", entity.text)
-        elif entity.label_ == "PRODUCT":
-            print("(Product)", entity.text)
-        elif entity.label_ == "NORP":
-            print("(Nationalities, religious, political groups)", entity.text)
-        else:
-            print("Other entity", entity.text)
-
-
-def setup_spacy():
-    # spacy.download("en_core_web_sm")
-    spacy_nlp = spacy.load("en_core_web_sm")
-    spacy_stopwords = spacy_nlp.Defaults.stop_words
-    # print("All default stopwords in spacy: ", spacy_stopwords)
 
 
 def test_semantic_similarity():
@@ -338,44 +197,15 @@ def extract_keywords_with_tf_idf(df: pd.DataFrame):
     pass  # TODO
 
 
-def detect_language(x):
-    try:
-        return detect(x)
-    except (LangDetectException, TypeError):
-        return 'unknown'
+def clean_tweet(tweet):
+    # Taken from https://www.kaggle.com/code/j13mehul/bert-fine-tuning-using-peft#Freezing-the-head
+    # Use like: df['text'] = df['text'].apply(lambda s: clean(s))
 
+    # Special characters
+    tweet = re.sub(r"https?:\/\/t.co\/[A-Za-z0-9]+", "", tweet)
 
-def detect_contains_english(x):
-    try:
-        languages = detect_langs(x)
-        # print(f"\nDetected languages \"{languages}\" for text: \"{x}\"")
-        for lang_el in languages:
-            if lang_el.lang == "en":
-                return True
-        return False
-    except (LangDetectException, TypeError):
-        return False
+    Special = '@#!?+&*[]-%:/()$=><|{}^'
+    for s in Special:
+        tweet = tweet.replace(s, "")
 
-
-def setup_spacy_language_detection():
-    # setup spacy language detector
-    spacy_en = spacy.load("en_core_web_sm")
-    spacy_en.add_pipe("language_detector")
-    return spacy_en
-
-
-# noinspection PyProtectedMember
-def detect_language_spacy(x, spacy_nlp, min_probability_score=0.3):
-    # a bit less restrictive than lang_detect above but where lang_detect removes too much, spacy_fastlang includes
-    # some obvious non-english texts as well ...
-    try:
-        doc = spacy_nlp(x)
-        detected_language = doc._.language
-        # make sure the probability score is high enough for the found english reviews
-        if detected_language == "en":
-            if doc._.language_score < min_probability_score:
-                return "unknown"
-        return detected_language
-    except Exception as e:
-        print(f"Error while trying to detect language with Spacy: {e}")
-        return 'unknown'
+    return tweet

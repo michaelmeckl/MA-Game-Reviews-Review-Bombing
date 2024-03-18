@@ -11,9 +11,6 @@ import evaluate
 import pandas as pd
 import tensorflow as tf
 import torch
-import pprint
-from sentiment_analysis_and_nlp.nlp_utils import detect_language
-from utils import utils
 
 
 # TODO only for testing:

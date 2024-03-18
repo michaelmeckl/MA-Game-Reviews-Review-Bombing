@@ -6,7 +6,7 @@ import pprint
 import pathlib
 from datetime import datetime
 import pandas as pd
-from sentiment_analysis_and_nlp.nlp_utils import split_into_sentences
+from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
 from utils import utils
 from profanity_check import predict, predict_prob
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -139,8 +139,9 @@ def calculate_text_similarity(text1: str, text2: str, spacy_nlp):
     See https://www.newscatcherapi.com/blog/ultimate-guide-to-text-similarity-with-python for a good overview.
     """
     # convert text to word embeddings with spaCy
-    sentences1 = split_into_sentences(text1)
-    sentences2 = split_into_sentences(text2)
+    spacy_utils = SpacyUtils()
+    sentences1 = spacy_utils.split_into_sentences(text1)
+    sentences2 = spacy_utils.split_into_sentences(text2)
     embeddings1 = [spacy_nlp(sentence).vector for sentence in sentences1]
     embeddings2 = [spacy_nlp(sentence).vector for sentence in sentences2]
     # alternatively use Gensim to use Doc2Vec for sentence embeddings or Elmo for contextual embeddings
