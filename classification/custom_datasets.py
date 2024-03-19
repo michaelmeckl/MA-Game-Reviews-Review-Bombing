@@ -16,20 +16,21 @@ class CustomDataset(Dataset):
         return len(self.features)
 
     def __getitem__(self, idx):
+        """
         feature = self.features.iloc[idx]['review']
         label = self.labels[idx]
         if self.transform:
             feature = self.transform(feature)
         if self.target_transform:
             label = self.target_transform(label)
-        """
-        return {
-            'input_ids': encoding['input_ids'].flatten(),
-            'attention_mask': encoding['attention_mask'].flatten(),
-            'labels': torch.tensor(label, dtype=torch.long)
-        }
-        """
+
+        # torch.tensor(label, dtype=torch.long)
         return {'input_ids': feature[0], 'attention_mask': feature[1], 'labels': label}
+        """
+        input_ids = self.features.iloc[idx]['input_ids']
+        attention_mask = self.features.iloc[idx]['attention_mask']
+        label = self.labels[idx]
+        return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': label}
 
 
 class CustomBaselineDataset(Dataset):

@@ -45,7 +45,7 @@ def preprocess_categorical_data(df: pd.DataFrame, column_names: list[str], use_w
             # todo stopword removal and lemmatization still missing here ? check tokens!
 
     else:
-        # TODO remove punctuation first and replace it with a whitespace or keep it?
+        # TODO keep punctuation?
         review_without_punct = [" " if char in string.punctuation else char for char in data_test]
         review_without_punct = "".join(review_without_punct)
         # then split into words, remove stopwords and lemmatize
@@ -112,10 +112,18 @@ def preprocess_data_version_1(df: pd.DataFrame):
     ###################### encode categorical variables #####################
     encode_target_variable(df, annotation_questions, use_label_encoder=False)
 
-    ######################## split into train and test set ########################
-    X_data = df[['review']]
+    ############################################
+    # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
+    # not have to be performed for every batch while training!
+    max_tokens = tokenizer.max_model_input_sizes[checkpoint]
+    dataset = Dataset.from_pandas(df[["review"]])
+    # don't use padding here already, instead a data collator is later used for dynamic padding
+    tokenized_dataset = dataset.map(lambda data: tokenizer(data["review"], truncation=True, max_length=max_tokens),
+                                    batched=True)
+    X_data = tokenized_dataset.to_pandas()
     y_data = df[['is-review-bombing']]
 
+    ######################## split into train and test set ########################
     # TODO save test set as a separate csv file to make sure none of the classifiers will see it
     #  while training! and to make sure it's the same for all! (which reviews should be used as the test set ?)
     train_x, test_x, train_y, test_y = split_data_scikit(X_data, y_data)
@@ -126,6 +134,7 @@ def preprocess_data_version_1(df: pd.DataFrame):
 
     ######################## create custom dataset and dataloader #######################
     # TODO also test other ways to vectorize with word embeddings such as word2vec or GloVe ?
+    """
     def tokenize_review(review: str):
         max_length = tokenizer.max_model_input_sizes[checkpoint]
         encoding = tokenizer(review, return_tensors='pt', truncation=True, max_length=max_length)  # padding="longest"
@@ -135,13 +144,14 @@ def preprocess_data_version_1(df: pd.DataFrame):
         # input_ids = nn.functional.pad(input_ids, (0, max_length - input_ids.shape[0]), value=0)
         # attention_mask = nn.functional.pad(attention_mask, (0, max_length - attention_mask.shape[0]), value=0)
         return input_ids, attention_mask
+    """
 
-    # use a data collator to pad the tokens to the longest per batch (see "Dynamic Padding")
+    # use a data collator to pad the tokens to the longest per batch (see "Dynamic Padding" on https://huggingface.co/learn/nlp-course/en/chapter3/2?fw=pt#dynamic-padding)
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     batch_size = 32
 
-    train_dataset = CustomDataset(train_x, train_y, transform=tokenize_review)
-    test_dataset = CustomDataset(test_x, test_y, transform=tokenize_review)
+    train_dataset = CustomDataset(train_x, train_y)  # transform=tokenize_review
+    test_dataset = CustomDataset(test_x, test_y)  # transform=tokenize_review
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=data_collator)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=data_collator)
 
@@ -153,22 +163,6 @@ def preprocess_data_version_1(df: pd.DataFrame):
     """
 
     return train_dataloader, test_dataloader
-
-
-# TODO apply the tokenization on all reviews at the beginning similar to the label encoding so it does not have to
-#  be performed for every item while training!
-def tokenize_input(dataframe: pd.DataFrame):
-    dataset = Dataset.from_pandas(dataframe)
-    max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    tokenized_dataset = dataset.map(lambda df: tokenizer(df["review"],  return_tensors='pt', padding="longest",
-                                                         truncation=True, max_length=max_tokens), batched=True)
-    # todo are input_ids and attention_mask saved here as two separate columns so they can be accessed later ?
-    return tokenized_dataset
-
-
-# TODO leave out padding in function above? see https://huggingface.co/learn/nlp-course/en/chapter3/2?fw=pt#dynamic-padding
-# padding all the samples to the maximum length is not efficient: it’s better to pad the samples when we’re building a
-# batch, as then we only need to pad to the maximum length in that batch, and not the maximum length in the entire dataset.
 
 
 if __name__ == "__main__":
