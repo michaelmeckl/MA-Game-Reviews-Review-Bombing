@@ -5,27 +5,65 @@ from torch.utils.data import Dataset
 from torchvision.transforms import Lambda
 
 
+class CustomDataset(Dataset):
+    def __init__(self, X, y, transform=None, target_transform=None):
+        self.features = X
+        # self.features = torch.tensor(X.to_numpy(), dtype=torch.float32)
+        self.labels = torch.tensor(y.to_numpy())  # , dtype=torch.float32
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        feature = self.features.iloc[idx]['review']
+        label = self.labels[idx]
+        if self.transform:
+            feature = self.transform(feature)
+        if self.target_transform:
+            label = self.target_transform(label)
+        """
+        encoding = self.tokenizer.encode_plus(
+            review,
+            add_special_tokens=True,
+            max_length=self.max_length,
+            return_token_type_ids=False,
+            padding='max_length',
+            return_attention_mask=True,
+            return_tensors='pt',
+            truncation=True
+        )
+
+        return {
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+            'label': torch.tensor(label, dtype=torch.long)
+        }
+        """
+        return {'input_ids': feature[0], 'attention_mask': feature[1], 'label': label}
+
+
 def one_hot_encode(num_labels: int):
     return Lambda(lambda y: torch.zeros(num_labels, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
 
 
-class CustomDataset(Dataset):
+class CustomBaselineDataset(Dataset):
     def __init__(self, dataframe: pd.DataFrame, num_labels: int, transform=None, target_transform=None):
         self.dataframe = dataframe
         self.transform = transform
-        self.target_transform = target_transform if target_transform is not None else one_hot_encode(num_labels)
+        self.target_transform = target_transform
+        # self.target_transform = target_transform if target_transform is not None else one_hot_encode(num_labels)
 
     def __len__(self):
         return len(self.dataframe)
 
     def __getitem__(self, idx):
         row = self.dataframe.iloc[idx]
-        # todo test if this works as well:
-        review_0 = row["review"]
-        label_0 = row["is-review-bombing"]
-
-        review = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("review")]
-        label = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("is-review-bombing")]
+        review = row["review"]
+        label = row["is-review-bombing"]
+        # review = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("review")]
+        # label = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("is-review-bombing")]
         if self.transform:
             review = self.transform(review)
         if self.target_transform:
