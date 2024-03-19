@@ -2,6 +2,7 @@
 Utilities specifically for classification, e.g. Transformers, Model Helpers, etc.
 """
 import os
+import pathlib
 import random
 from typing import List
 import numpy as np
@@ -55,7 +56,7 @@ def move_tensor_to_gpu(tensor) -> torch.Tensor:
 
 
 def get_pytorch_device() -> torch.device:
-    return torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def df_to_tensor(df: pd.DataFrame):
@@ -78,20 +79,40 @@ def get_vocabularies(df: pd.DataFrame, categorical_columns: List):
     return vocab_sizes
 
 
+def save_model_checkpoint(model_object, optimizer_object, loss, epoch, output_path: str | pathlib.Path):
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model_object.state_dict(),
+        'optimizer_state_dict': optimizer_object.state_dict(),
+        'loss': loss,
+    }, output_path)
+
+
+def load_model_checkpoint(model_object, optimizer_object, model_path: str | pathlib.Path):
+    # see https://pytorch.org/tutorials/beginner/saving_loading_models.html
+    checkpoint = torch.load(model_path)
+    model_object.load_state_dict(checkpoint['model_state_dict'])
+    optimizer_object.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    # use model.train() to resume training or model.eval() to start inference
+    return model_object, epoch, loss
+
+
 def split_data_scikit(x_data, y_data, test_split=0.2):
     return train_test_split(x_data, y_data, test_size=test_split, stratify=y_data)
 
 
 def split_data_pandas(data: pd.DataFrame, test_split=0.2):
     # alternative with pandas sample
-    train_set = data.sample(frac=1-test_split)
+    train_set = data.sample(frac=1 - test_split)
     test_set = data.drop(train_set.index).sample(frac=1.0)
     return train_set, test_set
 
 
 def split_data_pytorch(data: pd.DataFrame, test_split=0.2):
     # alternative with pytorch random split
-    train_data_len = round(len(data) * (1-test_split))  # 80-20 - train-test-split
+    train_data_len = round(len(data) * (1 - test_split))  # 80-20 - train-test-split
     test_data_len = len(data) - train_data_len
     train_set, test_set = random_split(data, [train_data_len, test_data_len])
     return train_set, test_set
@@ -101,12 +122,12 @@ def encode_target_variable(data: pd.DataFrame, column_names: list[str], use_labe
     if use_label_encoder:
         encoder = LabelEncoder()
         # fit on one column first and use transform afterwards so all "Ja"/"Nein" are encoded the same way in each column
-        encoder.fit(data[['is-review-bombing']])
-        data[column_names] = data[column_names].apply(encoder.transform)   # .astype('float32')
+        encoder.fit(data[['is-review-bombing']].values.ravel())
+        data[column_names] = data[column_names].apply(encoder.transform)  # .astype('float32')
     else:
-        label_mapping = {'Ja': 0, 'Nein': 1}  # uses the same encoding as the label encoder above
+        label_mapping = {'Ja': 0, 'Nein': 1}  # use the same encoding as the label encoder above
         data[column_names] = data[column_names].replace(label_mapping)
-        data[column_names] = data[column_names]   # .astype("float32")
+        data[column_names] = data[column_names]  # .astype("float32")
 
     # alternative: one-hot-encoding
     # encoded_df = pd.get_dummies(data, columns=column_names)
