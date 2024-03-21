@@ -5,13 +5,13 @@ import pathlib
 import time
 import os
 import pandas as pd
+from dotenv import load_dotenv
 # noinspection PyPackageRequirements
 from tweety import Twitter
 from tweety.filters import SearchFilters
 from tweety.types import Tweet
 import emoji
 from utils.utils import enable_max_pandas_display_size, compare_pandas_dataframes
-import pprint
 # import requests
 # import snscrape.modules.twitter as sntwitter
 
@@ -400,9 +400,11 @@ def get_tweets_tweety():
 
     #################################################################
     # twitter authentication
+    load_dotenv(dotenv_path="twitter_credentials.env")
+
     app = Twitter("session")
-    # app.sign_in("MM487558184414", "masterarbeit.1")  # test account
-    # app.sign_in("LordM4679", "Mastersemester.7")  # test account 2
+    # app.sign_in(os.getenv('ACCOUNT_1_USERNAME'), os.getenv('ACCOUNT_1_PASSWORD'))  # test account
+    # app.sign_in(os.getenv('ACCOUNT_2_USERNAME'), os.getenv('ACCOUNT_2_PASSWORD'))  # test account 2
     app.connect()
 
     use_single_query = False
