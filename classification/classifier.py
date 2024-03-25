@@ -118,8 +118,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         optimizer.zero_grad()  # reset the gradients after every batch
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
-        labels = batch['labels'].to(device)
-        labels = labels.type(torch.LongTensor)  # make sure it is a Long Tensor as CrossEntropy loss requires this
+        labels = batch['labels'].to(device, torch.long)  # make sure it is a Long Tensor as loss function requires this
         labels = labels.squeeze()  # squeeze label tensor to remove the outer dimension
         # calculate the forward pass of the model
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
