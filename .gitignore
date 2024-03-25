@@ -22,6 +22,7 @@ sentiment_analysis_and_nlp/checkpoints/
 sentiment_analysis_and_nlp/checkpoints.json
 classification/model_test/
 classification/trained_models/
+classification/runs/
 
 label_studio_study/MA-Pre-Fragebogen.csv
 label_studio_study/label_studio_api_key.env

@@ -10,6 +10,7 @@ import json
 import pathlib
 from collections import defaultdict
 from datetime import datetime
+import numpy as np
 from dateutil import parser
 import time
 from typing import Any
@@ -149,6 +150,14 @@ def remove_linebreaks_from_pd_cells(dataframe: pd.DataFrame, column_name=None):
         return dataframe.replace(replacement_regex, ' ', regex=True)
 
 
+def remove_whitespaces_from_cells(dataframe: pd.DataFrame):
+    # remove all trailing and leading whitespaces
+    dataframe.columns = dataframe.columns.str.strip()
+    obj_cols = dataframe.select_dtypes(['object']).columns
+    dataframe[obj_cols] = dataframe[obj_cols].apply(lambda x: x.str.strip())
+    return dataframe
+
+
 def enable_max_pandas_display_size():
     pd.options.display.width = 0
 
@@ -209,3 +218,9 @@ def concat_generators(*iterables):
     # See https://stackoverflow.com/a/47592164
     for iterable in iterables:
         yield from iterable
+
+
+def cosine_similarity(u, v):
+    # Calculates the cosine similarity between two vectors
+    # Taken from https://www.analyticsvidhya.com/blog/2020/08/top-4-sentence-embedding-techniques-using-python/
+    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))

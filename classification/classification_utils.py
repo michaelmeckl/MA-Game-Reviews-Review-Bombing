@@ -1,21 +1,26 @@
 """
 Utilities specifically for classification, e.g. Transformers, Model Helpers, etc.
 """
+import itertools
 import os
 import pathlib
 import random
+import sys
 from typing import List
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import torch.backends.cudnn
 import torch.backends.cuda
+from matplotlib import pyplot as plt
+from sklearn import metrics
 from torch.utils.data import random_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from classification.classification_constants import RANDOM_SEED
 
 
-def set_random_seed(seed: int = 42, is_pytorch: bool = True) -> None:
+def set_random_seed(seed: int = RANDOM_SEED, is_pytorch: bool = True) -> None:
     """
     Method taken from article https://wandb.ai/sauravmaheshkar/RSNA-MICCAI/reports/How-to-Set-Random-Seeds-in-PyTorch-and-Tensorflow--VmlldzoxMDA2MDQy
     """
@@ -41,7 +46,10 @@ def set_random_seed(seed: int = 42, is_pytorch: bool = True) -> None:
 
 
 def check_system_for_cuda(is_pytorch: bool = True):
-    print(torch.cuda.is_available())  # should be True
+    if torch.cuda.is_available():
+        print('Running on the GPU')
+    else:
+        print('Running on the CPU')
     print(torch.backends.cuda.is_built())
     print(torch.backends.cudnn.is_available())
     print(torch.backends.cudnn.version())
@@ -79,24 +87,24 @@ def get_vocabularies(df: pd.DataFrame, categorical_columns: List):
     return vocab_sizes
 
 
-def save_model_checkpoint(model_object, optimizer_object, loss, epoch, output_path: str | pathlib.Path):
+def save_model_checkpoint(model_object, optimizer_object, epoch, output_path: str | pathlib.Path):
     torch.save({
         'epoch': epoch,
         'model_state_dict': model_object.state_dict(),
         'optimizer_state_dict': optimizer_object.state_dict(),
-        'loss': loss,
+        # 'loss': loss,
     }, output_path)
 
 
 def load_model_checkpoint(model_object, optimizer_object, model_path: str | pathlib.Path):
     # see https://pytorch.org/tutorials/beginner/saving_loading_models.html
+    # use model.train() to resume training or model.eval() to start inference
     checkpoint = torch.load(model_path)
     model_object.load_state_dict(checkpoint['model_state_dict'])
     optimizer_object.load_state_dict(checkpoint['optimizer_state_dict'])
     epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
-    # use model.train() to resume training or model.eval() to start inference
-    return model_object, epoch, loss
+    # loss = checkpoint['loss']
+    return epoch
 
 
 def split_data_scikit(x_data, y_data, test_split=0.2):
@@ -130,4 +138,84 @@ def encode_target_variable(data: pd.DataFrame, column_names: list[str], use_labe
         data[column_names] = data[column_names]  # .astype("float32")
 
     # alternative: one-hot-encoding
-    # encoded_df = pd.get_dummies(data, columns=column_names)
+    # encoded_cols = pd.get_dummies(data, columns=column_names)
+    # encoded_df = pd.concat([data, encoded_cols], axis=1).reset_index(drop=True)
+
+
+def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, output_folder=".",
+                       output_name="train_history.png", show=True):
+    plt.figure(figsize=(8, 8))
+    plt.subplot(1, 2, 1)
+    plt.plot(train_accuracy, label='Training Accuracy')
+    plt.plot(val_accuracy, label='Validation Accuracy')
+    plt.legend(loc='lower right')
+    plt.title('Training and Validation Accuracy')
+
+    plt.subplot(1, 2, 2)
+    plt.plot(train_loss, label='Training Loss')
+    plt.plot(val_loss, label='Validation Loss')
+    plt.legend(loc='upper right')
+    plt.title('Training and Validation Loss')
+
+    # save plot to file and show in a new window
+    plt.savefig(os.path.join(output_folder, output_name))
+    if show:
+        plt.show()
+
+
+def plot_confusion_matrix(cm, class_names, output_folder="."):
+    """
+    Returns a matplotlib figure containing the plotted confusion matrix.
+    Taken from https://www.tensorflow.org/tensorboard/image_summaries#building_an_image_classifier and slightly adjusted
+
+    Args:
+    cm (array, shape = [n, n]): a confusion matrix of integer classes
+    class_names (array, shape = [n]): String names of the integer classes
+    """
+    figure = plt.figure(figsize=(10, 8))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title("Confusion matrix")
+    plt.colorbar()
+    tick_marks = np.arange(len(class_names))
+    plt.xticks(tick_marks, class_names, rotation=45)
+    plt.yticks(tick_marks, class_names)
+
+    # Compute the labels from the normalized confusion matrix.
+    # row_sum = cm.sum(axis=1)[:, np.newaxis] if all(cm.sum(axis=1)) != 0 else [1, np.newaxis]
+    # labels = np.around((cm.astype('float') / row_sum) if all(cm.sum(axis=1)) != 0 else cm.astype('float'), decimals=2)
+    labels = np.around(cm.astype('float'), decimals=2)
+
+    # Use white text if squares are dark; otherwise black.
+    threshold = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        color = "white" if cm[i, j] > threshold else "black"
+        plt.text(j, i, labels[i, j], horizontalalignment="center", color=color)
+
+    # plt.tight_layout()
+    plt.ylabel("True label")
+    plt.xlabel("Predicted label")
+    plt.savefig(os.path.join(output_folder, "confusion_matrix.png"))
+    plt.show()
+
+
+def calculate_prediction_results(true_labels, predicted_labels, class_names=None):
+    label_names = class_names if class_names is not None else ["Ja", "Nein"]
+
+    print(f"\nAccuracy score on test data: {metrics.accuracy_score(true_labels, predicted_labels) * 100:.2f} %")
+    print(f"Balanced accuracy score on test data: {metrics.balanced_accuracy_score(true_labels, predicted_labels):.2f}")
+    print(f"Precision score on test data: "
+          f"{metrics.precision_score(true_labels, predicted_labels, average='weighted'):.2f}")
+    print(f"F1 score on test data: {metrics.f1_score(true_labels, predicted_labels, average='weighted'):.2f}")
+    try:
+        print(f"\nClassification Report:\n"
+              f"{metrics.classification_report(true_labels, predicted_labels, target_names=label_names)}")
+    except Exception as e:
+        sys.stderr.write(f"Failed to compute classification report: {e}")
+
+    # compute and show the confusion matrix
+    try:
+        conf_matrix = metrics.confusion_matrix(predicted_labels, true_labels, normalize="all")
+        print(f"Confusion Matrix:\n{conf_matrix}")
+        plot_confusion_matrix(conf_matrix, label_names)
+    except Exception as e:
+        sys.stderr.write(f"Failed to compute confusion matrix: {e}")
