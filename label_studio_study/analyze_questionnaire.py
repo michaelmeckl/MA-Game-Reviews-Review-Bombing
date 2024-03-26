@@ -118,12 +118,13 @@ if __name__ == "__main__":
     questionnaire_df = pd.read_csv("MA-Pre-Fragebogen.csv")
 
     # remove participants who dropped out of the study
-    questionnaire_df = questionnaire_df.drop([3], axis=0).reset_index(drop=True)
+    questionnaire_df = questionnaire_df.drop([0, 3], axis=0).reset_index(drop=True)
     # also remove columns that are not needed
     questionnaire_df = questionnaire_df.drop(questionnaire_df.columns[[8, 9, 10]], axis=1)
     # add the label studio IDs to the questionnaire so the answers can be combined with the data from the annotators
-    label_studio_ids = pd.Series([17561, 17568, 15655, 17629, 9365, 9627, 15657, 17750, 17758, 13430, 17811, 17911,
-                                  9368, 16195, 18232, 10389, 18236, 18248, 11790, 11478, 9754, 15710, 18440, 11926])
+    label_studio_ids = pd.Series([17568, 15655, 17629, 9365, 9627, 15657, 17750, 17758, 13430, 17811, 17911, 9368,
+                                  16195, 18232, 10389, 18236, 18248, 11790, 11478, 9754, 15710, 18440, 11926, 19069,
+                                  19146, 19561])
     questionnaire_df["annotator_id"] = label_studio_ids.values
 
     print("\n################# Analyzing demographics: ##########################\n")
