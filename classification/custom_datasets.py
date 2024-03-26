@@ -27,7 +27,7 @@ class CustomDataset(Dataset):
         # torch.tensor(label, dtype=torch.long)
         return {'input_ids': feature[0], 'attention_mask': feature[1], 'labels': label}
         """
-        input_ids = self.features.iloc[idx]['input_ids']
+        input_ids = self.features.iloc[idx]['input_ids']   # .astype('float32')
         attention_mask = self.features.iloc[idx]['attention_mask']
         label = self.labels[idx]
         return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': label}

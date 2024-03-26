@@ -118,7 +118,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         optimizer.zero_grad()  # reset the gradients after every batch
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
-        labels = batch['labels'].to(device, torch.long)  # make sure it is a Long Tensor as loss function requires this
+        labels = batch['labels'].to(device, torch.long)  # make sure this is a Long Tensor as loss function expects it
         labels = labels.squeeze()  # squeeze label tensor to remove the outer dimension
         # calculate the forward pass of the model
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
@@ -142,12 +142,14 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
 
     # for calculating loss see https://discuss.pytorch.org/t/correct-way-to-calculate-train-and-valid-loss/178974 and
     # https://stackoverflow.com/questions/59584457/pytorch-is-there-a-definitive-training-loop-similar-to-keras-fit
-    avg_train_loss = sum(running_losses) / dataset_size   # or: np.array(running_losses).mean() ?
+    avg_train_loss = sum(running_losses) / dataset_size
     avg_train_accuracy = round(total_correct / total_samples, 4) * 100
+    print(f"Average train loss: {avg_train_loss:.4f}\nTrain Accuracy:{avg_train_accuracy:.2f}%\n")
 
     history["train_loss"].append(avg_train_loss)
     history["train_accuracy"].append(avg_train_accuracy)
     writer.add_scalar("Loss/train", avg_train_loss, epoch)
+    writer.add_scalar("Accuracy/train", avg_train_accuracy, epoch)
     return avg_train_loss
 
 
@@ -165,7 +167,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
         for batch in data_loader:
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+            labels = batch['labels'].to(device, torch.long)
             labels = labels.squeeze()
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             _, preds = torch.max(outputs, dim=1)
