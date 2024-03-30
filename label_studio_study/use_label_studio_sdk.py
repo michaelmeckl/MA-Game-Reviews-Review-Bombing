@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 
 def export_tasks(project_obj: Project, export_format: str):
     print(f"Exporting annotated tasks for project {project_obj.id} in format {export_format} ...")
-    output_folder = pathlib.Path(__file__).parent / "exported_data"
+    output_folder = pathlib.Path(__file__).parent / "exported_data" / "reviewed"
     if not output_folder.is_dir():
-        output_folder.mkdir()
+        output_folder.mkdir(parents=True)
 
     output_name = f"exported_tasks_project_{project_obj.id}"
     if export_format == "JSON":
@@ -264,49 +264,6 @@ def assign_reviews(is_first_assignment, assign_to_once_annotated_tasks, assign_t
         get_task_information_for_annotator(study_project_ids, found_user)
 
 
-def assign_myself():
-    # assign myself to all tasks that are already annotated twice
-    print("################################\n")
-    email = "TODO"
-    all_users = ls.get_users()
-    found_users = [u for u in all_users if u.email.lower() == email.lower()]
-    me = found_users[0]
-
-    for project_id in study_project_ids:
-        project = ls.get_project(project_id)
-
-        filter_double_annotated = Filters.create(Filters.AND, [
-            Filters.item(
-                Column.total_annotations,
-                Operator.EQUAL,
-                Type.Number,
-                Filters.value(2)
-            ),
-            Filters.item(
-                Column.completed_at,
-                Operator.EMPTY,
-                Type.Number,
-                Filters.value(0)
-            ),
-            # but don't assign me to reviews that I have already reviewed to prevent any bias
-            Filters.item(
-                Column.reviewers,
-                Operator.NOT_CONTAINS,
-                Type.List,
-                Filters.value(me.id)
-            )
-        ])
-        found_tasks = project.get_tasks(filter_double_annotated, only_ids=True)
-        if not found_tasks:
-            print(f'No tasks found for project {project_id}!')
-            continue
-
-        project.assign_annotators([me], found_tasks)
-        print(f'User {me.username} was assigned to {len(found_tasks)} tasks in project {project_id}')
-
-    get_task_information_for_annotator(study_project_ids, me)
-
-
 if __name__ == "__main__":
     load_dotenv(dotenv_path="label_studio_api_key.env")
 
@@ -328,4 +285,4 @@ if __name__ == "__main__":
     # assign_reviews(is_first_assignment=True, assign_to_once_annotated_tasks=False,
     #                assign_to_double_annotated_tasks=False)
 
-    # export_reviews_from_projects(study_project_ids, export_format="CSV")
+    export_reviews_from_projects(study_project_ids, export_format="CSV")  # JSON
