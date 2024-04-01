@@ -1,0 +1,7 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,median_lead_time_project_in_s,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Mortal Kombat 11,is-review-bombing,331,299,28.71,38.19,72.65,100.0,44.44
+Mortal Kombat 11,is-rating-game-related,513,117,28.71,38.19,72.65,100.0,44.44
+Mortal Kombat 11,criticism-praise-game-content,535,95,28.71,38.19,72.65,100.0,44.44
+Mortal Kombat 11,criticism-praise-developer-publisher,299,331,28.71,38.19,72.65,100.0,44.44
+Mortal Kombat 11,criticism-praise-ideological,281,349,28.71,38.19,72.65,100.0,44.44
+Mortal Kombat 11,criticism-praise-political,95,535,28.71,38.19,72.65,100.0,44.44

@@ -1,0 +1,7 @@
+project,annotation_question,num_reviews_yes,num_reviews_no,median_lead_time_project_in_s,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
+Borderlands - Epic Store,is-review-bombing,394,236,21.81,30.11,76.32,100.0,33.33
+Borderlands - Epic Store,is-rating-game-related,291,339,21.81,30.11,76.32,100.0,33.33
+Borderlands - Epic Store,criticism-praise-game-content,370,260,21.81,30.11,76.32,100.0,33.33
+Borderlands - Epic Store,criticism-praise-developer-publisher,311,319,21.81,30.11,76.32,100.0,33.33
+Borderlands - Epic Store,criticism-praise-ideological,196,434,21.81,30.11,76.32,100.0,33.33
+Borderlands - Epic Store,criticism-praise-political,24,606,21.81,30.11,76.32,100.0,33.33

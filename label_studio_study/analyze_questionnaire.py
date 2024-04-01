@@ -47,7 +47,7 @@ def analyze_correlations_with_annotations(df: pd.DataFrame):
         plot3.set_axis_labels(x_column, "Average annotator lead time in s")
         plot3.fig.suptitle(f'Annotator Lead Time for question \n\"{x_column}\"')
         plot3.tight_layout()
-        # plt.show()
+        plt.show()
 
     # calculate the correlations between the average values and the experience questions
     merged_df_numeric = merged_df.replace({'Nein': 0, 'Ja': 1, "Sehr häufig": 2, "Regelmäßig": 3, "Eher selten": 4,

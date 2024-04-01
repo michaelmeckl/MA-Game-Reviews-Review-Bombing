@@ -1,17 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import itertools
-import json
 import pprint
 import numpy as np
 import pathlib
 import pandas as pd
+import simpledorff
 import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy.stats import chi2_contingency
 from sklearn.metrics import cohen_kappa_score
+# import json
 
-DATA_FOLDER = pathlib.Path(__file__).parent / "exported_data"
+
+DATA_FOLDER = pathlib.Path(__file__).parent / "exported_data" / "reviewed"
 OUTPUT_FOLDER = pathlib.Path(__file__).parent / "parsed_data"
 PLOT_FOLDER = pathlib.Path(__file__).parent / "plots"
 
@@ -32,7 +35,8 @@ annotation_questions = ["is-review-bombing", "is-rating-game-related", "criticis
 
 
 def calculate_cappa_score_for_prestudy():
-    pre_study_df = pd.read_csv(DATA_FOLDER / "exported_tasks_52140_Vorstudie.csv")
+    # TODO use fleiss's kappa instead?
+    pre_study_df = pd.read_csv(pathlib.Path(__file__).parent / "exported_data" / "exported_tasks_52140_Vorstudie.csv")
     pre_study_df = pre_study_df.replace({'no': 'Nein', 'yes': 'Ja'})
     annotator_1 = pre_study_df[pre_study_df["annotator"] == 17120]
     annotator_2 = pre_study_df[pre_study_df["annotator"] == 17156]
@@ -60,40 +64,120 @@ def calculate_cappa_score_for_prestudy():
     print(f"Kappa Score for the very first annotated review: {kappa_score_first:.3f}")
 
 
-def remove_annotated_duplicates(cleaned_df: pd.DataFrame):
+"""
+def calculate_cronbach_alpha():
+    pre_study_df = pd.read_csv(pathlib.Path(__file__).parent / "exported_data" / "exported_tasks_52140_Vorstudie.csv")
+    pre_study_df = pre_study_df.replace({'no': 0, 'yes': 1, 'Nein': 0, 'Ja': 1})
+    prestudy_annotation_questions = ["review-bombing", "off-topic", "Entwickler-Publisher", "Kritik-Lob-Ideologisch",
+                                     "Kritik-Lob-Politisch", "Spielinhalte"]  # "Kritik-Lob-Sonstiges"
+
+    # convert to this (wide) format:
+    # review      is_rb_annotator_1   is_rb_annotator_2 
+    # 9934            1                   0
+    # 3348            0                   0
+    relevant_columns = pre_study_df[["id", "annotator", *prestudy_annotation_questions]]
+    wide_df_complete = relevant_columns.pivot(index='id', columns='annotator')
+    print(f"Cronbach's Alpha - Wide Df: {pg.cronbach_alpha(data=wide_df_complete)}")
+    for question in prestudy_annotation_questions:
+        columns = pre_study_df[["id", "annotator", question]]
+        wide_df_question = columns.groupby(['id', 'annotator'])[question].first().unstack().reset_index()
+        cronbach_alpha_question = pg.cronbach_alpha(data=wide_df_question)
+        print(f"Cronbach's Alpha - Question {question}: {cronbach_alpha_question}")
+    """
+
+
+def calculate_krippendorff_alpha_pre_study():
+    """ Interpretation:
+    α ≥ 0,800: zuverlässige Übereinstimmung,
+    0,800 > α ≥ 0,667: moderat, vorläufige Schlussfolgerungen sind möglich,
+    α < 0,667: Daten sind zu verwerfen
+    """
+    pre_study_df = pd.read_csv(pathlib.Path(__file__).parent / "exported_data" / "exported_tasks_52140_Vorstudie.csv")
+    pre_study_df = pre_study_df.replace({'no': 0, 'yes': 1, 'Nein': 0, 'Ja': 1})
+    prestudy_annotation_questions = ["review-bombing", "off-topic", "Entwickler-Publisher", "Kritik-Lob-Ideologisch",
+                                     "Kritik-Lob-Politisch", "Spielinhalte"]  # "Kritik-Lob-Sonstiges"
+
+    relevant_columns = pre_study_df[["id", "annotator", *prestudy_annotation_questions]]
+    for question in prestudy_annotation_questions:
+        alpha_value = simpledorff.calculate_krippendorffs_alpha_for_df(relevant_columns, experiment_col='id',
+                                                                       annotator_col='annotator', class_col=question)
+        print(f"Krippendorf's Alpha for question {question}: {alpha_value}")
+
+
+def calculate_final_annotation(review_df: pd.DataFrame, final_annotations: list):
+    """
+    Applies the majority vote consensus algorithm to the given dataframe in order to calculate one final annotation
+    per review for each of the annotation questions. It is expected that the reviews in the given dataframe have
+    either 3 annotations or only 1.
+    """
+    if len(review_df) == 1:
+        # for reviews that were annotated only once do nothing, just append them to the output
+        final_annotations.append(review_df)
+    else:
+        # if there are 3 annotators per review take the answer that was given the most often for each annotation column
+        if len(review_df) == 2:
+            print("WARNING: There are reviews in this project that were annotated only twice! This shouldn't be!")
+
+        last_row = review_df.iloc[-1]  # first, make a copy of the last row and fill it with the aggregated infos
+        for annotation_question in annotation_questions:
+            # get the answer that was given more often and update the last row copy with it
+            most_often_answer = review_df[annotation_question].mode()
+            last_row[annotation_question] = most_often_answer[0]
+
+        final_annotations.append(last_row.to_frame().T)
+
+
+def remove_annotated_duplicates(cleaned_df: pd.DataFrame, rb_incident_name: str):
     # delete all duplicate reviews again (this time punctuation is also removed before comparing which I forgot
     # before uploading ...)
-    # TODO should be only 1 at max for the other rb incidents other than AC Unity; for AC Unity it should be 7
-    #  -> for AC Unity: delete the duplicates (and then also 7 random from the other incidents as well?) or keep them?
     cleaned_df["review_case_insensitive"] = cleaned_df["review"].astype(str).str.lower()
     cleaned_df["review_case_insensitive"] = cleaned_df['review_case_insensitive'].str.replace(r'[^\w+\s+]', '',
                                                                                               regex=True)
-    # delete double annotated rows first to make it easier to see the actual duplicates
+    # create a df without the triple annotated rows first to make it easier to see the actual duplicates
     cleaned_df_no_duplicate_annotator = cleaned_df.drop_duplicates(subset=["id"])
-    cleaned_df_no_duplicates = cleaned_df_no_duplicate_annotator.drop_duplicates(subset=["review_case_insensitive"])
-    print(f"Found {len(cleaned_df_no_duplicate_annotator) - len(cleaned_df_no_duplicates)} rows with duplicate texts")
+    # cleaned_df_no_duplicates = cleaned_df_no_duplicate_annotator.drop_duplicates(subset=["review_case_insensitive"])
+    # print(f"Found {len(cleaned_df_no_duplicate_annotator) - len(cleaned_df_no_duplicates)} rows with duplicate texts")
 
-    # remove the duplicate reviews
-    df1 = cleaned_df_no_duplicate_annotator[["review_case_insensitive"]]
-    df2 = cleaned_df_no_duplicates[["review_case_insensitive"]]
-    duplicate_reviews = df1[~df1.isin(df2)].dropna(how="all")
-    cleaned_df = cleaned_df.drop(duplicate_reviews.index, axis=0)
-
-    # alternatively remove manually selected rows
-    """
-    Row Numbers:
-        Ukraine-Russia: 221 (ID 91992579)
-        Firewatch: 80 oder 186
-        Skyrim: 59 oder 237
-        AC Unity: 53 / 225; 111 / 247; 125 / 236; 281 / 296;  and 3 more TODO
-    """
-    # show all duplicates to choose which of the duplicates should be deleted
+    # show the duplicate reviews and decide which of them to remove
     duplicates = cleaned_df_no_duplicate_annotator.loc[
                  cleaned_df_no_duplicate_annotator.duplicated(subset=["review_case_insensitive"], keep=False), :]
-    # rows_to_remove = [91992579]
-    # cleaned_df = cleaned_df[~cleaned_df["id"].isin(rows_to_remove)]
+    # print("\nDuplicate Reviews:")
+    # pprint.pprint(duplicates)
+    """
+    Column IDs to remove:
+        Ukraine-Russia: 91992579 (oder 91992491)
+        Firewatch: (91871530 oder) 91871603
+        Skyrim: 91872684 (oder 91872836)
+        AC Unity: 
+            91871093 oder 91871260
+            91871156 oder 91871282
+            91871170 oder 91871271
+            91871199 oder 91871331 oder 91871346
+            91871297 oder 91871310
+            91871308 oder 91871375
+    """
+    rows_to_remove = []
+    if rb_incident_name == "Ukraine-Russia-Support":
+        rows_to_remove = [91992579]
+    elif rb_incident_name == "Firewatch":
+        rows_to_remove = [91871603]
+    elif rb_incident_name == "Skyrim - Paid Mods":
+        rows_to_remove = [91872684]
+    elif rb_incident_name == "Assassin's Creed Unity":
+        rows_to_remove = [91871093, 91871156, 91871170, 91871199, 91871331, 91871297, 91871308]
+    # Also delete one bad (manually selected) review from the other two incidents that don't have duplicates so all the
+    # incidents (apart from AC Unity) have exactly the same number of reviews (to prevent any big biases from the data).
+    # One could also remove 7 random reviews from all the other incidents to have the same number as AC Unity but this
+    # would be kind of a waste since it has only 7 reviews less and therefore this bias won't be very impactful.
+    elif rb_incident_name == "Mortal Kombat 11":
+        rows_to_remove = [91871985]
+    elif rb_incident_name == "Borderlands - Epic Store":
+        rows_to_remove = [91872249]
 
-    # cleaned_df = cleaned_df.drop(columns=["review_case_insensitive"], axis=1)  # remove the newly added column again
+    # remove the rows with the specified IDs from the dataframe
+    cleaned_df = cleaned_df[~cleaned_df["id"].isin(rows_to_remove)]
+
+    cleaned_df = cleaned_df.drop(columns=["review_case_insensitive"], axis=1)  # remove the newly added column again
     return cleaned_df.reset_index(drop=True)
 
 
@@ -180,8 +264,7 @@ def calculate_overlap_correlation_infos(annotated_dataframe, review_bombing_inci
     print(f"Average annotator agreement for Metacritic reviews: {avg_agreement_metacritic:.2f} %\n")
 
     # calculate correlations between agreement and the questions (mainly is-review-bombing)
-    # TODO test plotting
-    calculate_correlations(annotated_agreement_df, "agreement", "is-review-bombing", plot_correlation=True)
+    calculate_correlations(annotated_agreement_df, "agreement", "is-review-bombing", plot_correlation=False)
 
     ############################################################################
     # calculate overlap / correlations between combined rating (i.e. positive/negative) and the questions (mainly
@@ -242,8 +325,7 @@ def cleanup_initial_dataframe(exported_dataframe_path: pathlib.Path):
     # also add the label studio project name as a new column
     cleaned_df.insert(0, "project", [rb_incident] * len(cleaned_df))
 
-    # TODO remove duplicates (also from ac:unity or only for the others?)
-    # cleaned_df = remove_annotated_duplicates(cleaned_df)
+    cleaned_df = remove_annotated_duplicates(cleaned_df, rb_incident)
     return cleaned_df, rb_incident
 
 
@@ -260,8 +342,10 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
     lead_time_upper_limit = 180
     lead_times = cleaned_df[cleaned_df["lead_time"] <= lead_time_upper_limit]["lead_time"]
     avg_lead_time_overall = round(np.average(lead_times), 2)
+    median_lead_time_overall = round(np.median(lead_times), 2)
     print(f"Average time needed per review for the entire project: {avg_lead_time_overall:.2f} s /"
-          f" {avg_lead_time_overall / 60:.2f} min")
+          f" {avg_lead_time_overall / 60:.2f} min\nMedian time: {median_lead_time_overall:.2f} s /"
+          f" {median_lead_time_overall / 60:.2f}")
 
     # filter out all rows that appear only once in the dataframe before calculating the agreement as these reviews
     # obviously have 100% agreement (and would bias the result)
@@ -287,6 +371,8 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
         # print(f"Answers from this annotator for:\n {column_info.to_frame()}")
 
         avg_lead_time = round(np.average(annotator_df[annotator_df["lead_time"] <= lead_time_upper_limit]["lead_time"]), 2)
+        median_lead_time = round(np.median(annotator_df[annotator_df["lead_time"] <= lead_time_upper_limit][
+                                           "lead_time"]), 2)
         # print(f"Average time needed for annotating each review: {avg_lead_time:.2f}s / {avg_lead_time / 60:.2f}min")
         avg_agreement = round(np.average(annotator_df["agreement"]), 2)
 
@@ -297,6 +383,7 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
             "num_reviews_no": column_info.get("Nein", 0),
             "annotator_id": annotator_id,
             "num_annotated_reviews": len(annotator_df),
+            "median_lead_time_annotator_in_s": median_lead_time,
             "avg_lead_time_annotator_in_s": avg_lead_time,
             "avg_agreement_annotator": avg_agreement,  # slightly biased for annotators that didn't have a 2nd annotator
         }
@@ -308,13 +395,14 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
         # print(f"Answers to question \"{question}\":\n{question_info.to_frame()}")
 
         cleaned_df.groupby(["annotator"], group_keys=False).apply(
-            lambda x: aggregate_per_annotator(x, question), include_groups=True).reset_index(drop=True)
+            lambda x: aggregate_per_annotator(x, question)).reset_index(drop=True)
 
         question_dict = {
             "project": rb_incident_name,
             "annotation_question": question,
             "num_reviews_yes": question_info.get("Ja", 0),
             "num_reviews_no": question_info.get("Nein", 0),
+            "median_lead_time_project_in_s": median_lead_time_overall,
             "avg_lead_time_project_in_s": avg_lead_time_overall,
             "avg_agreement_project": avg_agreement_overall,
             "highest_agreement_project": highest_agreement,
@@ -330,24 +418,8 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
 
     ############################################################################
 
-    def calculate_final_annotation(review_df: pd.DataFrame):
-        # calculate the final annotation for all reviews (i.e. for each annotation column take the answer that was given
-        # the most often if there are three reviews per review; for reviews that were annotated only once do nothing)
-        if len(review_df) == 1:
-            final_annotations_list.append(review_df)
-        else:
-            if len(review_df) == 2:
-                print("WARNING: There are reviews in this project that were annotated only twice! This shouldn't be!")
-
-            last_row = review_df.iloc[-1]  # make a copy of the last row and fill it with the aggregated infos
-            for annotation_question in annotation_questions:
-                most_often_answer = review_df[annotation_question].mode()
-                last_row[annotation_question] = most_often_answer[0]
-
-            final_annotations_list.append(last_row.to_frame().T)
-
     final_annotations_list = []
-    cleaned_df.groupby(["id"], group_keys=False).apply(lambda y: calculate_final_annotation(y), include_groups=True)
+    cleaned_df.groupby(["id"], group_keys=False).apply(lambda y: calculate_final_annotation(y, final_annotations_list))
     final_annotations_df = pd.concat(final_annotations_list).reset_index(drop=True)
 
     # remove all annotator-specific columns
@@ -389,20 +461,22 @@ def analyze_aggregated_annotation_information():
 
     ############################################################################
     avg_lead_time = round(np.average(combined_annotator_df["avg_lead_time_annotator_in_s"]), 2)
-    print(f"Average time needed per review over all projects: {avg_lead_time:.2f} s / {avg_lead_time / 60:.2f} min\n")
+    median_lead_time = round(np.average(combined_annotator_df["median_lead_time_annotator_in_s"]), 2)
+    print(f"Average time needed per review over all projects: {avg_lead_time:.2f} s / {avg_lead_time / 60:.2f} "
+          f"min\nMedian time: {median_lead_time:.2f} s / {median_lead_time / 60:.2f}\n")
     # also show the lead time per annotator aggregated over all projects
-    annotator_lead_times = combined_annotator_df.groupby("annotator_id")["avg_lead_time_annotator_in_s"].agg(np.average)
+    avg_annotator_lead_times = combined_annotator_df.groupby("annotator_id")["avg_lead_time_annotator_in_s"].agg(np.average)
+    # median_annotator_lead_times = combined_annotator_df.groupby("annotator_id")["median_lead_time_annotator_in_s"].agg(np.average)
 
-    # TODO check lead time for annotator 15710 once all reviews are annotated from her ! (see graph before and after)
     # plot the annotator lead times
     sns.set_style("darkgrid")
-    ax = sns.barplot(x=annotator_lead_times.index, y=annotator_lead_times.values)
-    ax.set(xlabel="Annotator ID", ylabel="Average time in seconds", ylim=(0, 400))
+    ax = sns.barplot(x=avg_annotator_lead_times.index, y=avg_annotator_lead_times.values)
+    ax.set(xlabel="Annotator ID", ylabel="Average time in seconds")  # , ylim=(0, 200)
     ax.set_title("Average annotation time for each annotator")
     ax.set_xticks(ax.get_xticks(), ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     # sns.despine()
     plt.tight_layout()
-    plt.savefig(PLOT_FOLDER / "lead_time_per_annotator.svg", format="svg")
+    plt.savefig(PLOT_FOLDER / "average_lead_time_per_annotator.svg", format="svg")
 
     ############################################################################
     # show annotator agreement aggregated over all projects
@@ -414,7 +488,7 @@ def analyze_aggregated_annotation_information():
     avg_agreement_rb_yes = np.average(agreement_df[agreement_df["is-review-bombing"] == "Ja"]["agreement"])
     print(f"Average annotator agreement for reviews marked as 'review-bombing': {avg_agreement_rb_yes:.2f} %")
     avg_agreement_rb_no = np.average(agreement_df[agreement_df["is-review-bombing"] == "Nein"]["agreement"])
-    print(f"Average annotator agreement for reviews not marked as 'review-bombing': {avg_agreement_rb_no:.2f} %")
+    print(f"Average annotator agreement for reviews marked as 'not review-bombing': {avg_agreement_rb_no:.2f} %")
     # check annotator agreement between review source (i.e. higher agreement on steam or metacritic reviews)
     avg_agreement_steam = np.average(agreement_df[agreement_df["source"] == "Steam"]["agreement"])
     print(f"Average annotator agreement for Steam reviews: {avg_agreement_steam:.2f} %")
@@ -431,16 +505,16 @@ def analyze_aggregated_annotation_information():
             info_dict = {
                 "group": group_name,
                 "annotation_question": question,
-                "num_reviews_yes": aggr_question_info.get("Ja", 0),
-                "num_reviews_no": aggr_question_info.get("Nein", 0),
+                "Applies to review - yes": aggr_question_info.get("Ja", 0),
+                "Applies to review - no": aggr_question_info.get("Nein", 0),
             }
             plot_info.append(info_dict)
 
     plot_info = list()
-    print(f"\nQuestion answers over all projects grouped by \"combined_rating\":")
+    # print(f"\nQuestion answers over all projects grouped by \"combined_rating\":")
     combined_final_df.groupby("combined_rating").apply(lambda frame: show_question_answers_overall(frame))
     rating_plot_df_long = pd.melt(pd.DataFrame(plot_info), id_vars=['group', 'annotation_question'])
-    print(f"\nQuestion answers over all projects grouped by \"source\":")
+    # print(f"\nQuestion answers over all projects grouped by \"source\":")
     combined_final_df.groupby("source").apply(lambda frame: show_question_answers_overall(frame))
     source_plot_df = pd.DataFrame(plot_info)
     source_plot_df_long = pd.melt(source_plot_df, id_vars=['group', 'annotation_question'])
@@ -450,11 +524,12 @@ def analyze_aggregated_annotation_information():
     plot = sns.catplot(data=combined_plot_df_long, x="annotation_question", y="value", col="group", hue="variable",
                        kind="bar", col_wrap=2, aspect=.8, dodge=True)
     plot.set_axis_labels("", "Number of reviews")
-    plot.fig.suptitle('Grouped annotation question answers over all projects - Reviews grouped by', fontsize=10)
-    plot.set_titles("{col_name} - \"{col_var}\"")
+    plot.fig.suptitle('Annotation question answers over all projects: Reviews grouped by - ', fontsize=10)
+    plot.set_titles("{col_name}")   # - \"{col_var}\"")
     # plot.fig.subplots_adjust(top=0.8)  # adjust space between plot and title
     plot.tick_params(axis='x', rotation=75)
     plot.tight_layout()
+    plt.savefig(PLOT_FOLDER / "grouped_question_answers_rating_source.png", format="png")
     plt.savefig(PLOT_FOLDER / "grouped_question_answers_rating_source.svg", format="svg")
 
     ############################################################################
@@ -478,8 +553,9 @@ def analyze_aggregated_annotation_information():
         # significant_corr = corr_matrix.apply(lambda row: row[(row < 0.05) & (row > -0.05)].index.tolist(), axis=1)
 
     # compare some differences between the projects in general
-    # TODO notable differences between ac unity vs. ukraine-russia vs the rest: fewer reviews marked as rb
-    #  for projects ac unity and ukraine-russia than for the others
+    #  -> notable differences between ac unity vs. ukraine-russia vs the rest: fewer reviews marked as rb
+    #  for projects ac unity and ukraine-russia than for the others (maybe because those are the only two that
+    #  are / include positive review bombing?)
     project_info_list = list()
     for project in project_df_list:
         project_name = project.reset_index(drop=True).at[0, "project"]
@@ -487,10 +563,11 @@ def analyze_aggregated_annotation_information():
         num_review_bombing_reviews = project["is-review-bombing"].value_counts().get("Ja", 0)
         print(f"Number of reviews marked as 'Review Bombing': {num_review_bombing_reviews}")
         agreement = round(np.average(project["annotation_certainty"]), 2)
-        print(f"Average Annotation Agreement: {agreement}")
+        print(f"Average Annotation Agreement: {agreement} (IMPORTANT: Reviews that were annotated only once are "
+              f"included here!)")
 
         project_info_dict = {
-            "project": project_name,
+            "Project": project_name,
             "percentage_rb_reviews": (num_review_bombing_reviews / len(project)) * 100,
             "avg_agreement": agreement,
         }
@@ -498,16 +575,19 @@ def analyze_aggregated_annotation_information():
 
     project_info_df = pd.DataFrame(project_info_list)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
-    sns.barplot(data=project_info_df, x="project", y="percentage_rb_reviews", hue="project", ax=ax1)
-    sns.barplot(data=project_info_df, x="project", y="avg_agreement", hue="project", ax=ax2)
+    sns.barplot(data=project_info_df, x="Project", y="percentage_rb_reviews", hue="Project", ax=ax1)
+    sns.barplot(data=project_info_df, x="Project", y="avg_agreement", hue="Project", ax=ax2)
     fig.suptitle("Aggregated Features per Project", fontsize=12)
     ax1.set_xlabel("")
     ax2.set_xlabel("")
-    ax1.set_ylabel("Percentage - Review Bombing Reviews")
-    ax2.set_ylabel("Percentage - Annotator Agreement")
+    ax1.set_ylabel("Percentage of Review Bombing Reviews")
+    ax2.set_ylabel("Agreement in % (including only once annotated)")
     ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     ax2.set_xticks(ax2.get_xticks(), ax2.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     ax2.set_ylim([70, 100])
+
+    ax1.get_legend().remove()
+    sns.move_legend(ax2, "upper left", bbox_to_anchor=(1, 1))
     plt.tight_layout()
     plt.savefig(PLOT_FOLDER / "grouped_project_features.svg", format="svg")
 
@@ -535,29 +615,30 @@ def parse_annotated_json_data(annotated_data_file):
 
 if __name__ == "__main__":
     pd.options.display.width = 0
-    pd.set_option('future.no_silent_downcasting', True)  # disable some warnings
+    # pd.set_option('future.no_silent_downcasting', True)  # disable some warnings
 
     if not OUTPUT_FOLDER.is_dir():
-        OUTPUT_FOLDER.mkdir()
+        OUTPUT_FOLDER.mkdir(parents=True)
     if not PLOT_FOLDER.is_dir():
         PLOT_FOLDER.mkdir()
 
+    run_parsing_code = False
     single_input_file = False
-    """
-    if single_input_file:
-        input_file = DATA_FOLDER / "exported_tasks_project_52575.csv"
-        parse_annotated_csv_data(input_file)
-    else:
-        for file in pathlib.Path.iterdir(DATA_FOLDER):
-            print(f"\n################## Parsing file {file.name} ##################\n")
-            if file.suffix == ".json":
-                # parse_annotated_json_data(DATA_FOLDER / file)
-                continue  # for now, only parse csv files
-            elif file.suffix == ".csv":
-                parse_annotated_csv_data(DATA_FOLDER / file)
-            else:
-                raise ValueError("The file is neither json nor csv.")
-    """
+
+    if run_parsing_code:
+        if single_input_file:
+            input_file = DATA_FOLDER / "exported_tasks_project_52575.csv"
+            parse_annotated_csv_data(input_file)
+        else:
+            for file in pathlib.Path.iterdir(DATA_FOLDER):
+                print(f"\n################## Parsing file {file.name} ##################\n")
+                if file.suffix == ".json":
+                    # parse_annotated_json_data(DATA_FOLDER / file)
+                    continue  # for now, only parse csv files
+                elif file.suffix == ".csv":
+                    parse_annotated_csv_data(DATA_FOLDER / file)
+                else:
+                    raise ValueError("The file is neither json nor csv.")
 
     analyze_aggregated_information = True
     if analyze_aggregated_information:

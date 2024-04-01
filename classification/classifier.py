@@ -108,13 +108,13 @@ class MLP(nn.Module):
 
 
 def train_model(model, data_loader, optimizer, scheduler, criterion, device, epoch, writer, history, progress_bar):
-    model.train()  # set the model in training mode
     running_losses = []
     total_correct = 0
     total_samples = 0
     dataset_size = len(data_loader.dataset)
 
-    for batch_number, batch in enumerate(data_loader):
+    model.train()  # set the model in training mode
+    for batch_number, batch in enumerate(data_loader, 0):
         optimizer.zero_grad()  # reset the gradients after every batch
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
@@ -136,7 +136,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         total_samples += labels.shape[0]   # len(labels)
 
         progress_bar.update(1)
-        if batch_number % 100 == 0:
+        if batch_number % 10 == 0:
             current_num = (batch_number + 1) * len(input_ids)
             print(f"batch loss: {batch_loss:>7f}  [{current_num:>4d}/{dataset_size:>4d}]")
 
@@ -150,11 +150,10 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
     history["train_accuracy"].append(avg_train_accuracy)
     writer.add_scalar("Loss/train", avg_train_loss, epoch)
     writer.add_scalar("Accuracy/train", avg_train_accuracy, epoch)
-    return avg_train_loss
+    return avg_train_loss, avg_train_accuracy
 
 
 def evaluate_model(model, data_loader, criterion, device, epoch, writer, history):
-    model.eval()  # set the model in evaluation mode (i.e. deactivate dropout layers)
     metric = evaluate.load("glue", "mrpc")
     all_predictions = []
     actual_labels = []
@@ -163,6 +162,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     total_samples = 0
     dataset_size = len(data_loader.dataset)
 
+    model.eval()  # set the model in evaluation mode (i.e. deactivate dropout layers)
     with torch.no_grad():  # deactivate autograd, see https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html
         for batch in data_loader:
             input_ids = batch['input_ids'].to(device)
@@ -229,7 +229,7 @@ def predict_label(text, model, tokenizer, device, max_length=512):
 
 # Methods below taken from https://github.com/NielsRogge/Transformers-Tutorials/blob/master/BERT/Fine_tuning_BERT_(
 # and_friends)_for_multi_label_text_classification.ipynb
-def start_training(encoded_dataset, tokenizer, labels, id2label: dict, label2id: dict):
+def start_training_trainer_api(encoded_dataset, tokenizer, labels, id2label: dict, label2id: dict):
     model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
                                                                problem_type="multi_label_classification",
                                                                num_labels=len(labels),
