@@ -428,9 +428,14 @@ def parse_annotated_csv_data(annotated_data_file: pathlib.Path):
 
     ############################################################################
 
+    # apply majority voting to get one final annotation for each review
     final_annotations_list = []
     cleaned_df.groupby(["id"], group_keys=False).apply(lambda y: calculate_final_annotation(y, final_annotations_list))
     final_annotations_df = pd.concat(final_annotations_list).reset_index(drop=True)
+
+    # add a new column to the dataframe that indicates whether this review has been annotated once or by 3 annotators
+    number_of_annotators_per_review = cleaned_df.groupby('id').id.count()
+    final_annotations_df.insert(7, "num_annotators", number_of_annotators_per_review.reset_index(drop=True))
 
     # remove all annotator-specific columns
     final_annotations_df = final_annotations_df.drop(columns=["annotator", "lead_time", "annotation_created_at",
@@ -572,9 +577,12 @@ def analyze_aggregated_annotation_information():
         print(f"\n######################### Project \"{project_name}\":")
         num_review_bombing_reviews = project["is-review-bombing"].value_counts().get("Ja", 0)
         print(f"Number of reviews marked as 'Review Bombing': {num_review_bombing_reviews}")
-        agreement = round(np.average(project["annotation_certainty"]), 2)
-        print(f"Average Annotation Agreement: {agreement} (IMPORTANT: Reviews that were annotated only once are "
-              f"included here!)")
+
+        # remove reviews that were annotated only once first to not bias the agreement results
+        filtered_project = project[project["num_annotators"] > 1]
+        agreement = round(np.average(filtered_project["annotation_certainty"]), 2)
+        print(f"Average Annotation Agreement: {agreement} (IMPORTANT: Only reviews that were annotated by three "
+              f"annotators are included here!)")
 
         project_info_dict = {
             "Project": project_name,
@@ -588,16 +596,21 @@ def analyze_aggregated_annotation_information():
     sns.barplot(data=project_info_df, x="Project", y="percentage_rb_reviews", hue="Project", ax=ax1)
     sns.barplot(data=project_info_df, x="Project", y="avg_agreement", hue="Project", ax=ax2)
     fig.suptitle("Aggregated Features per Project", fontsize=12)
+    ax1.set_ylabel("Percentage of Review Bombing - Reviews")
+    ax2.set_ylabel("Annotator Agreement in %")
     ax1.set_xlabel("")
     ax2.set_xlabel("")
-    ax1.set_ylabel("Percentage of Review Bombing Reviews")
-    ax2.set_ylabel("Agreement in % (including only once annotated)")
-    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-    ax2.set_xticks(ax2.get_xticks(), ax2.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-    ax2.set_ylim([70, 100])
+    ax1.set(xticklabels=[])
+    ax2.set(xticklabels=[])
+    # ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+    # ax2.set_xticks(ax2.get_xticks(), ax2.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+    ax2.set_ylim([60, 100])
 
     ax1.get_legend().remove()
-    sns.move_legend(ax2, "upper left", bbox_to_anchor=(1, 1))
+    sns.move_legend(
+        ax2, "upper right",
+        bbox_to_anchor=(1, 1), ncol=1, title=None, frameon=False, borderaxespad=0.,
+    )
     plt.tight_layout()
     plt.savefig(PLOT_FOLDER / "grouped_project_features.svg", format="svg")
 
@@ -632,8 +645,8 @@ if __name__ == "__main__":
     if not PLOT_FOLDER.is_dir():
         PLOT_FOLDER.mkdir()
 
-    run_parsing_code = True
-    single_input_file = True
+    run_parsing_code = False
+    single_input_file = False
 
     if run_parsing_code:
         if single_input_file:
@@ -650,7 +663,7 @@ if __name__ == "__main__":
                 else:
                     raise ValueError("The file is neither json nor csv.")
 
-    analyze_aggregated_information = False
+    analyze_aggregated_information = True
     if analyze_aggregated_information:
         analyze_aggregated_annotation_information()
 
