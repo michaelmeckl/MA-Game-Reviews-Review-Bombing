@@ -86,22 +86,32 @@ def calculate_cronbach_alpha():
     """
 
 
-def calculate_krippendorff_alpha_pre_study():
+def calculate_krippendorff_alpha(df_file_path):
     """ Interpretation:
     α ≥ 0,800: zuverlässige Übereinstimmung,
     0,800 > α ≥ 0,667: moderat, vorläufige Schlussfolgerungen sind möglich,
     α < 0,667: Daten sind zu verwerfen
     """
-    pre_study_df = pd.read_csv(pathlib.Path(__file__).parent / "exported_data" / "exported_tasks_52140_Vorstudie.csv")
-    pre_study_df = pre_study_df.replace({'no': 0, 'yes': 1, 'Nein': 0, 'Ja': 1})
-    prestudy_annotation_questions = ["review-bombing", "off-topic", "Entwickler-Publisher", "Kritik-Lob-Ideologisch",
-                                     "Kritik-Lob-Politisch", "Spielinhalte"]  # "Kritik-Lob-Sonstiges"
+    study_df = pd.read_csv(df_file_path)
+    relevant_columns = study_df[["id", "annotator", *annotation_questions]]
+    relevant_columns = relevant_columns.replace({'Nein': 0, 'Ja': 1})
+    # krippendorff alpha is only calculated for reviews that were annotated more than once, so this is not needed:
+    # relevant_columns = relevant_columns[relevant_columns.groupby('id').id.transform('count') > 1]
 
-    relevant_columns = pre_study_df[["id", "annotator", *prestudy_annotation_questions]]
-    for question in prestudy_annotation_questions:
+    for question in annotation_questions:
         alpha_value = simpledorff.calculate_krippendorffs_alpha_for_df(relevant_columns, experiment_col='id',
                                                                        annotator_col='annotator', class_col=question)
-        print(f"Krippendorf's Alpha for question {question}: {alpha_value}")
+        print(f"Krippendorff's Alpha for column '{question}': {alpha_value:.4f}")
+
+    """
+    ###### Calculating Krippendorff's alpha for file: combined_cleaned_all_projects.csv ######
+    Krippendorff's Alpha for column 'is-review-bombing': 0.7095
+    Krippendorff's Alpha for column 'is-rating-game-related': 0.4983
+    Krippendorff's Alpha for column 'criticism-praise-game-content': 0.6978
+    Krippendorff's Alpha for column 'criticism-praise-developer-publisher': 0.5763
+    Krippendorff's Alpha for column 'criticism-praise-ideological': 0.2115
+    Krippendorff's Alpha for column 'criticism-praise-political': 0.5789
+    """
 
 
 def calculate_final_annotation(review_df: pd.DataFrame, final_annotations: list):
@@ -622,8 +632,8 @@ if __name__ == "__main__":
     if not PLOT_FOLDER.is_dir():
         PLOT_FOLDER.mkdir()
 
-    run_parsing_code = False
-    single_input_file = False
+    run_parsing_code = True
+    single_input_file = True
 
     if run_parsing_code:
         if single_input_file:
@@ -640,6 +650,12 @@ if __name__ == "__main__":
                 else:
                     raise ValueError("The file is neither json nor csv.")
 
-    analyze_aggregated_information = True
+    analyze_aggregated_information = False
     if analyze_aggregated_information:
         analyze_aggregated_annotation_information()
+
+    calculate_krippendorff_metric = False
+    if calculate_krippendorff_metric:
+        for file in pathlib.Path(OUTPUT_FOLDER).glob("cleaned_project*.csv"):
+            print(f"\n###### Calculating Krippendorff's alpha for file: {file.name} ######\n")
+            calculate_krippendorff_alpha(OUTPUT_FOLDER / file)
