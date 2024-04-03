@@ -29,6 +29,7 @@ label_studio_study/label_studio_api_key.env
 Reddit/praw.ini
 Twitter/twitter_credentials.env
 Twitter/session.json
+Twitter/session.tw_session
 
 
 .idea

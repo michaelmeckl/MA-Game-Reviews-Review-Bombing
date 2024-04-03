@@ -3,26 +3,30 @@
 Steam und Metacritic herunterzuladen.
 
 ## Steam
-Steam Web API funktioniert gut, um an grundlegende Spieleinformationen (z.B. AppList, AppReviewHistogramm) und die 
-Nutzerreviews heranzukommen.
+Die Steam Web API funktioniert gut, um grundlegende Spieleinformationen (z.B. AppList, AppReviewHistogramm) und die 
+Nutzerreviews zu bekommen.
 
 **100 % fertig**:
 * [get_steam_reviews.py](./Steam/get_steam_reviews.py): enthält eine Funktion zum Laden der kompletten AppListe von 
-  Steam (App/Spiel + App_Id) sowie eine Funktion zum Laden der Reviews & Review Histogramm-Daten für bestimmte Spiele
-  * Default-Parameter - Einstellungen sind max. 1000 Reviews pro Spiel (in 100er Batches), nur negative, maximal 1h 
-    Spielzeit zum Zeitpunkt des Reviews, auch off-topic-Reviews und nach Datum sortiert
+  Steam (App/Spiel + App_Id) sowie eine Funktion zum Laden der Reviews (mit Nutzerinfos), Informationen zum Spiel & 
+  Review-Histogramm-Daten für bestimmte Spiele
+  * Default-Parameter - Einstellungen sind Download in 100er Batches im angegebenen Zeitraum pro Spiel, nur negative, 
+    kein Limit für die Spielzeit zum Zeitpunkt des Reviews, nach Datum sortiert und off-topic-Reviews sind mit enthalten
+  * Language - Filter ist per default auf "all", für Spiele mit mehr Reviews aber sinnvoll auf "english" einzugrenzen
 
 **Ablauf :**
-1. (nur einmal, falls noch nicht vorhanden) Steam-AppListe laden (Games + ID)
+1. (nur einmal falls noch nicht vorhanden) Steam-AppListe laden (Games + ID): in Main-Methode Bool-Flag auf True stellen
+   1. wichtig, um schnell die richtigen App-IDs für Spiele auf Steam zu finden
 2. Nutzerreviews für best. Spiele laden (vgl. `get_steam_reviews.py`)
-   1. (im Moment) Liste mit Spielen direkt im Code anpassen
-   2. ggf. Start- & Enddatum unterhalb anpassen / weglassen
-   3. falls mehrere Reviews mit versch. Parametern / Zeiträumen extrahiert werden sollen, nach jedem Durchgang die 
-      `current_progress.txt` - Datei löschen
+   1. Liste mit Spielen direkt im Code anpassen
+   2. ggf. Start- & Enddatum anpassen / weglassen 
+   3. falls für ein Spiel mehrere Reviews mit versch. Parametern / Zeiträumen extrahiert werden sollen, nach jedem 
+      Durchgang die `current_progress.txt` - Datei löschen (ansonsten wird mit dem zwischengespeicherten Cursor 
+      weitergemacht)
 
 ---
 ## Metacritic
-Da keine offizielle API und keine guten, aktuellen Scraper gefunden, eigenen Scraper geschrieben.
+Da keine offizielle API und keine guten, aktuellen Scraper gefunden, wurde ein eigener Scraper geschrieben.
 
 **Anmerkung:** seit ca. 10.09.2023 funktioniert der Scraper nicht mehr, da die gesamte Metacritic-Webseite komplett 
 modernisiert und re-designt wurde :(
@@ -33,61 +37,71 @@ Scraper für die neue Metacritic-Seite
 **100 % fertig:**
 * Scrapen von Spielen (allgemeine Informationen zum Spiel + Reviews + User Informationen) für die angegebenen 
   Plattformen: entweder alle Reviews (sortiert nach Datum) oder Suche nach allen Reviews in einem angegebenen Zeitraum
-* es werden alle Reviews (nicht nur schlecht bewertete) nach Datum sortiert extrahiert
-* in [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) werden die extrahierten Reviews 
-  gefiltert (nur englisch oder deutsch, nur Ratings 0-2 und (optional) Keyword-Search)
-* **BUG**: Time Period Search funktioniert oft nicht richtig, da manchmal die Filterfunktion auf Metacritic die Reviews 
-  nicht immer in der richtigen Reihenfolge anzeigt :(
+* es werden alle Reviews (nicht nur schlecht bewertete) extrahiert (nach Datum sortiert)
+* in [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) können die extrahierten Reviews 
+  gefiltert werden (nur englisch oder deutsch, nur Ratings 0-2 und (optional) Keyword-Search)
+
 
 **Ablauf :**
 1. in [metacritic_scraper_new.py](./Metacritic/metacritic_scraper_new.py) oben in Dictionary Spielname (vgl. Name in 
-   Metacritic-Url) eintragen mit Plattform
-2. alle Reviews oder nur in Zeitraum - Flag entsprechend ändern (+ ggf. Zeitraum)
-3. danach mit [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) die extrahierten Reviews filtern
+   Metacritic-Url) eintragen mit gewünschter Plattform
+2. per default werden alle Reviews geladen, ansonsten den Zeitraum entsprechend ändern
+3. (optional) danach mit [filter_metacritic_reviews.py](./Metacritic/filter_metacritic_reviews.py) die extrahierten 
+   Reviews filtern
+   - wurde letztendlich nicht verwendet (Filtern wurde später separat für Label Studio implementiert)
 
 ---
 ## Reddit
 PRAW - API - Wrapper funktioniert sehr gut für das meiste, bis auf die Suche nach Kommentaren (da die Kommentarsuche 
 auch noch nicht in der offiziellen Reddit API im Moment enthalten ist).
-Pushshift API ist nicht mehr aktiv seit Mai 2023 und eigenes Scrapen der Result Page sehr problematisch.
-RedditWarp API scheint aber für Kommentarsuche gut zu funktionieren (nutzt den undokumentierten GraphQL-Endpunkt).
+Pushshift API ist nicht mehr aktiv seit Mai 2023 und eigenes Scrapen der Result Page stellte sich als sehr 
+schwierig heraus. Deshalb wurde die RedditWarp API verwendet, diese scheint für Kommentarsuche gut zu 
+funktionieren (nutzt den undokumentierten GraphQL-Endpunkt von Reddit).
 
-**92 % fertig** (Kommentare von submissions werden aktuell noch ignoriert!)
+**95 % fertig**
 * Extrahieren / Parsen von Submissions und Kommentaren in bestimmten Subreddits, bzw. "r/all" (sowie den Kommentaren zu 
   einer Submission)
 * Keyword-Suche in Subreddits nach Submissions mithilfe von PRAW (bzw. Reddit Search Queries) und nach Kommentaren 
   mit RedditWarp
 * Timeperiod-Search nach Submissions und Kommentaren vorhanden
-* aktuell wird für Submissions grundsätzlich auch "r/all" durchsucht, für Kommentare aber nicht (da vermutlich zu viele)
+* aktuell wird für Submissions grundsätzlich auch "r/all" durchsucht, für Kommentare nicht (da zu viele)
+* **TODO** Kommentare zu Submissions werden aktuell noch nicht extrahiert! Code dafür ist aber mit ein paar Bugs schon 
+  vorhanden...
 
 **Ablauf :**
-1. in [reddit_api.py](./Reddit/reddit_api.py) existierenden Code in `get_reddit_data` - Methode anpassen
-   1. Game, zugehörige Subreddits & Timeperiod anpassen
-   2. Queries für Suche nach Submissions anpassen
+1. in [reddit_api.py](./Reddit/reddit_api.py) existierenden Code in `get_reddit_data_for_games` - Methode anpassen
+   1. Game, zugehörige Subreddits & Timeperiod für Suche in Dictionary anpassen
+   2. Queries für Suche nach Submissions anpassen sowohl in Subreddits als auch r/all (für r/all eignet sich 
+      meistens "game_name AND query_subreddit")
    3. Query anpassen für Kommentarsuche mit RedditWarp
 
 ---
 ## Twitter
-Offizielle API nicht verwendbar (sehr teuer, kein akademischer Tier mehr vorhanden & starke Limits bzgl. Menge an 
-Tweets und historische Tweets); die meisten Tools / Libraries funktionieren nach den wiederholten Änderungen an der 
-Twitter API nicht mehr. SNScrape war das beste Tool, dass ohne Twitter Dev - Account funktionierte (geht seit Juli aber auch nicht 
-mehr).
-Rettiwt-API (Typescript) kann als aktuell noch für ein paar Daten (deutlich weniger als SNScrape) genutzt werden.
-Tweety ist im Moment die einzige Library, mit der es zu funktionieren scheint, aufgrund der Rate-Limits müssen zwar 
-regelmäßig Accounts gewechselt werden, aber ansonsten kann man damit die Twitter-Advanced-Search verwenden.
+* Offizielle API nicht verwendbar (sehr teuer, kein Academic-Tier mehr vorhanden & starke Limits bzgl. Menge an 
+Tweets und historische Tweets)
+* die meisten Tools / Libraries funktionieren nach den wiederholten Änderungen an der Twitter API nicht mehr :(
+  * SNScrape war das beste Tool, dass ohne Twitter Dev - Account funktionierte (geht 
+    seit Juli 2023 aber auch nicht mehr). 
+  * Rettiwt-API (Typescript) kann aktuell (September 2023) noch für ein paar Daten (deutlich weniger als SNScrape) 
+    genutzt werden.
+* Tweety ist im Moment die einzige Library, mit der es zu funktionieren scheint, aufgrund der Rate-Limits müssen zwar 
+  regelmäßig Accounts gewechselt werden, aber ansonsten kann man damit die Twitter-Advanced-Search verwenden.
 
-**99 % fertig**:
+**95 % fertig**:
 * mit Tweety funktioniert fast alles, nur Replies / Kommentare können leider nicht extrahiert werden
+* **Update - April 2024**: offenbar funktioniert inzwischen mit Tweety die exakte Suche in Anführungszeichen nicht 
+  mehr (obwohl es auf Twitter weiterhin zu funktionieren scheint)  -> Queries im Code funktionieren deshalb nicht mehr
 
 **Ablauf :**
-1. in [get_tweets.py](./Twitter/get_tweets.py) unten die Games & Queries anpassen, oder single_query auf True 
-   stellen und query unten anpassen (die Konfiguration ganz oben 
-   wird im Moment nicht benutzt)
-    1. regelmäßig Console überprüfen bzgl. Rate-Limits und ggf. Account unten in Methode wechseln
+1. in [get_tweets.py](./Twitter/get_tweets.py) unten im Dictionary die Games & Queries anpassen (oder single_query auf 
+   True stellen und query unten anpassen, gut geeignet zum Testen)
+   1. die Zeiträume sind immer am Ende der jeweiligen Queries mit in den Queries enthalten
+   2. regelmäßig Console überprüfen bzgl. Rate-Limits und ggf. Account unten in Methode wechseln (mindestens zwei 
+       Twitter/X - Accounts sind nötig, sonst dauert es ewig)
 
 ---
-# Aktuell verfügbare Daten
-vgl. [data_for_analysis](./data_for_analysis) - Ordner
+# Aktuell extrahierte Daten
+vgl. [data_for_analysis](./data_for_analysis) - Ordner (im Moment nicht in Github hochgeladen)
 
 * **Steam:**
   * ca. 250 negative Reviews zu Hogwarts Legacy (7.02.2023 - 21.02.2023) (noch ohne User Infos)
@@ -152,7 +166,6 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing 
     (Skyrim & Fallout 4) sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code; manchmal 
     auch Ergebnisse mehrerer Queries kombiniert)
-    * **TODO:** auch noch Daten für "Crusader Kings II", "The Long Dark" und "Superhot VR" ?
   
 * **Twitter:**
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 
@@ -165,9 +178,8 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner
     Overwatch 2, The Elder Scrolls V: Skyrim, Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und 
     Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing (Skyrim & Fallout 4) sowie für 
     das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
-    * **TODO:** auch noch Daten für "Crusader Kings II", "The Long Dark" und "Superhot VR" ?
 
-* **Old Data:**
+* **Alte Social Media-Daten: (folder "old_data")**
   * **Reddit:**
     * 49 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Cyberpunk 2077 
       (aus Subreddits und r/all) aus dem Zeitraum 10.12.2020 - 27.06.2023

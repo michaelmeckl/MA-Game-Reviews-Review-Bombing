@@ -3,7 +3,7 @@ Util to add the user info for each review in a csv file retrospectively. Necessa
 been scraped before the code for scraping the user data was added (otherwise all of these would need to be scraped
 again).
 """
-from metacritic_scraper import scrape_user_profile
+from metacritic_scraper_new import scrape_user_profile
 import pathlib
 import pandas as pd
 

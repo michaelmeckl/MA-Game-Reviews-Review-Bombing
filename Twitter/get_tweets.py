@@ -398,6 +398,8 @@ def get_tweets_tweety():
         ],
     }
 
+    # TODO apparently exact search with quotation marks does not work anymore (April 2024)  -> can this be fixed?
+
     #################################################################
     # twitter authentication
     load_dotenv(dotenv_path="twitter_credentials.env")
@@ -439,12 +441,14 @@ def get_tweets_tweety():
             print(f"\nFinished with game {game}\n######################################\n")
 
 
+"""
 def compare_result_dataframes():
     df_2 = pd.read_csv("./tweets_Metro Exodus_query_0.csv")
     df_3 = pd.read_csv("./tweets_Metro Exodus_query_1.csv")
     df_4 = pd.read_csv("./tweets_Metro Exodus_query_2.csv")
     compare_pandas_dataframes(df_2, df_3, merge_column="id", df_1_name="df_2-3", df_2_name="df_3-2")
     compare_pandas_dataframes(df_2, df_4, merge_column="id", df_1_name="df_2-4", df_2_name="df_4-2")
+"""
 
 
 if __name__ == "__main__":

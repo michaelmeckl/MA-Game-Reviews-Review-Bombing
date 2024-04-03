@@ -55,6 +55,3 @@ if __name__ == "__main__":
                 filtered_df = filter_extracted_reviews(review_df, search_for_keywords=False)
                 print(f"\nNum rows before filtering: {len(review_df)}\nNum rows after filtering: {len(filtered_df)}")
                 filtered_df.to_csv(game_folder_path / f"filtered_metacritic_{filename}", index=False)
-
-        # TODO only take first game for now
-        break

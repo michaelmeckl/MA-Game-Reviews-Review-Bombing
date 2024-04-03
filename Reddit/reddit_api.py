@@ -10,11 +10,8 @@ from datetime import datetime
 import pandas as pd
 import praw
 import prawcore
-import pprint
-import requests
-import requests.auth
 from Reddit.comments_utils import search_comments_with_redditwarp, extract_comments_for_submission
-from Reddit.reddit_utils import save_reddit_data, REDDIT_BASE_URL, OUT_DATA, get_user_information
+from Reddit.reddit_utils import save_reddit_data, OUT_DATA, get_user_information
 # from pmaw import PushshiftAPI
 
 
@@ -22,67 +19,6 @@ from Reddit.reddit_utils import save_reddit_data, REDDIT_BASE_URL, OUT_DATA, get
 # init PRAW instance with .ini file
 reddit = praw.Reddit("Search_Reddit", config_interpolation="basic")
 print(reddit.read_only)
-
-
-# old method without praw wrapper:
-"""def make_reddit_api_call(query: str, request_limit: int = 2):
-    subreddit = "cyberpunkgame"
-    url = f"https://reddit.com/r/{subreddit}/search.json"
-
-    querystring = {"q": f"{query}", "limit": f"{request_limit}"}
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/113.0.0.0 Safari/537.36",
-    }
-
-    response = requests.request("GET", url, headers=headers, params=querystring)
-    result = response.json()
-    print(f"Result type: {result['kind']}")   # t1_	Comment, t3_ Link
-    result_list = result["data"]["children"]
-    # pprint.pprint(result_list)
-
-    for result_item in result_list:
-        print(f"\nResult item type: {result_item['kind']}")
-        item = result_item["data"]
-        print("NewItem:")
-        pprint.pprint(f"Title: {item['title']}, Text: {item['selftext']},\n Author: {item['author']}, Subreddit:"
-                      f" {item['subreddit']}, (Net)Score: {item['score']}, Upvote Ratio: {item['upvote_ratio']}, "
-                      f"Upvotes: {item['ups']}, Downvotes: {item['downs']}, num_comments: {item['num_comments']}, "
-                      f"created at: {item['created']}, permalink: {REDDIT_BASE_URL + item['permalink']}")
-
-        article_id = item["id"]
-        # print(article_id)
-
-        comments_url = f"https://reddit.com/comments/{article_id}.json"
-        querystring = {"limit": "3"}  # only get the first 3 comments for testing
-        comments_response = requests.request("GET", comments_url, headers=headers, params=querystring)
-        print(f"Comments:\n {comments_response.text}")
-
-        comments_result = comments_response.json()
-        print(len(comments_result))
-
-        # ? is the first element always the original post ?
-        comments_list = comments_result[1]["data"]["children"]
-        # pprint.pprint(comments_list)
-
-        # the last comment always seems to be a miscellaneous listing with ids for further comments ?
-        # see https://github.com/reddit-archive/reddit/wiki/JSON#more
-        for i, comment_item in enumerate(comments_list):
-            comment = comment_item["data"]
-            print(f"\nComment {i}:")
-            print(f"Author: {comment['author'] if 'author' in comment else 'no author'}, Body:"
-                  f" {comment['body'] if 'body' in comment else 'no body'}")
-            # print(f"Parent ID: {comment['parent_id'] if 'parent_id' in comment else 'no parent'}")
-
-            replies_data = comment['replies'] if 'replies' in comment else []
-            if len(replies_data) > 0:
-                replies = replies_data['data']['children']
-                print(f"Replies List: {len(replies)}")
-                for reply in replies:
-                    print(reply)
-            else:
-                print("No replies for this comment.")
-"""
 
 
 def enable_praw_logging():
@@ -137,7 +73,7 @@ def extract_submissions_from(subreddit_names: list):
         print(f"Title {submission.title} from author {submission.author}")
         print("Url: ", submission.url)
         extract_relevant_submission_content(submission, existing_submissions, all_submissions)
-        # TODO save comments for this submission in an own file with the id of the submission added for reference ?
+        # save comments for this submission in an own file with the id of the submission added for reference ?
         # extract_comments_for_submission(submission)
 
         print(f"Finished with submission {submission.name} (id: {submission.id})\n##################\n")
@@ -480,8 +416,8 @@ def get_comments_for_extracted_submissions():
               "\n#########################\n")
 
 
-# ! nach neuem Pricing (seit 1. Juli) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
+# ! nach neuem Pricing (seit 1. Juli 2023) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
 if __name__ == "__main__":
     # extracted_submissions = extract_submissions_from(["cyberpunkgame"])
     get_reddit_data_for_games()
-    # get_comments_for_extracted_submissions()
+    # get_comments_for_extracted_submissions()  # TODO
