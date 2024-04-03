@@ -14,7 +14,7 @@ Nutzerreviews zu bekommen.
     kein Limit für die Spielzeit zum Zeitpunkt des Reviews, nach Datum sortiert und off-topic-Reviews sind mit enthalten
   * Language - Filter ist per default auf "all", für Spiele mit mehr Reviews aber sinnvoll auf "english" einzugrenzen
 
-**Ablauf :**
+**Verwendung :**
 1. (nur einmal falls noch nicht vorhanden) Steam-AppListe laden (Games + ID): in Main-Methode Bool-Flag auf True stellen
    1. wichtig, um schnell die richtigen App-IDs für Spiele auf Steam zu finden
 2. Nutzerreviews für best. Spiele laden (vgl. `get_steam_reviews.py`)
@@ -42,7 +42,7 @@ Scraper für die neue Metacritic-Seite
   gefiltert werden (nur englisch oder deutsch, nur Ratings 0-2 und (optional) Keyword-Search)
 
 
-**Ablauf :**
+**Verwendung :**
 1. in [metacritic_scraper_new.py](./Metacritic/metacritic_scraper_new.py) oben in Dictionary Spielname (vgl. Name in 
    Metacritic-Url) eintragen mit gewünschter Plattform
 2. per default werden alle Reviews geladen, ansonsten den Zeitraum entsprechend ändern
@@ -68,7 +68,7 @@ funktionieren (nutzt den undokumentierten GraphQL-Endpunkt von Reddit).
 * **TODO** Kommentare zu Submissions werden aktuell noch nicht extrahiert! Code dafür ist aber mit ein paar Bugs schon 
   vorhanden...
 
-**Ablauf :**
+**Verwendung :**
 1. in [reddit_api.py](./Reddit/reddit_api.py) existierenden Code in `get_reddit_data_for_games` - Methode anpassen
    1. Game, zugehörige Subreddits & Timeperiod für Suche in Dictionary anpassen
    2. Queries für Suche nach Submissions anpassen sowohl in Subreddits als auch r/all (für r/all eignet sich 
@@ -92,7 +92,7 @@ Tweets und historische Tweets)
 * **Update - April 2024**: offenbar funktioniert inzwischen mit Tweety die exakte Suche in Anführungszeichen nicht 
   mehr (obwohl es auf Twitter weiterhin zu funktionieren scheint)  -> Queries im Code funktionieren deshalb nicht mehr
 
-**Ablauf :**
+**Verwendung :**
 1. in [get_tweets.py](./Twitter/get_tweets.py) unten im Dictionary die Games & Queries anpassen (oder single_query auf 
    True stellen und query unten anpassen, gut geeignet zum Testen)
    1. die Zeiträume sind immer am Ende der jeweiligen Queries mit in den Queries enthalten

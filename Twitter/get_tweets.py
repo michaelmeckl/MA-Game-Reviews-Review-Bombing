@@ -405,7 +405,7 @@ def get_tweets_tweety():
     load_dotenv(dotenv_path="twitter_credentials.env")
 
     app = Twitter("session")
-    # app.sign_in(os.getenv('ACCOUNT_1_USERNAME'), os.getenv('ACCOUNT_1_PASSWORD'))  # test account
+    app.sign_in(os.getenv('ACCOUNT_1_USERNAME'), os.getenv('ACCOUNT_1_PASSWORD'))  # test account
     # app.sign_in(os.getenv('ACCOUNT_2_USERNAME'), os.getenv('ACCOUNT_2_PASSWORD'))  # test account 2
     app.connect()
 
