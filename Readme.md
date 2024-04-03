@@ -1,15 +1,16 @@
 # Überblick
 
 Dieses Repository enthält den Code für meine Masterarbeit im Studiengang Medieninformatik an der Universität Regensburg,
-bei der es um die Analyse und Erkennung des Phänomens "Review Bombing" bei Videospiel-Nutzerreviews geht. Dazu 
-werden Videospiel-Reviews zusammen mit Metadaten und Nutzerinformationen für ausgewählte Spiele sowie Social Media - 
-Daten aus den jeweiligen Zeiträumen der Review Bombing-Vorfälle heruntergeladen, analysiert und für die manuelle 
-Annotation in Label Studio vorbereitet. Darauf aufbauend werden verschiedene DL-Modelle auf diesen Daten trainiert, 
-mit dem Ziel die Zugehörigkeit eines Reviews zu einem Review Bombing automatisch zu bestimmen.
+bei der es um die **Analyse und Erkennung des Phänomens ["Review Bombing"](https://en.wikipedia.org/wiki/Review_bomb)
+bei Videospiel-Nutzerreviews** geht. Dazu werden Videospiel-Reviews zusammen mit Metadaten und Nutzerinformationen 
+für ausgewählte Spiele sowie Social Media - Daten aus den jeweiligen Zeiträumen der Review Bombing-Vorfälle 
+heruntergeladen, analysiert und für die manuelle Annotation in Label Studio vorbereitet. Darauf aufbauend werden 
+verschiedene DL-Modelle auf diesen Daten trainiert, mit dem Ziel die Zugehörigkeit eines Reviews zu einem Review 
+Bombing automatisch zu bestimmen.
 
 ## Ordnerstruktur
 * Die Skripte, um relevante Daten von Steam, Metacritic, Twitter / X und Reddit zu extrahieren befinden sich in den 
-entsprechenden Ordnern: **Steam, Metacritic, Twitter, Reddit**
+entsprechenden Ordnern (Steam, Metacritic, Twitter, Reddit).
   * Genauere Informationen zu den extrahierten Review und Social Media - Daten sowie zum Code für das Herunterladen und 
   Extrahieren der Daten befindet sich in der [Data_Extraction.md](./Data_Extraction.md) - Datei. 
   In der [Twitter_Reddit_Search.md](./Twitter_Reddit_Search.md) - Datei befinden sich zudem einige Notizen zu den 
@@ -28,26 +29,31 @@ entsprechenden Ordnern: **Steam, Metacritic, Twitter, Reddit**
 * Im [classification](./classification) - Ordner befindet sich der Code für das Machine und Deep Learning.
 
 ## Requirements
-Der gesamte Code wurde in Python 3.11 geschrieben. Die benötigten Python-Libraries befinden sich in der requirements.
-txt. Unter anderem wurden BeautifulSoup zum Scraping, Pandas, Textblob, NLTK & Spacy zum Analysieren der Daten, 
-Matplotlib und Seaborn für Visualisierungen sowie PyTorch und Hugging Face Transformers für das Deep Learning verwendet.
+Der gesamte Code wurde in Python 3.11 geschrieben. Die benötigten Python-Libraries befinden sich in der 
+[requirements.txt](requirements.txt). Unter anderem wurden BeautifulSoup zum Scraping, Pandas, Textblob, NLTK & 
+Spacy zum Analysieren der Daten, Matplotlib und Seaborn für Visualisierungen sowie PyTorch und Hugging Face 
+Transformers für das Deep Learning verwendet.
 
-Für das Extrahieren der Daten werden plattformspezifische Credentials benötigt, die nicht im Repository enthalten sind:
+Für das Extrahieren der Daten werden plattformspezifische **Credentials** benötigt, die nicht im Repository enthalten 
+sind:
 
 #### Steam
-Eine .env - Datei mit folgendem Aufbau wird im [Steam](./Steam) - Ordner erwartet:
+Für einige Teile der Steam Web API (z.B. Zugriff auf Nutzerinformationen) ist ein API-Key erforderlich. Eine .env - 
+Datei mit folgendem Aufbau wird im [Steam](./Steam) - Ordner erwartet:
 ```
 STEAM_API_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 #### Reddit
-Eine praw.ini - Datei mit folgendem Aufbau wird im [Reddit](./Reddit) - Ordner erwartet:
+Für die Verwendung der Reddit API ist es erforderlich sich bei Reddit als Developer zu registrieren und sich eine 
+Reddit Client - Anwendung zu erstellen. Eine praw.ini - Datei mit folgendem Aufbau wird im [Reddit](./Reddit) - 
+Ordner erwartet:
 ```ini
 [Search_Reddit]
 client_id=YOUR_APP_ID
 client_secret=YOUR_APP_SECRET_KEY
 username=YOUR_REDDIT_USERNAME
-user_agent=script:Post_Comments_Search_Academic (by /u/%(username)s)
+user_agent=script:Post_Comments_Search_Academic (by /u/%(username)s)    # oder ähnliches
 ```
 
 #### Twitter / X
