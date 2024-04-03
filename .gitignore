@@ -3,30 +3,35 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-.idea
-annotated_data/
-data_for_analysis/
-data_for_analysis_cleaned/
-data_for_labelstudio/
-data_labeling_test/*.csv
-Steam/steam_review_data/
-Steam/Steam-Games-Scraper-main/
-Metacritic/metacritic_data/
-Twitter/extracted_tweets/
-Twitter/session.json
-Twitter/twitter_credentials.env
-Reddit/reddit_data/
-Reddit/praw.ini
 
+# ML models and data
 sentiment_analysis_and_nlp/checkpoints/
 sentiment_analysis_and_nlp/checkpoints.json
 classification/model_test/
 classification/trained_models/
 classification/runs/
 
-label_studio_study/MA-Pre-Fragebogen.csv
-label_studio_study/label_studio_api_key.env
 
+# downloaded data and data excluded for data protection reasons
+Steam/steam_review_data/
+Metacritic/metacritic_data/
+Twitter/extracted_tweets/
+Reddit/reddit_data/
+data_for_analysis/
+data_for_analysis_cleaned/
+data_for_labelstudio/
+data_labeling_test/*.csv
+label_studio_study/MA-Pre-Fragebogen.csv
+
+
+# credentials
+label_studio_study/label_studio_api_key.env
+Reddit/praw.ini
+Twitter/twitter_credentials.env
+Twitter/session.json
+
+
+.idea
 
 # Distribution / packaging
 .Python
