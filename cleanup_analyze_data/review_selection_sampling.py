@@ -14,7 +14,7 @@ from transformers import AutoTokenizer
 from datasets import Dataset
 
 
-DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned"
+DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "reviews"
 OUTPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_labelstudio"
 
 

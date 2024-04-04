@@ -14,14 +14,15 @@ METACRITIC_DATA_FOLDER = DATA_FOLDER / "metacritic"
 TWITTER_DATA_FOLDER = DATA_FOLDER / "tweets"
 REDDIT_DATA_FOLDER = DATA_FOLDER / "reddit"
 
-OUTPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned"
+OUTPUT_FOLDER_REVIEWS = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "reviews"
+OUTPUT_FOLDER_POSTS = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "posts"
 
 
 ###############################################################################
 review_bombing_incidents = {
     "Skyrim-Paid-Mods": {
         "games_title_terms": ["*skyrim", "*Skyrim"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Skyrim*"],
         "affected_games": "The Elder Scrolls V: Skyrim",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Die Entwickler "Bethesda" versuchten bezahlte Mods für Skyrim im Steam-Workshop '
@@ -36,7 +37,7 @@ review_bombing_incidents = {
     },
     "GrandTheftAutoV-OpenIV": {
         "games_title_terms": ["*grand-theft-auto-v", "*Grand_Theft_Auto_V"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Grand Theft Auto V*"],
         "affected_games": "Grand Theft Auto V (GTA V)",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Der Publisher "Take-Two Interactive" forderte die Entwickler der beliebten '
@@ -50,7 +51,7 @@ review_bombing_incidents = {
     },
     "Firewatch": {
         "games_title_terms": ["*firewatch"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Firewatch*"],
         "affected_games": "Firewatch",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Die Entwickler "Campo Santo" reichten eine DMCA-Beschwerde gegen ein Video ein, '
@@ -63,7 +64,7 @@ review_bombing_incidents = {
     },
     "Bethesda-Creation-Club": {
         "games_title_terms": ["*skyrim-special-edition", "*Skyrim_Special_Edition", "*fallout-4", "*Fallout_4"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Bethesda Creation Club*", "*bethesda_creation_club*"],
         "affected_games": "Fallout 4 und The Elder Scrolls V: Skyrim Special Edition",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Der Grund war die Einführung von Bethesda\'s "Creation Club", einem direkt in das '
@@ -77,7 +78,7 @@ review_bombing_incidents = {
     },
     "TotalWar-Rome-II": {
         "games_title_terms": ["*total-war-rome-ii", "*Total_War_ROME_II_Emperor_Edition"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Total War Rome II*"],
         "affected_games": "Total War: Rome II (& Emperor Edition)",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Das Spiel erhielt im März 2018 einen Patch, der die Wahrscheinlichkeit erhöhte, '
@@ -95,7 +96,7 @@ review_bombing_incidents = {
     },
     "Metro-Epic-Exclusivity": {
         "games_title_terms": ["*metro*"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Metro*"],
         "affected_games": '"Metro" - Serie: Metro 2033, Metro: Last Light, Metro 2033 Redux, Metro: Last Light Redux',
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Kurz vor Release von Metro Exodus wurde von Entwickler "4A Games" '
@@ -107,7 +108,7 @@ review_bombing_incidents = {
     },
     "Borderlands-Epic-Exclusivity": {
         "games_title_terms": ["*borderlands*"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Borderlands*"],
         "affected_games": '"Borderlands" - Serie: Borderlands (und GOTY - Editionen), Borderlands 2 und '
                           'Borderlands: The Pre-Sequel',
         "review_bomb_type": "negativ",
@@ -120,7 +121,7 @@ review_bombing_incidents = {
     },
     "Assassins-Creed-Unity": {
         "games_title_terms": ["*assassins-creed-unity", "*Assassin_s_Creed_Unity"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Assassins Creed Unity*"],
         "affected_games": "Assassin's Creed Unity",
         "review_bomb_type": "positiv",
         "review_bomb_reason": 'Nach dem Brand in der Notre-Dame, die in Assassin\'s Creed Unity virtuell '
@@ -132,7 +133,7 @@ review_bombing_incidents = {
     },
     "Mortal-Kombat-11": {
         "games_title_terms": ["*mortal-kombat-11", "*Mortal_Kombat_11"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Mortal Kombat 11*"],
         "affected_games": "Mortal Kombat 11",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Das Spiel erhielt zu Release sehr viele negative Bewertungen, unter anderem aufgrund '
@@ -187,7 +188,10 @@ review_bombing_incidents = {
         "games_title_terms": ["*cyberpunk-2077", "*cyberpunk-2077_03_2022", "*Cyberpunk_2077",
                               "*Cyberpunk_2077_03_2022", "*witcher*", "*frostpunk", "*S_T_A_L_K_E_R*",
                               "*s-t-a-l-k-e-r*"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*ukraine_russia_review_bombing*", "*comments_general_Cyberpunk 2077_2020*",
+                                     "*submissions_general_Cyberpunk 2077_2020*", "*Cyberpunk 2077--query*",
+                                     "*CDPR*", "*Frostpunk*", "*Gwent*", "*Witcher-*", "*tweets_russia_ukraine*",
+                                     "*STALKER-*", "*Ukraine_Russia_ReviewBomb*"],
         "affected_games": '"Witcher" - Spiele: The Witcher 1 und 2 (und deren Enhanced Editionen), The Witcher 3 '
                           '(und Complete Edition), GWENT, Thronebreaker; Cyberpunk 2077; This War of Mine; Frostpunk; '
                           '"S.T.A.L.K.E.R." - Spiele',
@@ -205,7 +209,7 @@ review_bombing_incidents = {
     },
     "Overwatch-2": {
         "games_title_terms": ["*overwatch-2", "*Overwatch_2"],
-        "social_media_title_terms": [],
+        "social_media_title_terms": ["*Overwatch 2*"],
         "affected_games": "Overwatch 2",
         "review_bomb_type": "negativ",
         "review_bomb_reason": 'Auslöser war der Steam-Release von Overwatch 2 (auf Metacritic wurde das Spiel schon '
@@ -221,8 +225,8 @@ review_bombing_incidents = {
 }
 
 
-# the keys in this dictionary must map to the file names in the Metacritic and Steam folders without the underscores
-# and hyphens (case doesn't matter)
+# the keys in this dictionary must map to the file names in the Metacritic and Steam folders in
+# 'data_for_analysis' without the underscores and hyphens (case doesn't matter)
 game_names_mapping = {
     "assassins creed unity.csv": {
         "game": "Assassins Creed Unity",
@@ -409,6 +413,34 @@ def select_relevant_data_files(games_terms, select_only_reviews=False):
 """
 
 
+def add_game_name_to_game_files():
+    """
+    Add two additional columns for the game name: "game_name_display" for the actual name that is shown in Label
+    Studio and "game" for easier mapping (e.g. to map "Borderlands" and "Borderlands GOTY" to the same game).
+    This way the game_info and user_reviews files in metacritic and steam can be matched and merged accordingly.
+    Also add another column "source" to differentiate between the review platforms.
+    """
+    for file in concat_generators(METACRITIC_DATA_FOLDER.glob("*.csv"), STEAM_DATA_FOLDER.glob("*.csv")):
+        # find the correct dict entry by checking if the filename contains the key string
+        for key in game_names_mapping.keys():
+            # unify file names by removing _, - or whitespace
+            file_name_cleaned = re.sub(r'[_-]+', ' ', file.name).lower()
+            if key.lower() in file_name_cleaned:
+                df = pd.read_csv(file)
+                if "source" not in df:
+                    source_value = "Steam" if file.parent.name == "steam" else "Metacritic"
+                    df.insert(0, "source", [source_value] * len(df))
+                if "game_name_display" not in df:
+                    game_name_display = game_names_mapping[key]["game_name_display"]
+                    df.insert(0, "game_name_display", [game_name_display] * len(df))
+                if "game" not in df:
+                    game_name = game_names_mapping[key]["game"]
+                    df.insert(0, "game", [game_name] * len(df))
+
+                # overwrite the old file
+                df.to_csv(file, index=False)
+
+
 def add_rb_information_to_game_files(rb_incident_name):
     """
     Map each file in the steam and metacritic folder to the corresponding review bombing incident by adding
@@ -417,7 +449,7 @@ def add_rb_information_to_game_files(rb_incident_name):
     print(f"\n##########################\nUpdating files for \"{rb_incident_name}\" ...\n")
 
     # create a subfolder for this review bombing incident if it doesn't exist yet
-    Sub_Folder = OUTPUT_FOLDER / rb_incident_name
+    Sub_Folder = OUTPUT_FOLDER_REVIEWS / rb_incident_name
     if not Sub_Folder.is_dir():
         Sub_Folder.mkdir()
     else:
@@ -461,59 +493,114 @@ def add_rb_information_to_game_files(rb_incident_name):
         df.to_csv(Sub_Folder / f"{file.stem}_updated.csv", index=False)
 
 
-def add_game_name_to_game_files():
+def add_rb_information_to_social_media_files(rb_incident_name):
     """
-    Add two additional columns for the game name: "game_name_display" for the actual name that is shown in Label
-    Studio and "game" for easier mapping (e.g. to map "Borderlands" and "Borderlands GOTY" to the same game).
-    This way the game_info and user_reviews files in metacritic and steam can be matched and merged accordingly.
-    Also add another column "source" to differentiate between the review platforms.
+    Map each file in the twitter and reddit folder to the corresponding review bombing incident.
     """
-    for file in concat_generators(METACRITIC_DATA_FOLDER.glob("*.csv"), STEAM_DATA_FOLDER.glob("*.csv")):
-        # find the correct dict entry by checking if the filename contains the key string
-        for key in game_names_mapping.keys():
-            # unify file names by removing _, - or whitespace
-            file_name_cleaned = re.sub(r'[_-]+', ' ', file.name).lower()
-            if key.lower() in file_name_cleaned:
-                df = pd.read_csv(file)
-                if "source" not in df:
-                    source_value = "Steam" if file.parent.name == "steam" else "Metacritic"
-                    df.insert(0, "source", [source_value] * len(df))
-                if "game_name_display" not in df:
-                    game_name_display = game_names_mapping[key]["game_name_display"]
-                    df.insert(0, "game_name_display", [game_name_display] * len(df))
-                if "game" not in df:
-                    game_name = game_names_mapping[key]["game"]
-                    df.insert(0, "game", [game_name] * len(df))
+    print(f"\n##########################\nUpdating files for \"{rb_incident_name}\" ...\n")
+    rb_information = review_bombing_incidents[rb_incident_name]
+    social_media_title_terms = rb_information["social_media_title_terms"]
+    affected_games = rb_information["affected_games"]
 
-                # overwrite the old file
-                df.to_csv(file, index=False)
+    relevant_twitter_files = []
+    relevant_reddit_files = []
+    for term in social_media_title_terms:
+        pattern = f"{term}.csv"
+        twitter_files = [f for f in TWITTER_DATA_FOLDER.glob(pattern)]
+        reddit_files = [f for f in REDDIT_DATA_FOLDER.glob(pattern)]
+        relevant_twitter_files.extend(twitter_files)
+        relevant_reddit_files.extend(reddit_files)
+
+    print(f"{len(relevant_twitter_files)} Twitter files found:")
+    pprint.pprint(relevant_twitter_files)
+    print(f"{len(relevant_reddit_files)} Reddit files found:")
+    pprint.pprint(relevant_reddit_files)
+
+    twitter_dataframes = []
+    reddit_comments_dataframes = []
+    reddit_submissions_dataframes = []
+    # add the new columns and save updated dataframe to the correct list
+    for file in relevant_twitter_files + relevant_reddit_files:
+        df = pd.read_csv(file)
+        df.insert(3, "affected_games", [affected_games] * len(df))
+        df.insert(3, "review_bombing_incident", [rb_incident_name] * len(df))
+        # add the social media data source (Twitter or Reddit) as an additional column
+        if file.parent.name == "reddit":
+            df.insert(3, "source", ["Reddit"] * len(df))
+            if "comment" in file.name:
+                reddit_comments_dataframes.append(df)
+            else:
+                reddit_submissions_dataframes.append(df)
+        else:
+            df.insert(3, "source", ["Twitter"] * len(df))
+            twitter_dataframes.append(df)
+
+    return twitter_dataframes, reddit_submissions_dataframes, reddit_comments_dataframes
 
 
-# TODO map each file in the twitter and reddit folder to the corresponding review bombing incident (in the respective
-#  title) as well as the corresponding video games (make a separate column where all related game names are listed
-#  comma separated) -> game names must be the same as in the steam and metacritic files for mapping!!
-#  => i.e. two new columns for each tweet/reddit file: review_bombing_incident and affected_games
-def map_tweet_data():
-    pass
+def map_combine_social_media_data():
+    # map each file in the tweets folder to its corresponding review bombing incident by adding the relevant
+    # dataframe columns and combine all twitter files per rb incident afterwards
+    print("Mapping twitter files to corresponding review bombing incidents ...\n")
 
+    for rb_name in review_bombing_incidents.keys():
+        if rb_name in ["Crusader-Kings-II-Deus-Vult", "The-Long-Dark-GeForce-Now", "Superhot-VR"]:
+            # no social media files were downloaded for these review bombing incidents as they are not used
+            continue
 
-def map_reddit_data():
-    pass
+        # create a subfolder for this review bombing incident if it doesn't exist yet
+        Sub_Folder = OUTPUT_FOLDER_POSTS / rb_name
+        if not Sub_Folder.is_dir():
+            Sub_Folder.mkdir()
+        else:
+            print("WARNING: Subfolder already exists!")
+            answer = input(f"Do you want to overwrite the existing folder for \"{rb_name}\"? [y/n]\n")
+            if str.lower(answer) == "y" or str.lower(answer) == "yes":
+                shutil.rmtree(Sub_Folder)
+                Sub_Folder.mkdir()
+            else:
+                return
+
+        twitter_df_list, reddit_submissions_df_list, reddit_comments_df_list = add_rb_information_to_social_media_files(rb_name)
+        print("Combining files ...\n")
+        twitter_df_combined = pd.concat(twitter_df_list)
+        twitter_df_combined.sort_values(by="created_at", ascending=False, inplace=True)
+        twitter_df_combined = twitter_df_combined.drop_duplicates(subset=['id']).reset_index(drop=True)
+
+        # combine reddit comments and submissions into two different dataframes since they have different columns
+        reddit_submissions_df_combined = pd.concat(reddit_submissions_df_list)
+        reddit_submissions_df_combined.sort_values(by="created_at", ascending=False, inplace=True)
+        reddit_submissions_df_combined = reddit_submissions_df_combined.drop_duplicates(subset=["id"]).reset_index(drop=True)
+
+        reddit_comments_df_combined = pd.concat(reddit_comments_df_list)
+        reddit_comments_df_combined.sort_values(by="created_at", ascending=False, inplace=True)
+        reddit_comments_df_combined = reddit_comments_df_combined.drop_duplicates(subset=["id"]).reset_index(drop=True)
+
+        twitter_df_combined.to_csv(Sub_Folder / f"twitter_combined_{rb_name}.csv", index=False)
+        reddit_submissions_df_combined.to_csv(Sub_Folder / f"reddit_submissions_combined_{rb_name}.csv", index=False)
+        reddit_comments_df_combined.to_csv(Sub_Folder / f"reddit_comments_combined_{rb_name}.csv", index=False)
+        print(f"Finished with review bombing incident {rb_name}\n")
 
 
 if __name__ == "__main__":
     enable_max_pandas_display_size()
-    if not OUTPUT_FOLDER.is_dir():
-        OUTPUT_FOLDER.mkdir()
+
+    if not OUTPUT_FOLDER_REVIEWS.is_dir():
+        OUTPUT_FOLDER_REVIEWS.mkdir(parents=True)
+    if not OUTPUT_FOLDER_POSTS.is_dir():
+        OUTPUT_FOLDER_POSTS.mkdir(parents=True)
 
     add_game_name_columns = False
     if add_game_name_columns:
         add_game_name_to_game_files()
 
-    # for rb_name in review_bombing_incidents:
-    #     add_rb_information_to_game_files(rb_name)
-    review_bombing_name = "Assassins-Creed-Unity"
-    add_rb_information_to_game_files(review_bombing_name)
+    add_review_bombing_information = False
+    if add_review_bombing_information:
+        # for rb_name in review_bombing_incidents:
+        #     add_rb_information_to_game_files(rb_name)
+        review_bombing_name = "Assassins-Creed-Unity"
+        add_rb_information_to_game_files(review_bombing_name)
 
-    # map_tweet_data()
-    # map_reddit_data()
+    map_social_media_data = False
+    if map_social_media_data:
+        map_combine_social_media_data()

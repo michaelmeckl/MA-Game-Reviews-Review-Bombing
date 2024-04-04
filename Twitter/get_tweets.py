@@ -394,7 +394,7 @@ def get_tweets_tweety():
         ],
         "Assassins Creed Unity": [
             '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND ("notre-dame" OR '
-            'fire OR donation OR positive) since:2019-04-17 until:2019-05-20',
+            'fire OR donation OR positive) since:2019-04-16 until:2019-05-20',
         ],
     }
 

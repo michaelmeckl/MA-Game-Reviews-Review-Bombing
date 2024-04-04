@@ -206,9 +206,19 @@ def get_comments_for_game(game, subreddits, query, is_specific_query, start_date
         # comments_df.to_csv(OUT_DATA / f"reddit_comments_{game}_{subreddit}.csv", index=False)
         dataframes.append(comments_df)
 
-    df_all = pd.concat(dataframes, join="outer").drop_duplicates(subset=['id'], keep='first').reset_index(drop=True)
-    df_all.to_csv(OUT_DATA / f"merged_reddit_comments_{'' if is_specific_query else 'general_'}{game}.csv", index=False)
+    df_all_subreddits = pd.concat(dataframes, join="outer").drop_duplicates(subset=['id'], keep='first').reset_index(
+        drop=True)
     # TODO search r/all for comments as well ?
+    """
+    all_query = f"{game} AND ({query})"
+    extracted_all_comments = search_comments_with_redditwarp(query=all_query, subreddit=None, since=start_date,
+                                                             until=end_date, reddit_instance=reddit)
+    print(f"\nExtracted {len(extracted_all_comments)} comments from r/all")
+    all_comments_df = pd.DataFrame(extracted_all_comments)
+
+    df_all_subreddits = pd.concat([df_all_subreddits, all_comments_df]).drop_duplicates(subset=['id']).reset_index(drop=True)
+    """
+    df_all_subreddits.to_csv(OUT_DATA / f"merged_reddit_comments_{'' if is_specific_query else 'general_'}{game}.csv", index=False)
 
 
 def get_reddit_data_for_games():
@@ -280,7 +290,7 @@ def get_reddit_data_for_games():
             "subreddits": ["Firewatch"],
             "start_date": "01-09-2017", "end_date": None,   # "01-11-2017"  # None otherwise no results in subreddit
             "query_subreddit": "DCMA OR takedown OR pewdiepie",
-            "query_comments": "DCMA OR takedown OR pewdiepie",
+            "query_comments": "pewdiepie",
             "query_all": 'Firewatch AND (DCMA OR takedown OR pewdiepie)',
         },
         "Overwatch 2": {
@@ -337,7 +347,7 @@ def get_reddit_data_for_games():
         "Assassins Creed Unity": {
             "name": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity")',
             "subreddits": ["assassinscreed", "acunity"],
-            "start_date": "17-04-2019", "end_date": None,  # "20-05-2019",
+            "start_date": "16-04-2019", "end_date": None,  # "20-05-2019",
             "query_subreddit": 'unity AND ("notre-dame" OR fire OR positive)',
             "query_comments": 'unity AND ("notre-dame" OR fire OR positive)',
             "query_all": '("assassins creed unity" OR "assassin\'s creed unity" OR "AC Unity" OR "AC:Unity") AND ('
