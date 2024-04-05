@@ -58,15 +58,15 @@ Pushshift API ist nicht mehr aktiv seit Mai 2023 und eigenes Scrapen der Result 
 schwierig heraus. Deshalb wurde die RedditWarp API verwendet, diese scheint für Kommentarsuche gut zu 
 funktionieren (nutzt den undokumentierten GraphQL-Endpunkt von Reddit).
 
-**95 % fertig**
+**99 % fertig**
 * Extrahieren / Parsen von Submissions und Kommentaren in bestimmten Subreddits, bzw. "r/all" (sowie den Kommentaren zu 
   einer Submission)
 * Keyword-Suche in Subreddits nach Submissions mithilfe von PRAW (bzw. Reddit Search Queries) und nach Kommentaren 
   mit RedditWarp
 * Timeperiod-Search nach Submissions und Kommentaren vorhanden
 * aktuell wird für Submissions grundsätzlich auch "r/all" durchsucht, für Kommentare nicht (da zu viele)
-* **TODO** Kommentare zu Submissions werden aktuell noch nicht extrahiert! Code dafür ist aber mit ein paar Bugs schon 
-  vorhanden...
+* Code, um Kommentare zu Submissions zu extrahieren ist vorhanden, aber separat und nicht standardmäßig im Ablauf 
+  integriert (für schnelleren Download der Reddit Submissions und aufgrund der Rate Limits) 
 
 **Verwendung :**
 1. in [reddit_api.py](./Reddit/reddit_api.py) existierenden Code in `get_reddit_data_for_games` - Methode anpassen
@@ -178,22 +178,3 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner (im Moment nicht in Githu
     Overwatch 2, The Elder Scrolls V: Skyrim, Grand Theft Auto V, Total War: Rome II, Mortal Kombat 11 und 
     Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing (Skyrim & Fallout 4) sowie für 
     das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code)
-
-* **Alte Social Media-Daten: (folder "old_data")**
-  * **Reddit:**
-    * 49 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Cyberpunk 2077 
-      (aus Subreddits und r/all) aus dem Zeitraum 10.12.2020 - 27.06.2023
-    * 8 Submissions (ohne Kommentare) zur Query `("ReviewBomb*" OR "review-bomb*" OR "review bomb*")` für Hogwarts 
-      Legacy (aus Subreddits und r/all) aus dem Zeitraum 06.02.2023 - 27.06.2023
-    * Submissions und Kommentare zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The Last 
-      of Us Part II, Borderlands Series und Titan Souls für die Queries `ReviewBomb OR boycott OR controversy 
-      OR fake OR sabotage OR manipulate OR spam OR hate` (Submissions) sowie `ReviewBomb OR "review bombing"`(Kommentare)
-  * **Twitter:**
-    * Hogwarts Legacy:
-      * ca 3000-4000 Tweets zu verschiedenen Queries aus Februar 2022 + ca. 8000 Tweets für 06.02
-    * Cyberpunk 2077:
-      * ca 2000 Tweets von bestimmten Tagen im Dezember 2020 und März 2022
-    * Tweets für die Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR controversy OR manipulate OR manipulation OR fake OR sabotage OR sabotaging OR spam OR hate)` zu den Spielen Hogwarts Legacy, Cyberpunk 2077, Elden Ring, Ghostwire Tokyo, The 
-      Last of Us Part II, Borderlands Series, Titan Souls und Kunai
-    * 8449 Tweets zu Ghostwire Tokyo für die Query `Ghostwire Tokyo (lang:en OR lang:de) since:2023-04-11 
-      until:2023-04-19`

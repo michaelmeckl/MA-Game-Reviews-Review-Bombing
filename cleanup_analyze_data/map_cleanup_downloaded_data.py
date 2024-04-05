@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pprint
 import pathlib
+import pprint
 import re
 import shutil
 import pandas as pd
-from utils.utils import enable_max_pandas_display_size, concat_generators
+from sentiment_analysis_and_nlp.language_detection import detect_language
+from utils.utils import enable_max_pandas_display_size, concat_generators, check_if_date_in_range
 
 DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis"
 STEAM_DATA_FOLDER = DATA_FOLDER / "steam"
@@ -34,6 +35,10 @@ review_bombing_incidents = {
                               'waren, Mods sollten grundsätzlich kostenlos sein, hinterließen einige negative '
                               'Reviews für Skyrim.',
         "review_bomb_time": "23. April 2015 - Ende April 2015",
+        # the social media start and end times are a bit broader to also get a few posts before and after the actual
+        # review bombing time period
+        "social_media_start_time": "16.04.2015",
+        "social_media_end_time": "01.07.2015",
     },
     "GrandTheftAutoV-OpenIV": {
         "games_title_terms": ["*grand-theft-auto-v", "*Grand_Theft_Auto_V"],
@@ -48,6 +53,8 @@ review_bombing_incidents = {
                               'da dadurch das Modding des Spiels und damit auch für viele der Spielspaß stark '
                               'eingeschränkt wurde.',
         "review_bomb_time": "14. Juni 2017 - Ende Juli 2017",
+        "social_media_start_time": "07.06.2017",
+        "social_media_end_time": "01.09.2017",
     },
     "Firewatch": {
         "games_title_terms": ["*firewatch"],
@@ -61,6 +68,8 @@ review_bombing_incidents = {
                               'Bewertungen zu Firewatch ab und bezeichneten die Entwickler als "Social Justice '
                               'Warrior" (SJW), oder behaupteten sie würden Zensur unterstützen.',
         "review_bomb_time": "12. September 2017 - Anfang Oktober 2017",
+        "social_media_start_time": "05.09.2017",
+        "social_media_end_time": "01.01.2018",
     },
     "Bethesda-Creation-Club": {
         "games_title_terms": ["*skyrim-special-edition", "*Skyrim_Special_Edition", "*fallout-4", "*Fallout_4"],
@@ -75,6 +84,8 @@ review_bombing_incidents = {
                               'Arbeit unabhängiger Modder selbst mit zu profitieren, führte das zu einer großen '
                               'Anzahl an negativen Reviews für die beiden Spiele.',
         "review_bomb_time": "Beginn 29.08.2017 (Fallout 4), bzw. 26.09.2017 (Skyrim Special Edition) - November 2017",
+        "social_media_start_time": "22.08.2017",
+        "social_media_end_time": "01.01.2018",
     },
     "TotalWar-Rome-II": {
         "games_title_terms": ["*total-war-rome-ii", "*Total_War_ROME_II_Emperor_Edition"],
@@ -93,6 +104,8 @@ review_bombing_incidents = {
                               'Zielgruppe wären. Wenig überraschend führte das zu einem großen \'Shitstorm\' und einer '
                               'Menge negativer Reviews für das Spiel.',
         "review_bomb_time": "September und Oktober 2018",
+        "social_media_start_time": "14.09.2018",
+        "social_media_end_time": "01.01.2019",
     },
     "Metro-Epic-Exclusivity": {
         "games_title_terms": ["*metro*"],
@@ -105,6 +118,8 @@ review_bombing_incidents = {
                               'anderen Plattformen wie Steam. Deshalb erhielten ältere Teile der Metro - Serie '
                               'auf Metacritic und vor allem auf Steam negative Reviews.',
         "review_bomb_time": "28. Januar 2019 - Ende Februar 2019",
+        "social_media_start_time": "20.01.2019",
+        "social_media_end_time": "01.03.2020",
     },
     "Borderlands-Epic-Exclusivity": {
         "games_title_terms": ["*borderlands*"],
@@ -118,6 +133,8 @@ review_bombing_incidents = {
                               'anderen Plattformen wie Steam. Deshalb erhielten ältere Teile der Borderlands - Serie '
                               'auf Steam und Metacritic negative Reviews.',
         "review_bomb_time": "03. April 2019 - Ende April 2019",
+        "social_media_start_time": "20.03.2019",
+        "social_media_end_time": "01.05.2020",
     },
     "Assassins-Creed-Unity": {
         "games_title_terms": ["*assassins-creed-unity", "*Assassin_s_Creed_Unity"],
@@ -130,6 +147,8 @@ review_bombing_incidents = {
                               'Wiederaufbau der Notre-Dame zu spenden. Dies führte innerhalb kurzer Zeit zu einer '
                               'deutlich gestiegenen Zahl an Spielern und positiven Bewertungen.',
         "review_bomb_time": "17. April 2019 - Ende April 2019",
+        "social_media_start_time": "15.04.2019",
+        "social_media_end_time": "01.07.2019",
     },
     "Mortal-Kombat-11": {
         "games_title_terms": ["*mortal-kombat-11", "*Mortal_Kombat_11"],
@@ -143,6 +162,8 @@ review_bombing_incidents = {
                               'abzuschaffen), vielen Mikrotransaktionen und dem Fehlen von beliebten Charakteren aus '
                               'früheren Teilen der Serie.',
         "review_bomb_time": "23. April 2019 - Ende Mai 2019",
+        "social_media_start_time": "16.04.2019",
+        "social_media_end_time": "01.07.2019",
     },
     "Crusader-Kings-II-Deus-Vult": {
         "games_title_terms": ["*crusader-kings-ii", "*Crusader_Kings_II"],
@@ -159,6 +180,8 @@ review_bombing_incidents = {
                               'Community nicht gut an, weshalb bei dem damals aktuellen 2. Teil sehr viele negative '
                               'Reviews mit Bezug auf "Deus Vult" hinterlassen wurden.',
         "review_bomb_time": "19. Oktober - Ende Oktober 2019",
+        "social_media_start_time": "12.10.2019",
+        "social_media_end_time": "01.12.2019",
     },
     "The-Long-Dark-GeForce-Now": {
         "games_title_terms": ["*the-long-dark", "*The_Long_Dark"],
@@ -171,6 +194,8 @@ review_bombing_incidents = {
                               'was dazu führte, dass die Entwickler wegen ihrer Entscheidung als gierig bezeichnet '
                               'wurden und negative Reviews für das Spiel hinterlassen wurden.',
         "review_bomb_time": "02. März - April 2020",
+        "social_media_start_time": "01.03.2020",
+        "social_media_end_time": "01.05.2020",
     },
     "Superhot-VR": {
         "games_title_terms": ["*superhot-vr", "*SUPERHOT_VR"],
@@ -183,6 +208,8 @@ review_bombing_incidents = {
                               'Entfernen von Content enttäuscht und bezeichneten die Aktion als "Zensur" und '
                               '"verweichlicht" oder beschwerten sich über die angebliche "Wokeness" der Entwickler.',
         "review_bomb_time": "21. Juli - Ende Juli 2021",
+        "social_media_start_time": "14.07.2021",
+        "social_media_end_time": "01.09.2021",
     },
     "Ukraine-Russia-Conflict": {
         "games_title_terms": ["*cyberpunk-2077", "*cyberpunk-2077_03_2022", "*Cyberpunk_2077",
@@ -206,6 +233,8 @@ review_bombing_incidents = {
                               "da sie der Meinung waren, dass sich Spieleentwickler aus politischen Angelegenheiten "
                               "heraushalten sollten.",
         "review_bomb_time": "24. Februar 2022 - Anfang April 2022",
+        "social_media_start_time": "17.02.2022",
+        "social_media_end_time": "01.07.2022",
     },
     "Overwatch-2": {
         "games_title_terms": ["*overwatch-2", "*Overwatch_2"],
@@ -221,6 +250,8 @@ review_bombing_incidents = {
                               'enthalten waren. Zudem wurde mit dem Start von Overwatch 2 das erste Overwatch '
                               'abgeschaltet, was langjährige Spieler des ersten Teils verärgerte.',
         "review_bomb_time": "11. August 2023 - September 2023",
+        "social_media_start_time": "04.10.2022",
+        "social_media_end_time": "01.10.2023",
     },
 }
 
@@ -538,6 +569,41 @@ def add_rb_information_to_social_media_files(rb_incident_name):
     return twitter_dataframes, reddit_submissions_dataframes, reddit_comments_dataframes
 
 
+def add_language_column(df: pd.DataFrame, content_column_names: list[str]):
+    def check_language(post):
+        text_content = post["combined_content"]
+        # since it is only relevant whether it is in english or not other languages are ignored for now
+        detected_language = "english" if detect_language(text_content) == "en" else "other"
+        # detected_language = "english" if detect_contains_english(text_content) else "other"
+        return detected_language
+
+    # combine all the text column first (e.g. title and content for reddit submissions) into a new column with one
+    # text divided by newline
+    df["combined_content"] = df[[*content_column_names]].fillna('').apply("\n".join, axis=1)
+
+    # add a new column to the given dataframe with the detected language of the text content
+    lang_result = df.apply(lambda row: check_language(row), axis=1)
+    df.insert(4, "detected_language", lang_result.reset_index(drop=True))
+    # df.drop(columns=["combined_content"], axis=1, inplace=True)  # remove the temporarily created combined text column
+
+
+def filter_post_time_period(df: pd.DataFrame, review_bombing_incident: str, is_reddit_submissions_file=False):
+    # first, bring all date columns into the same format as the reviews have
+    if is_reddit_submissions_file:
+        df['created_at'] = pd.to_datetime(df['created_at'], unit="s")
+        df.drop(columns=['created_at_formatted'], axis=1, inplace=True)  # not needed anymore
+    else:
+        df['created_at'] = pd.to_datetime(df['created_at'])
+    df['created_at'] = df['created_at'].dt.strftime('%d.%m.%Y %H:%M:%S')
+
+    start_time = review_bombing_incidents[review_bombing_incident]["social_media_start_time"]
+    end_time = review_bombing_incidents[review_bombing_incident]["social_media_end_time"]
+    # add new column with True / False based on whether the post was created during the time of the review bomb
+    in_rb_period_result = df["created_at"].apply(
+        lambda post_date: check_if_date_in_range(post_date, start_time, end_time))
+    df.insert(6, "in_rb_time_period", in_rb_period_result.reset_index(drop=True))
+
+
 def map_combine_social_media_data():
     # map each file in the tweets folder to its corresponding review bombing incident by adding the relevant
     # dataframe columns and combine all twitter files per rb incident afterwards
@@ -562,6 +628,7 @@ def map_combine_social_media_data():
                 return
 
         twitter_df_list, reddit_submissions_df_list, reddit_comments_df_list = add_rb_information_to_social_media_files(rb_name)
+
         print("Combining files ...\n")
         twitter_df_combined = pd.concat(twitter_df_list)
         twitter_df_combined.sort_values(by="created_at", ascending=False, inplace=True)
@@ -575,6 +642,18 @@ def map_combine_social_media_data():
         reddit_comments_df_combined = pd.concat(reddit_comments_df_list)
         reddit_comments_df_combined.sort_values(by="created_at", ascending=False, inplace=True)
         reddit_comments_df_combined = reddit_comments_df_combined.drop_duplicates(subset=["id"]).reset_index(drop=True)
+
+        # add a new column that flags each posts as either english or not to make it easier to separate these later
+        print("Detecting language for each post ...")
+        add_language_column(twitter_df_combined, content_column_names=["content"])
+        add_language_column(reddit_submissions_df_combined, content_column_names=["title", "content"])
+        add_language_column(reddit_comments_df_combined, content_column_names=["content"])
+
+        # Check for each post if it's creation time is approximately in the period of the review bombing incident
+        print("Filtering time range ...")
+        filter_post_time_period(twitter_df_combined, rb_name)
+        filter_post_time_period(reddit_submissions_df_combined, rb_name, is_reddit_submissions_file=True)
+        filter_post_time_period(reddit_comments_df_combined, rb_name)
 
         twitter_df_combined.to_csv(Sub_Folder / f"twitter_combined_{rb_name}.csv", index=False)
         reddit_submissions_df_combined.to_csv(Sub_Folder / f"reddit_submissions_combined_{rb_name}.csv", index=False)
