@@ -152,7 +152,7 @@ def search_submissions(query: str, subreddits: list[str] = None, limit=None, sin
                 continue
 
             extract_relevant_submission_content(submission, existing_submissions, all_submissions)
-            # extract_comments_for_submission(submission)  # TODO also extract the comments for each submission ?
+            # extract_comments_for_submission(submission)  # also extract the comments for each submission ?
 
         except prawcore.exceptions.Forbidden as exc:
             print("Forbidden error!")
@@ -386,7 +386,7 @@ def get_comments_for_extracted_submissions():
         submission_id = submission_row["id"]
         try:
             submission = get_specific_submission(submission_id, choice="i")
-            comment_list = extract_comments_for_submission(submission, only_top_level=False)
+            comment_list = extract_comments_for_submission(submission, only_top_level=True)
 
             # Fill in the missing values from the associated submission; this could be done when extracting the
             # comment, but it is far more efficient (in terms of requests) to only do it once here for all comments
@@ -406,28 +406,33 @@ def get_comments_for_extracted_submissions():
         except Exception as e:
             print(f"ERROR when trying to load comments for submission ({submission_id}): {e}")
 
-    submissions_folder = pathlib.Path(__file__).parent.parent / "data_for_analysis" / "reddit"
-    for submissions_file in os.listdir(submissions_folder):
-        if "submissions" not in submissions_file:
-            continue
-        print("Loading comments for submission file: ", submissions_file)
-        all_comments = list()
+    cleaned_data_folder = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "posts"
+    for review_bombing_folder in os.listdir(cleaned_data_folder):
+        for post_file in os.listdir(cleaned_data_folder / review_bombing_folder):
+            if "reddit_submissions" not in post_file:
+                continue
+            print("Loading comments for submission file: ", post_file)
+            all_comments = list()
 
-        submissions_df = pd.read_csv(submissions_folder / submissions_file)
-        # submissions_df = submissions_df.head(2)    # take first n rows only for faster testing
-        # submissions_df["id"].apply(lambda submission: load_comments(submission))
-        submissions_df.apply(lambda row: load_comments(row), axis=1)
-        comments_df = pd.DataFrame(all_comments)
+            submissions_df = pd.read_csv(cleaned_data_folder / review_bombing_folder / post_file)
+            # load only comments for submissions written during the review bombing - period
+            time_filtered_df = submissions_df[submissions_df["in_rb_time_period"]]
+            print(f"Loading comments for {len(time_filtered_df)} submissions... (rows overall: {len(submissions_df)})")
 
-        submissions_file_name = (submissions_folder / submissions_file).stem   # remove the file extension
-        comments_df.to_csv(OUT_DATA / f"{submissions_file_name}_comments.csv", index=False)
-        print("\n#########################\n"
-              f"Finished with submissions file {submissions_file}"
-              "\n#########################\n")
+            # submissions_df = submissions_df.head(2)    # take first n rows only for faster testing
+            time_filtered_df.apply(lambda row: load_comments(row), axis=1)
+            comments_df = pd.DataFrame(all_comments)
+
+            # remove the file extension
+            submissions_file_name = (cleaned_data_folder / review_bombing_folder / post_file).stem
+            comments_df.to_csv(OUT_DATA / f"comments_for_{submissions_file_name}.csv", index=False)
+            print("\n#########################\n"
+                  f"Finished with submissions file {post_file}"
+                  "\n#########################\n")
 
 
 # ! nach neuem Pricing (seit 1. Juli 2023) nur noch 10 queries pro Minute ohne OAuth - Authentifikation ?
 if __name__ == "__main__":
     # extracted_submissions = extract_submissions_from(["cyberpunkgame"])
     get_reddit_data_for_games()
-    # get_comments_for_extracted_submissions()  # TODO
+    # get_comments_for_extracted_submissions()

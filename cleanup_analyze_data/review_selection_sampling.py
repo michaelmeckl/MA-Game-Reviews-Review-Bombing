@@ -46,7 +46,8 @@ def load_data(path):
 
 
 def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacritic: pd.DataFrame,
-                                     game_info_steam: pd.DataFrame, game_info_metacritic: pd.DataFrame):
+                                     game_info_steam: pd.DataFrame, game_info_metacritic: pd.DataFrame,
+                                     drop_columns=True):
     """
     Combine metacritic and steam reviews into one unified dataframe. As steam reviews have far more features the
     Metacritic rows will contain a lot of empty values.
@@ -65,20 +66,22 @@ def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacr
     # merge the reviews and the general info for the game
     combined_df = merged_reviews_df.merge(merged_game_info_df, on=None, how='inner')
 
-    # drop unnecessary columns
-    combined_df = combined_df.drop(columns=["review_id", "created_at", "last_updated", "author_id", "comment_count",
-                                            "platform", "profile_visibility", "profile_url", "game_id", "game_title",
-                                            "price_euro",
-                                            # the following are not useful for the annotation study in label studio:
-                                            "review_bombing_incident", "weighted_score", "developers",
-                                            "publishers", "detailed_description", "title", "author_review_distribution",
-                                            "user_score_distribution", "user_score", "critic_score", "num_user_ratings",
-                                            "author_num_game_reviews", "author_average_score", "unhelpful_votes",
-                                            "helpful_votes", "author_reviews_overall", "author_ratings_overall",
-                                            "author_steam_level", "author_num_owned_games", "author_num_friends",
-                                            "author_country_code", "author_last_online", "profile_created",
-                                            "author_real_name", "username"],
-                                   axis=1)
+    if drop_columns:
+        # drop unnecessary columns
+        combined_df = combined_df.drop(columns=["review_id", "created_at", "last_updated", "author_id", "comment_count",
+                                                "platform", "profile_visibility", "profile_url", "game_id",
+                                                "game_title", "price_euro",
+                                                # the following are not useful for the annotation study in label studio:
+                                                "review_bombing_incident", "weighted_score", "developers",
+                                                "publishers", "detailed_description", "title",
+                                                "author_review_distribution", "user_score_distribution",
+                                                "user_score", "critic_score", "num_user_ratings",
+                                                "author_num_game_reviews", "author_average_score", "unhelpful_votes",
+                                                "helpful_votes", "author_reviews_overall", "author_ratings_overall",
+                                                "author_steam_level", "author_num_owned_games", "author_num_friends",
+                                                "author_country_code", "author_last_online", "profile_created",
+                                                "author_real_name", "username"],
+                                       axis=1)
 
     # add a new column for label studio that contains the Metacritic score if it is a Metacritic review or the
     # "Recommended" / "Not recommended" label if it is a Steam review
@@ -273,7 +276,7 @@ def preprocess_reviews_for_label_studio(review_dataframe: pd.DataFrame, rb_name:
     # add lowercase column for the comparison so reviews "good game" and "Good Game" are still considered duplicates!
     english_review_dataframe["review_case_insensitive"] = english_review_dataframe["review"].astype(str).str.lower()
     english_review_dataframe["review_case_insensitive"] = english_review_dataframe[
-        'review_case_insensitive'].str.replace(r'[^\w+\s+]', '', regex=True)
+        'review_case_insensitive'].str.replace(r'[^\w+\s+]', '', regex=True)  # also remove punctuation
     no_duplicates_review_dataframe = english_review_dataframe.drop_duplicates(subset=["review_case_insensitive"])
     no_duplicates_review_dataframe = no_duplicates_review_dataframe.drop(columns=["review_case_insensitive"], axis=1)
     print(f"Removed {len(english_review_dataframe) - len(no_duplicates_review_dataframe)} rows with duplicate texts")
@@ -571,11 +574,11 @@ if __name__ == "__main__":
         # "Crusader-Kings-II-Deus-Vult": DATA_FOLDER / "Crusader-Kings-II-Deus-Vult",
         "Firewatch": DATA_FOLDER / "Firewatch",
         # "GrandTheftAutoV-OpenIV": DATA_FOLDER / "GrandTheftAutoV-OpenIV",
-        "Metro-Epic-Exclusivity": DATA_FOLDER / "Metro-Epic-Exclusivity",
+        # "Metro-Epic-Exclusivity": DATA_FOLDER / "Metro-Epic-Exclusivity",
         "Mortal-Kombat-11": DATA_FOLDER / "Mortal-Kombat-11",
         # "Overwatch-2": DATA_FOLDER / "Overwatch-2",
         "Skyrim-Paid-Mods": DATA_FOLDER / "Skyrim-Paid-Mods",
-        "Superhot-VR": DATA_FOLDER / "Superhot-VR",
+        # "Superhot-VR": DATA_FOLDER / "Superhot-VR",
         # "The-Long-Dark-GeForce-Now": DATA_FOLDER / "The-Long-Dark-GeForce-Now",
         # "TotalWar-Rome-II": DATA_FOLDER / "TotalWar-Rome-II",
         "Ukraine-Russia-Conflict": DATA_FOLDER / "Ukraine-Russia-Conflict",

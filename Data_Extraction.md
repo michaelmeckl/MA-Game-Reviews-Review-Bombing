@@ -166,6 +166,9 @@ vgl. [data_for_analysis](./data_for_analysis) - Ordner (im Moment nicht in Githu
     War: Rome II, Mortal Kombat 11 und Assassin's Creed Unity* sowie für das Bethesda Creation Club - Review Bombing 
     (Skyrim & Fallout 4) sowie für das Russland-Ukraine-Review Bombing (für Queries & Zeiträume, s. Code; manchmal 
     auch Ergebnisse mehrerer Queries kombiniert)
+  * Kommentare (nur top-level) mit zugehörigen User Informationen für alle Submissions in den Review Bombing - 
+    Zeiträumen der Vorfälle *The Elder Scrolls V: Skyrim - Paid Mods, Assassin's Creed Unity, Mortal Kombat 11, 
+    Firewatch, Borderlands 3 und das Russland-Ukraine-Review Bombing*
   
 * **Twitter:**
   * Tweets für die allg. Query `[GAME] review (bomb OR bombs OR bombing OR boycott OR boycotting OR controvers OR 

@@ -591,7 +591,7 @@ def filter_post_time_period(df: pd.DataFrame, review_bombing_incident: str, is_r
     # first, bring all date columns into the same format as the reviews have
     if is_reddit_submissions_file:
         df['created_at'] = pd.to_datetime(df['created_at'], unit="s")
-        df.drop(columns=['created_at_formatted'], axis=1, inplace=True)  # not needed anymore
+        # df.drop(columns=['created_at_formatted'], axis=1, inplace=True)  # not needed anymore
     else:
         df['created_at'] = pd.to_datetime(df['created_at'])
     df['created_at'] = df['created_at'].dt.strftime('%d.%m.%Y %H:%M:%S')
@@ -607,7 +607,7 @@ def filter_post_time_period(df: pd.DataFrame, review_bombing_incident: str, is_r
 def map_combine_social_media_data():
     # map each file in the tweets folder to its corresponding review bombing incident by adding the relevant
     # dataframe columns and combine all twitter files per rb incident afterwards
-    print("Mapping twitter files to corresponding review bombing incidents ...\n")
+    print("Mapping social media files to corresponding review bombing incidents ...\n")
 
     for rb_name in review_bombing_incidents.keys():
         if rb_name in ["Crusader-Kings-II-Deus-Vult", "The-Long-Dark-GeForce-Now", "Superhot-VR"]:
@@ -661,6 +661,49 @@ def map_combine_social_media_data():
         print(f"Finished with review bombing incident {rb_name}\n")
 
 
+def cleanup_reddit_comments_for_submissions():
+    # These were only fetched for certain review bombing incidents and rely on the cleaned reddit_submissions file
+    # from the method above, so they need to be loaded and cleaned after the other social media files
+    submission_comments_pattern = "comments_*submissions*"
+    reddit_comment_files = [f for f in REDDIT_DATA_FOLDER.glob(submission_comments_pattern)]
+    pprint.pprint(reddit_comment_files)
+
+    for file in reddit_comment_files:
+        print(f"Updating file {file} ...\n")
+        df = pd.read_csv(file)
+        incident_name = ""
+        for rb_name in review_bombing_incidents.keys():
+            # these reddit files contain the rb_name from the dictionary above in their file name (I know, just don't
+            # touch anything related to it ...)
+            if rb_name in file.stem:
+                incident_name = rb_name
+                affected_games = review_bombing_incidents[rb_name]["affected_games"]
+                df.insert(3, "affected_games", [affected_games] * len(df))
+                df.insert(3, "review_bombing_incident", [rb_name] * len(df))
+
+        df.insert(3, "source", ["Reddit"] * len(df))
+        print("Detecting language ...")
+        add_language_column(df, content_column_names=["content"])
+        print("Filtering time range ...")
+        filter_post_time_period(df, incident_name)
+        df.to_csv(OUTPUT_FOLDER_POSTS / incident_name / f"reddit_comments_for_submissions_{incident_name}.csv", index=False)
+
+
+def combine_reddit_comments():
+    for review_bombing_folder in OUTPUT_FOLDER_POSTS.iterdir():
+        try:
+            rb_name = review_bombing_folder.stem
+            reddit_comments_df = pd.read_csv(review_bombing_folder / f"reddit_comments_combined_{rb_name}.csv")
+            reddit_submission_comments_df = pd.read_csv(review_bombing_folder / f"reddit_comments_for_submissions_{rb_name}.csv")
+            combined_comments_df = pd.concat([reddit_comments_df, reddit_submission_comments_df])
+            combined_comments_df.sort_values(by="created_at", ascending=False, inplace=True)
+            combined_comments_df = combined_comments_df.drop_duplicates(subset=['id']).reset_index(drop=True)
+
+            combined_comments_df.to_csv(review_bombing_folder / f"combined_reddit_comments_{rb_name}.csv", index=False)
+        except Exception as e:
+            print(f"Could not load and combine two reddit comments files for folder {review_bombing_folder}: {e}\n")
+
+
 if __name__ == "__main__":
     enable_max_pandas_display_size()
 
@@ -683,3 +726,8 @@ if __name__ == "__main__":
     map_social_media_data = False
     if map_social_media_data:
         map_combine_social_media_data()
+
+    cleanup_combine_reddit_comments = False
+    if cleanup_combine_reddit_comments:
+        cleanup_reddit_comments_for_submissions()
+        combine_reddit_comments()
