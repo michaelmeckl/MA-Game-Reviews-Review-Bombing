@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import json
 import pprint
 import pathlib
-from datetime import datetime
 import pandas as pd
 from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
 from utils import utils
@@ -15,33 +13,6 @@ from textstat import textstat
 from textblob import TextBlob, Word
 
 DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis"
-
-
-def analyze_steam_review_graph(review_graph_data: dict):
-    # convert unix timestamps to readable dates
-    start_date_unix = review_graph_data["start_date"]
-    end_date_unix = review_graph_data["end_date"]
-    start_date = datetime.fromtimestamp(start_date_unix).strftime('%d.%m.%Y')
-    end_date = datetime.fromtimestamp(end_date_unix).strftime('%d.%m.%Y')
-    print(f"\nSteam Review Graph Data from {start_date = } to {end_date = }")
-
-    steam_review_graph_dict = {"month": [], "recommendations_up": [], "recommendations_down": []}
-    months_data = review_graph_data["review_data"]
-    for month in months_data:
-        date_utc = month["date"]
-        date = datetime.fromtimestamp(date_utc).strftime('%m.%Y')
-        upvotes = month["recommendations_up"]
-        downvotes = month["recommendations_down"]
-        print(f"{date}: {upvotes} Upvotes / {downvotes} Downvotes")
-        steam_review_graph_dict["month"].append(date)
-        steam_review_graph_dict["recommendations_up"].append(upvotes)
-        steam_review_graph_dict["recommendations_down"].append(downvotes)
-
-    # convert data to csv
-    review_graph_df = pd.DataFrame(steam_review_graph_dict)
-    review_graph_df.to_csv("steam_review_graph_cyberpunk_2077.csv", index=False)
-
-    # TODO search for temporal bursts and other suspicious changes in the number of reviews per month
 
 
 def analyze_reviewer(reviewer: pd.Series):
@@ -171,12 +142,6 @@ def analyze_review(review: pd.Series):
 
 
 def start_analysis():
-    """
-    with open(DATA_FOLDER / "steam" / "steam_reviews_timeseries_Cyberpunk_2077.json", "r") as f:
-        steam_graph_data = json.load(f)
-    analyze_steam_review_graph(steam_graph_data)
-    """
-
     review_df = pd.read_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv")
     review_df.apply(lambda row: analyze_review(row), axis=1)
     # review_df["profanity_in_percent"] = predict_prob(review_df["review"]) * 100
