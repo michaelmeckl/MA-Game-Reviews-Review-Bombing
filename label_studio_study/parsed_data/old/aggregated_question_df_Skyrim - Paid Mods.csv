@@ -1,7 +1,0 @@
-project,annotation_question,num_reviews_yes,num_reviews_no,avg_lead_time_project_in_s,avg_agreement_project,highest_agreement_project,lowest_agreement_project
-Skyrim - Paid Mods,is-review-bombing,503,48,40.63,73.03,100.0,44.44
-Skyrim - Paid Mods,is-rating-game-related,250,301,40.63,73.03,100.0,44.44
-Skyrim - Paid Mods,criticism-praise-game-content,263,288,40.63,73.03,100.0,44.44
-Skyrim - Paid Mods,criticism-praise-developer-publisher,397,154,40.63,73.03,100.0,44.44
-Skyrim - Paid Mods,criticism-praise-ideological,287,264,40.63,73.03,100.0,44.44
-Skyrim - Paid Mods,criticism-praise-political,4,547,40.63,73.03,100.0,44.44
