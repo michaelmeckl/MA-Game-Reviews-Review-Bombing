@@ -7,6 +7,7 @@ import string
 import numpy as np
 import pandas as pd
 from nltk import word_tokenize
+from cleanup_analyze_data.review_bombing_incidents_info import review_bombing_incidents
 from sentiment_analysis_and_nlp.language_detection import detect_language, detect_contains_english, \
     setup_spacy_language_detection, detect_language_spacy
 from utils.utils import enable_max_pandas_display_size, check_if_date_in_range
@@ -567,7 +568,7 @@ if __name__ == "__main__":
     if not OUTPUT_FOLDER.is_dir():
         OUTPUT_FOLDER.mkdir()
 
-    review_bombing_incidents = {
+    review_bombing_incident_paths = {
         "Assassins-Creed-Unity": DATA_FOLDER / "Assassins-Creed-Unity",
         # "Bethesda-Creation-Club": DATA_FOLDER / "Bethesda-Creation-Club",
         "Borderlands-Epic-Exclusivity": DATA_FOLDER / "Borderlands-Epic-Exclusivity",
@@ -584,15 +585,14 @@ if __name__ == "__main__":
         "Ukraine-Russia-Conflict": DATA_FOLDER / "Ukraine-Russia-Conflict",
     }
 
-    ###### the start and end date of the review bombing must be updated for every review bombing incident! ######
-    # see the dictionary at the top of the "map_cleanup_downloaded_data.py" file
-    metacritic_start_date = "24.02.2022"
-    metacritic_end_date = "16.04.2022"
-
     ###### the name here needs to be updated for different review bombing incidents, see dictionary above ######
     review_bombing_name = "Ukraine-Russia-Conflict"
-    data_path = review_bombing_incidents[review_bombing_name]
+    data_path = review_bombing_incident_paths[review_bombing_name]
     label_studio_data_path = OUTPUT_FOLDER / f"{review_bombing_name}"
+
+    ###### the start and end date of the review bombing must be updated for every review bombing incident! ######
+    metacritic_start_date = review_bombing_incidents[review_bombing_name]["rb_start_date"]
+    metacritic_end_date = review_bombing_incidents[review_bombing_name]["rb_end_date"]
 
     combine_data_first = False
     if combine_data_first:
