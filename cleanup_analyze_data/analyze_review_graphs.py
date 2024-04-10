@@ -64,7 +64,7 @@ def analyze_game_graph(game_df, results_dict: dict):
     sub_df["date"] = sub_df.index
     votes_diff["date"] = votes_diff.index
 
-    # check for which month / row the calculated difference values exceed the thresholds defined above
+    # check for which month / row the calculated difference values exceed the thresholds defined above: find "peaks"
     votes_diff_new = votes_diff.iloc[2:]  # remove the first two rows / month
     votes_diff_suspicious = votes_diff_new[(votes_diff_new["recommendations_up"] >= threshold_votes_up) | (
                 votes_diff_new["recommendations_down"] >= threshold_votes_down)]

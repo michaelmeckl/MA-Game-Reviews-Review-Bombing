@@ -6,7 +6,7 @@ from enum import Enum
 
 RANDOM_SEED = 42
 
-INPUT_DATA_FOLDER = pathlib.Path(__file__).parent.parent / "label_studio_study" / "parsed_data"
+INPUT_DATA_FOLDER = pathlib.Path(__file__).parent.parent
 MODEL_FOLDER = pathlib.Path(__file__).parent / "trained_models"
 
 # the colum names that contain the annotation results

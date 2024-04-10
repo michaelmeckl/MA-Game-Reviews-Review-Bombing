@@ -45,7 +45,6 @@ def load_unlabeled_data() -> pd.DataFrame:
     # with many links as well
     #english_review_data = combined_review_df[combined_review_df["review"].apply(lambda x: detect_language(x)).eq('en')]
 
-    # TODO split ?
     # train_data_len = int(len(english_review_data) * 0.8)  # 80 - 20 - split
     # train_data = list(english_review_data['review'][:train_data_len])
 
@@ -114,7 +113,6 @@ def lf_metadata(x):
 
 
 def train_snorkel_label_model(df_train, df_test):
-    # TODO
     df_train["label"] = 0
 
     lfs = [lf_keywords, lf_contains_review_bomb, lf_textblob_polarity]

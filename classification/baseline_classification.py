@@ -62,7 +62,7 @@ def preprocess_categorical_data(df: pd.DataFrame, column_names: list[str], use_w
 
 def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, num_epochs=2):
     total_steps = len(train_dataloader) * num_epochs
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.CrossEntropyLoss()   # nn.BCELoss()  # use binary cross entropy ?
     optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 5e-5  # see BERT paper for learning rates
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
@@ -166,6 +166,9 @@ def preprocess_data_version_1(df: pd.DataFrame):
     test_x = test_x.reset_index(drop=True)
     test_y = test_y.reset_index(drop=True)
 
+    # TODO Reihenfolge der Reviews für Review Analyse wichtig? **Temporal splitting** (i.e. Trainingsreviews am
+    #  ältesten, Testreviews am neuesten)  -> kein Random Split oder K-Fold-Crossvalidation !
+
     ######################## create custom dataset and dataloader #######################
     # TODO also test other ways to vectorize with word embeddings such as word2vec or GloVe ?
     """
@@ -186,7 +189,7 @@ def preprocess_data_version_1(df: pd.DataFrame):
 
     train_dataset = CustomDataset(train_x, train_y)  # transform=tokenize_review
     test_dataset = CustomDataset(test_x, test_y)  # transform=tokenize_review
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=data_collator)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=data_collator)  # num_workers = 2
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=data_collator)
 
     """
@@ -217,7 +220,7 @@ if __name__ == "__main__":
         # load relevant data
         # TODO for testing
         num_rows = 10
-        combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects.csv",
+        combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
                                               nrows=num_rows)
         # random shuffle the data
         combined_annotated_data = combined_annotated_data.sample(frac=1)
@@ -239,7 +242,8 @@ if __name__ == "__main__":
         # load local model
         n_classes = 2
         model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
-        model.load_state_dict(torch.load(MODEL_FOLDER / "baseline_model.pt"))
+        checkpoint = torch.load(MODEL_FOLDER / "baseline_model.pt")
+        model.load_state_dict(checkpoint['model_state_dict'])
         # model.eval()  # switch to inference mode to not resume training
 
         # test prediction

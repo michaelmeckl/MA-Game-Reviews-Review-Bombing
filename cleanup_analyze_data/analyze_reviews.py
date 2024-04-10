@@ -12,8 +12,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from textstat import textstat
 from textblob import TextBlob, Word
 
-DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis"
-
 
 def analyze_reviewer(reviewer: pd.Series):
     # TODO analyze combined with review !! look for the same username in metacritic & steam?
@@ -260,6 +258,8 @@ def get_combined_data_march_2022():
 
 if __name__ == "__main__":
     utils.enable_max_pandas_display_size()
+    DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "reviews"
+
     # prepare_data()
     # start_analysis()
 
