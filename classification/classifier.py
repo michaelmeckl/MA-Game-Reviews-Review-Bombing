@@ -138,13 +138,13 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         progress_bar.update(1)
         if batch_number % 10 == 0:
             current_num = (batch_number + 1) * len(input_ids)
-            print(f"batch loss: {batch_loss:>7f}  [{current_num:>4d}/{dataset_size:>4d}]")
+            print(f"\nbatch loss: {batch_loss:>7f}  [{current_num:>4d}/{dataset_size:>4d}]")
 
     # for calculating loss see https://discuss.pytorch.org/t/correct-way-to-calculate-train-and-valid-loss/178974 and
     # https://stackoverflow.com/questions/59584457/pytorch-is-there-a-definitive-training-loop-similar-to-keras-fit
     avg_train_loss = sum(running_losses) / dataset_size
     avg_train_accuracy = round(total_correct / total_samples, 4) * 100
-    print(f"Average train loss: {avg_train_loss:.4f}\nTrain Accuracy:{avg_train_accuracy:.2f}%\n")
+    print(f"\nAverage train loss: {avg_train_loss:.4f}\nTrain Accuracy:{avg_train_accuracy:.2f}%\n")
 
     history["train_loss"].append(avg_train_loss)
     history["train_accuracy"].append(avg_train_accuracy)
@@ -208,15 +208,15 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     return avg_val_loss, val_accuracy
 
 
-def predict_label(text, model, tokenizer, device, max_length=512):
+def predict_label(text, target_col: str, model, tokenizer, device, max_length=512):
     model.eval()
     encoding = tokenizer(text, return_tensors='pt', padding="longest", truncation=True, max_length=max_length)
     input_ids = encoding['input_ids'].to(device)
     attention_mask = encoding['attention_mask'].to(device)
     # depends on how it was encoded during training!
     label_encoding = {
-        0: "Is Review Bombing",
-        1: "Not Review Bombing"
+        0: "Is Review Bombing" if target_col == "is-review-bombing" else "Is Off-Topic",
+        1: "Not Review Bombing" if target_col == "is-review-bombing" else "Not Off-Topic"
     }
 
     with torch.no_grad():

@@ -34,8 +34,9 @@ class CustomDataset(Dataset):
 
 
 class CustomBaselineDataset(Dataset):
-    def __init__(self, dataframe: pd.DataFrame, transform=None, target_transform=None):
+    def __init__(self, dataframe: pd.DataFrame, target_col: str, transform=None, target_transform=None):
         self.dataframe = dataframe
+        self.target_column = target_col
         self.transform = transform
         self.target_transform = target_transform
 
@@ -45,9 +46,9 @@ class CustomBaselineDataset(Dataset):
     def __getitem__(self, idx):
         row = self.dataframe.iloc[idx]
         review = row["review"]
-        label = row["is-review-bombing"]
+        label = row[self.target_column]
         # review = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("review")]
-        # label = self.dataframe.iloc[idx, self.dataframe.columns.get_loc("is-review-bombing")]
+        # label = self.dataframe.iloc[idx, self.dataframe.columns.get_loc(self.target_column)]
         if self.transform:
             review = self.transform(review)
         if self.target_transform:

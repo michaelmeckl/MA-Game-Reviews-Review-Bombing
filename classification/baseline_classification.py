@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torchtext
-from datasets import Dataset
+from datasets import Dataset as ds
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -97,6 +97,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
                                                    output_path=MODEL_FOLDER / f"baseline-epoch-{epoch}.pt")
         if val_accuracy > best_accuracy:
             best_accuracy = val_accuracy
+            print(f"Best val accuracy is now: {val_accuracy:.2f}% \n")
             classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
                                                        output_path=MODEL_FOLDER / f"baseline-best-model.pt")
     print("Finished training the model!\n")
@@ -118,44 +119,44 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     return optimizer
 
 
-def preprocess_data_version_2(df: pd.DataFrame):
+def preprocess_data_version_2(df: pd.DataFrame, target_col: str):
     relevant_data = df.filter(["review", *annotation_questions])
     print("==============================================")
     print(f'The shape of the relevant_data is: {relevant_data.shape}')
     print("==============================================")
-    print(f'The number of values for "is-review-bombing" is:\n{relevant_data["is-review-bombing"].value_counts()}')
+    print(f'The number of values for "{target_col}" is:\n{relevant_data[target_col].value_counts()}')
     print("==============================================")
 
     # encode the target variables
-    encode_target_variable(relevant_data, annotation_questions, use_label_encoder=False)
+    encode_target_variable(relevant_data, target_col, annotation_questions, use_label_encoder=False)
 
     # split into train and test data
     train_data, test_data = split_data_pytorch(relevant_data)
 
     # create dataset and dataloader
     batch_size = 32
-    training_dataset = CustomBaselineDataset(train_data)
-    test_dataset = CustomBaselineDataset(test_data)
+    training_dataset = CustomBaselineDataset(train_data, target_col)
+    test_dataset = CustomBaselineDataset(test_data, target_col)
     train_dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_dataloader, test_dataloader
 
 
-def preprocess_data_version_1(df: pd.DataFrame):
+def preprocess_data_version_1(df: pd.DataFrame, target_col: str):
     ###################### encode categorical variables #####################
-    encode_target_variable(df, annotation_questions, use_label_encoder=False)
+    encode_target_variable(df, target_col, annotation_questions, use_label_encoder=False)
 
     ############################################
     # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
     # not have to be performed for every batch while training!
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    dataset = Dataset.from_pandas(df[["review"]])
+    dataset = ds.from_pandas(df[["review"]])
     # don't use padding here already, instead a data collator is later used for dynamic padding
     tokenized_dataset = dataset.map(lambda data: tokenizer(data["review"], truncation=True, max_length=max_tokens),
                                     batched=True)
     # tokenized_dataset.set_format("torch")  # convert to pytorch dataset
     X_data = tokenized_dataset.to_pandas()
-    y_data = df[['is-review-bombing']]
+    y_data = df[[target_col]]
 
     ######################## split into train and test set ########################
     # TODO save test set as a separate csv file to make sure none of the classifiers will see it
@@ -214,12 +215,14 @@ if __name__ == "__main__":
     if not MODEL_FOLDER.is_dir():
         MODEL_FOLDER.mkdir()
 
+    target_column = "is-review-bombing"   # "is-rating-game-related"
+
     should_train_model = True
     if should_train_model:
         classification_utils.set_random_seed()  # set all the random seeds to make everything reproducible
         # load relevant data
         # TODO for testing
-        num_rows = 10
+        num_rows = 30
         combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
                                               nrows=num_rows)
         # random shuffle the data
@@ -227,10 +230,10 @@ if __name__ == "__main__":
 
         # TODO also split per rb incident for training?
 
-        train_data_loader, test_data_loader = preprocess_data_version_1(combined_annotated_data)
+        train_data_loader, test_data_loader = preprocess_data_version_1(combined_annotated_data, target_column)
 
         # create the model as well as the training parameters and start training
-        num_classes = combined_annotated_data["is-review-bombing"].nunique()
+        num_classes = combined_annotated_data[target_column].nunique()
         model = BERTClassifier(num_classes, model_checkpoint=checkpoint).to(device)
         classify_review_bombing(model, train_data_loader, test_data_loader)
 
@@ -248,6 +251,6 @@ if __name__ == "__main__":
 
         # test prediction
         test_review = "The game was great and I really enjoyed the combat and the story."
-        predicted_label = predict_label(test_review, model, tokenizer, device)
+        predicted_label = predict_label(test_review, target_column, model, tokenizer, device)
         print(test_review)
         print(f"Predicted label: \"{predicted_label}\"")

@@ -126,11 +126,11 @@ def split_data_pytorch(data: pd.DataFrame, test_split=0.2):
     return train_set, test_set
 
 
-def encode_target_variable(data: pd.DataFrame, column_names: list[str], use_label_encoder=True):
+def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: list[str], use_label_encoder=True):
     if use_label_encoder:
         encoder = LabelEncoder()
         # fit on one column first and use transform afterwards so all "Ja"/"Nein" are encoded the same way in each column
-        encoder.fit(data[['is-review-bombing']].values.ravel())
+        encoder.fit(data[[target_col]].values.ravel())
         data[column_names] = data[column_names].apply(encoder.transform)  # .astype('float32')
     else:
         label_mapping = {'Ja': 0, 'Nein': 1}  # use the same encoding as the label encoder above
