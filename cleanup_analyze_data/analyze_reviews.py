@@ -213,49 +213,6 @@ def prepare_data():
     combined_review_df.to_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv", index=False)
 
 
-def get_combined_data_borderlands():
-    steam_review_data = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_Borderlands_2.csv")
-    steam_general_game_info = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_Borderlands_2.csv")
-    metacritic_review_data = pd.read_csv(DATA_FOLDER / "metacritic" / "user_reviews_pc_borderlands-2.csv")
-    metacritic_game_info = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_borderlands-2.csv")
-
-    # take only very negative ratings
-    negative_metacritic_review_data = metacritic_review_data[metacritic_review_data["rating"] < 3]
-    filtered_metacritic = negative_metacritic_review_data.sample(n=10, random_state=1)
-    filtered_steam = steam_review_data.sample(n=10, random_state=1)
-    filtered_steam = utils.remove_linebreaks_from_pd_cells(filtered_steam, column_name="content")
-
-    combined_review_df = combine_metacritic_steam_reviews(filtered_steam, filtered_metacritic,
-                                                          steam_general_game_info, metacritic_game_info)
-    return combined_review_df
-
-
-def get_combined_data_march_2022():
-    steam_review_data_1 = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_The_Witcher_3_Wild_Hunt.csv",
-                                      nrows=100)
-    steam_general_game_info_1 = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_The_Witcher_3_Wild_Hunt.csv")
-    metacritic_review_data_1 = pd.read_csv(DATA_FOLDER / "metacritic" / "user_reviews_pc_the-witcher-3-wild-hunt.csv")
-    metacritic_game_info_1 = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_the-witcher-3-wild-hunt.csv")
-    steam_review_data_1 = utils.remove_linebreaks_from_pd_cells(steam_review_data_1, column_name="content")
-    combined_review_df_1 = combine_metacritic_steam_reviews(steam_review_data_1, metacritic_review_data_1,
-                                                            steam_general_game_info_1, metacritic_game_info_1)
-
-    steam_review_data_2 = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_GWENT_The_Witcher_Card_Game.csv")
-    steam_general_game_info_2 = pd.read_csv(
-        DATA_FOLDER / "steam" / "steam_general_info_GWENT_The_Witcher_Card_Game.csv")
-    metacritic_review_data_2 = pd.read_csv(
-        DATA_FOLDER / "metacritic" / "user_reviews_pc_gwent-the-witcher-card-game.csv")
-    metacritic_game_info_2 = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_gwent-the-witcher-card-game.csv")
-    # sample_size_steam = 10 if len(steam_review_data_2) > 10 else len(steam_review_data_2)
-    steam_review_data_2 = utils.remove_linebreaks_from_pd_cells(steam_review_data_2, column_name="content")
-    combined_review_df_2 = combine_metacritic_steam_reviews(steam_review_data_2, metacritic_review_data_2,
-                                                            steam_general_game_info_2, metacritic_game_info_2)
-
-    combined_review_df = pd.concat([combined_review_df_1, combined_review_df_2])
-    combined_review_df_sample = combined_review_df.sample(n=100, random_state=1)
-    return combined_review_df_sample
-
-
 if __name__ == "__main__":
     utils.enable_max_pandas_display_size()
     DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "reviews"

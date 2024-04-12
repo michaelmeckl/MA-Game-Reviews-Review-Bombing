@@ -7,6 +7,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torchtext
+# noinspection PyPep8Naming
 from datasets import Dataset as ds
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -60,14 +61,15 @@ def preprocess_categorical_data(df: pd.DataFrame, column_names: list[str], use_w
 ##############################################################################
 
 
-def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, num_epochs=2):
+def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, tag: str,
+                            num_epochs=2):
     total_steps = len(train_dataloader) * num_epochs
     loss_function = nn.CrossEntropyLoss()   # nn.BCELoss()  # use binary cross entropy ?
     optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 5e-5  # see BERT paper for learning rates
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
     best_accuracy = -1
-    writer = SummaryWriter("runs/baseline")
+    writer = SummaryWriter(f"runs/baseline-{tag}")
 
     train_history = {
         "train_accuracy": [],
@@ -81,7 +83,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     if start_epoch > 0:
         resume_epoch = start_epoch - 1
         start_epoch = classification_utils.load_model_checkpoint(bert_model, optimizer, MODEL_FOLDER /
-                                                                 f"baseline-epoch-{resume_epoch}.pt")
+                                                                 f"baseline-{tag}-epoch-{resume_epoch}.pt")
         print(f"Resuming training with epoch {start_epoch} ...")
 
     # train model
@@ -94,12 +96,12 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
                                                 train_history)
 
         classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
-                                                   output_path=MODEL_FOLDER / f"baseline-epoch-{epoch}.pt")
+                                                   output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}.pt")
         if val_accuracy > best_accuracy:
             best_accuracy = val_accuracy
             print(f"Best val accuracy is now: {val_accuracy:.2f}% \n")
             classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
-                                                       output_path=MODEL_FOLDER / f"baseline-best-model.pt")
+                                                       output_path=MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
     print("Finished training the model!\n")
     finish_time = time.time()
     total_time = finish_time - start_time
@@ -111,30 +113,29 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     writer.close()
     # plot the training history (loss and accuracy)
     classification_utils.show_training_plot(train_history["train_accuracy"], train_history["val_accuracy"],
-                                            train_history["train_loss"], train_history["val_loss"], show=False)
-
-    # save model locally
-    # torch.save(bert_model.state_dict(), MODEL_FOLDER / "baseline_model.pt")
+                                            train_history["train_loss"], train_history["val_loss"],
+                                            output_folder=MODEL_FOLDER, output_name=f"train_history_{tag}.png",
+                                            show=False)
 
     return optimizer
 
 
 def preprocess_data_version_2(df: pd.DataFrame, target_col: str):
-    relevant_data = df.filter(["review", *annotation_questions])
+    batch_size = 16
+    relevant_columns = df.filter(["review", *annotation_questions])
     print("==============================================")
-    print(f'The shape of the relevant_data is: {relevant_data.shape}')
+    print(f'The shape of the relevant columns is: {relevant_columns.shape}')
     print("==============================================")
-    print(f'The number of values for "{target_col}" is:\n{relevant_data[target_col].value_counts()}')
+    print(f'The number of values for "{target_col}" is:\n{relevant_columns[target_col].value_counts()}')
     print("==============================================")
 
     # encode the target variables
-    encode_target_variable(relevant_data, target_col, annotation_questions, use_label_encoder=False)
+    encode_target_variable(relevant_columns, target_col, annotation_questions, use_label_encoder=False)
 
     # split into train and test data
-    train_data, test_data = split_data_pytorch(relevant_data)
+    train_data, test_data = split_data_pytorch(relevant_columns)
 
     # create dataset and dataloader
-    batch_size = 32
     training_dataset = CustomBaselineDataset(train_data, target_col)
     test_dataset = CustomBaselineDataset(test_data, target_col)
     train_dataloader = DataLoader(training_dataset, batch_size=batch_size, shuffle=True)
@@ -142,7 +143,9 @@ def preprocess_data_version_2(df: pd.DataFrame, target_col: str):
     return train_dataloader, test_dataloader
 
 
-def preprocess_data_version_1(df: pd.DataFrame, target_col: str):
+def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
+    batch_size = 8  # 16
+
     ###################### encode categorical variables #####################
     encode_target_variable(df, target_col, annotation_questions, use_label_encoder=False)
 
@@ -186,7 +189,6 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str):
 
     # use a data collator to pad the tokens to the longest per batch (see "Dynamic Padding" on https://huggingface.co/learn/nlp-course/en/chapter3/2?fw=pt#dynamic-padding)
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    batch_size = 32  # 16
 
     train_dataset = CustomDataset(train_x, train_y)  # transform=tokenize_review
     test_dataset = CustomDataset(test_x, test_y)  # transform=tokenize_review
@@ -202,51 +204,37 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str):
     return train_dataloader, test_dataloader
 
 
-if __name__ == "__main__":
-    print(f"Using PyTorch version: {torch.__version__}")
-    utils.enable_max_pandas_display_size()
-
-    device = get_pytorch_device()
-    checkpoint = "google-bert/bert-base-cased"
+def train_and_predict(data: pd.DataFrame, tag: str):
     # create tokenizer for preprocessing the data
     # bert_tokenizer = BertTokenizer.from_pretrained(checkpoint)
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)  # uses a Rust-based fast tokenizer version instead of Python
 
-    if not MODEL_FOLDER.is_dir():
-        MODEL_FOLDER.mkdir()
-
-    target_column = "is-review-bombing"   # "is-rating-game-related"
-
     should_train_model = True
     if should_train_model:
-        classification_utils.set_random_seed()  # set all the random seeds to make everything reproducible
-        # load relevant data
-        # TODO for testing
-        num_rows = 30
-        combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
-                                              nrows=num_rows)
+        # set all the random seeds to make everything reproducible for preprocessing and training
+        classification_utils.set_random_seed()
         # random shuffle the data
-        combined_annotated_data = combined_annotated_data.sample(frac=1)
+        shuffled_data = data.sample(frac=1)
 
         # TODO also split per rb incident for training?
 
-        train_data_loader, test_data_loader = preprocess_data_version_1(combined_annotated_data, target_column)
+        train_data_loader, test_data_loader = preprocess_data_version_1(shuffled_data, target_column, tokenizer)
 
         # create the model as well as the training parameters and start training
-        num_classes = combined_annotated_data[target_column].nunique()
+        num_classes = shuffled_data[target_column].nunique()
         model = BERTClassifier(num_classes, model_checkpoint=checkpoint).to(device)
-        classify_review_bombing(model, train_data_loader, test_data_loader)
+        classify_review_bombing(model, train_data_loader, test_data_loader, tag)
 
         # load the best model for further code
-        # classification_utils.load_model_checkpoint(model, optimizer, MODEL_FOLDER / f"baseline-best-model.pt")
+        # classification_utils.load_model_checkpoint(model, optimizer, MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
 
     should_predict = False
     if should_predict:
         # load local model
         n_classes = 2
         model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
-        checkpoint = torch.load(MODEL_FOLDER / "baseline_model.pt")
-        model.load_state_dict(checkpoint['model_state_dict'])
+        model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
+        model.load_state_dict(model_checkpoint['model_state_dict'])
         # model.eval()  # switch to inference mode to not resume training
 
         # test prediction
@@ -254,3 +242,40 @@ if __name__ == "__main__":
         predicted_label = predict_label(test_review, target_column, model, tokenizer, device)
         print(test_review)
         print(f"Predicted label: \"{predicted_label}\"")
+
+
+if __name__ == "__main__":
+    print(f"Using PyTorch version: {torch.__version__}")
+    utils.enable_max_pandas_display_size()
+
+    if not MODEL_FOLDER.is_dir():
+        MODEL_FOLDER.mkdir()
+
+    device = get_pytorch_device()
+    checkpoint = "google-bert/bert-base-cased"
+
+    # load relevant data
+    num_rows = 30    # TODO for testing
+    combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
+                                          nrows=num_rows)
+
+    reviews_to_use = "both"   # "steam" / "metacritic" / "both"
+    if reviews_to_use == "steam":
+        print("[INFO] Training model with only steam reviews!\n")
+        relevant_data = combined_annotated_data[combined_annotated_data["source"] == "Steam"].reset_index(drop=True)
+        model_tag = "steam"
+    elif reviews_to_use == "metacritic":
+        print("[INFO] Training model with only metacritic reviews!\n")
+        relevant_data = combined_annotated_data[combined_annotated_data["source"] == "Metacritic"].reset_index(drop=True)
+        model_tag = "metacritic"
+    elif reviews_to_use == "both":
+        print("[INFO] Training model with steam and metacritic reviews!\n")
+        relevant_data = combined_annotated_data
+        model_tag = "both"
+    else:
+        raise ValueError("The specified reviews_to_use type is unknown!")
+
+    classify_rb = True     # if False classify off_topic column
+    target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
+
+    train_and_predict(relevant_data, model_tag)
