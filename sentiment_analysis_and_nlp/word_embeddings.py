@@ -1,18 +1,8 @@
 import pandas as pd
 import re
-from nltk.corpus import stopwords
 from gensim.models import Word2Vec
 import multiprocessing
-
-
-stopwords_list = stopwords.words("english")
-
-
-def remove_stopwords(text):
-    text_tokens = text.split(" ")
-    final_list = [word for word in text_tokens if word not in stopwords_list]
-    text = ' '.join(final_list)
-    return text
+from sentiment_analysis_and_nlp import nltk_utils
 
 
 def clean_data(text):
@@ -48,7 +38,7 @@ def apply_word2vec(df: pd.DataFrame, column_name: str):
     df[[column_name]] = df[[column_name]].astype(str)
     df[column_name] = df[column_name].map(lambda text: text.lower())
     df[column_name] = df[column_name].apply(clean_data)
-    df[column_name] = df[column_name].apply(remove_stopwords)
+    df[column_name] = df[column_name].apply(nltk_utils.remove_stopwords)
 
     w2v_df = get_w2vdf(df, column_name)
     w2v_model = train_w2v(w2v_df)

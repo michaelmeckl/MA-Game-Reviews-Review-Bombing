@@ -2,8 +2,43 @@
 # -*- coding: utf-8 -*-
 import pprint
 import pandas as pd
+from matplotlib import pyplot as plt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk import tokenize, FreqDist
+
+
+def vader_sentiment_analysis(df, df_text_col):
+    analyzer = SentimentIntensityAnalyzer()
+
+    def get_sentiment_score(tweet):
+        sentiment = analyzer.polarity_scores(tweet)
+        return sentiment['compound']
+
+    df['sentiment_score_vader'] = df[df_text_col].apply(lambda x: get_sentiment_score(x))
+    lemmatized_sentiment_mean = df['sentiment_score_vader'].mean()
+    print('Mean sentiment score for text:', lemmatized_sentiment_mean)
+
+    # Plot a histogram of sentiment scores
+    plt.hist(df['sentiment_score_vader'], bins=20, color='blue', alpha=0.5)
+    plt.xlabel('Sentiment Score')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of Vader Sentiment Scores')
+    plt.show()
+
+
+def classify_sentiment_score(score: float, result_as_number=True):
+    """
+    Use like this after the function above:
+     df["sentiment_score_vader"] = pd.to_numeric(df["sentiment_score_vader"], errors="coerce")
+     df["sentiment_classification_vader"] = df["sentiment_score_vader"].apply(classify_sentiment_score)
+    """
+    if score > 0.2:
+        class_result = "positive sentiment", 1
+    elif score < -0.2:
+        class_result = "negative sentiment", -1
+    else:
+        class_result = "neutral sentiment", 0
+    return class_result[1] if result_as_number else class_result[0]
 
 
 # TODO test other sentiment analysis tools like TextBlob or even embedding-models like FLAIR too!

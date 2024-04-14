@@ -6,13 +6,213 @@ from nltk import word_tokenize, RegexpTokenizer, bigrams, FreqDist
 from nltk.corpus import stopwords
 from rake_nltk import Rake
 import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from textblob import TextBlob
+from gensim.models import Phrases
+from sentiment_analysis_and_nlp import nltk_utils
+from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
 
-
-_SOME_ALPHA_RE = re.compile(r'[A-Za-z]+')
-_ONLY_ALPHA_RE = re.compile(r'^[A-Za-z]*$')
 
 punctuation_list = list(string.punctuation) + ['`', '’', '…']
+
+# A list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
+contractions = {
+    "ain't": "am not",
+    "aren't": "are not",
+    "can't": "cannot",
+    "can't've": "cannot have",
+    "'cause": "because",
+    "could've": "could have",
+    "couldn't": "could not",
+    "couldn't've": "could not have",
+    "didn't": "did not",
+    "doesn't": "does not",
+    "don't": "do not",
+    "hadn't": "had not",
+    "hadn't've": "had not have",
+    "hasn't": "has not",
+    "haven't": "have not",
+    "he'd": "he would",
+    "he'd've": "he would have",
+    "he'll": "he will",
+    "he's": "he is",
+    "how'd": "how did",
+    "how'll": "how will",
+    "how's": "how is",
+    "i'd": "i would",
+    "i'll": "i will",
+    "i'm": "i am",
+    "i've": "i have",
+    "isn't": "is not",
+    "it'd": "it would",
+    "it'll": "it will",
+    "it's": "it is",
+    "let's": "let us",
+    "ma'am": "madam",
+    "mayn't": "may not",
+    "might've": "might have",
+    "mightn't": "might not",
+    "must've": "must have",
+    "mustn't": "must not",
+    "needn't": "need not",
+    "oughtn't": "ought not",
+    "shan't": "shall not",
+    "sha'n't": "shall not",
+    "she'd": "she would",
+    "she'll": "she will",
+    "she's": "she is",
+    "should've": "should have",
+    "shouldn't": "should not",
+    "that'd": "that would",
+    "that's": "that is",
+    "there'd": "there had",
+    "there's": "there is",
+    "they'd": "they would",
+    "they'll": "they will",
+    "they're": "they are",
+    "they've": "they have",
+    "wasn't": "was not",
+    "we'd": "we would",
+    "we'll": "we will",
+    "we're": "we are",
+    "we've": "we have",
+    "weren't": "were not",
+    "what'll": "what will",
+    "what're": "what are",
+    "what's": "what is",
+    "what've": "what have",
+    "where'd": "where did",
+    "where's": "where is",
+    "who'll": "who will",
+    "who's": "who is",
+    "won't": "will not",
+    "wouldn't": "would not",
+    "you'd": "you would",
+    "you'll": "you will",
+    "you're": "you are"
+}
+
+
+def apply_standard_text_preprocessing(df: pd.DataFrame, text_col: str, remove_stopwords=True, use_spacy=True,
+                                      is_social_media_data=False):
+    spacy_utils = SpacyUtils()
+    df[text_col] = df[text_col].astype(str)
+    df['text_cleaned'] = df[text_col].apply(lambda text: clean_text(text, spacy_utils, remove_stopwords))
+
+    if use_spacy:
+        df['text_preprocessed'] = df['text_cleaned'].apply(lambda text: apply_lemmatization_spacy(text, spacy_utils))
+    else:
+        # use nltk instead of spacy
+        df['text_preprocessed'] = df['text_cleaned'].apply(lambda text: apply_lemmatization_nltk(text, is_social_media_data))
+    return df
+
+
+def apply_lemmatization_spacy(text: str, spacy_utils):
+    # tokenized_text = spacy_utils.split_into_words(text)
+    # combined_tokenized_text = " ".join([token.text for token in tokenized_text])
+    lemmatized_token_list, lemmatized_text = spacy_utils.lemmatize_text(text)
+    return lemmatized_text
+
+
+def apply_lemmatization_nltk(text: str, is_social_media_data):
+    tokenized_text = nltk_utils.tokenize_text(text, is_social_media_data)
+    lemmatized_token_list, lemmatized_text = nltk_utils.lemmatize_text(tokenized_text)
+    return lemmatized_text
+
+
+def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool):
+    """
+    Adapted from https://github.com/Idilismiguzel/NLP-with-Python/blob/master/Text-Classification.ipynb
+    Use like this:
+    ```
+    df['text'] = df['text'].astype(str)
+    df['text_cleaned'] = list(map(clean_text, df['text']))
+    ```
+    Remove unwanted characters, and format the text.
+    """
+    # Convert words to lower case
+    text = text.lower().strip()
+
+    # Replace contractions with their longer forms
+    text_cleaned = text.split()
+    new_text = []
+    for word in text_cleaned:
+        if word in contractions:
+            new_text.append(contractions[word])
+        else:
+            new_text.append(word)
+
+    # remove stop words
+    if remove_stopwords:
+        stop_words = combine_stopword_lists(spacy_utils)
+        text_cleaned = " ".join([w for w in new_text if w not in stop_words])
+    else:
+        text_cleaned = " ".join(new_text)
+
+    # Format words and remove unwanted characters
+    text_cleaned = re.sub(r'https?:\/\/.*[\r\n]*', '', text_cleaned, flags=re.MULTILINE)
+    text_cleaned = re.sub(r'\<a href', ' ', text_cleaned)
+    text_cleaned = re.sub(r'&amp;', '', text_cleaned)
+    text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
+    text_cleaned = re.sub(r'<br />', ' ', text_cleaned)
+    text_cleaned = re.sub(r'\'', ' ', text_cleaned)
+    text_cleaned = re.sub(r'\s+', ' ', text_cleaned)
+    # text_cleaned = re.sub(r'RT', '', text_cleaned)
+    # text_cleaned = re.sub(r"([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", text_cleaned)  # remove urls
+
+    # remove everything that isn't an alphabetic character, a number or a whitespace
+    # text_alternative = re.sub(r'[^a-zA-Z0-9\s]', '', text_cleaned)
+
+    # TODO replace numbers (up to 100?) with words (i.e. 1 with "one")
+
+    # remove string.punctuation characters
+    text_cleaned = text_cleaned.translate(str.maketrans('', '', ''.join(punctuation_list)))
+    # TODO remove single characters surrounded by whitespaces after the cleaning ? such as " i t " -> ""
+    return text_cleaned.strip()
+
+
+def combine_stopword_lists(spacy_utils: SpacyUtils):
+    # combine stopwords from nltk, spacy and gensim into one set
+    from gensim.parsing.preprocessing import STOPWORDS
+    stop_words = spacy_utils.get_stopwords().union(STOPWORDS).union(nltk_utils.get_nltk_stop_words())
+    stopwords_set = set(stop_words) - {'one', 'two', 'three'}   # retain 'one', 'two', 'three' for making n-grams
+    return stopwords_set
+
+
+def create_bigrams(df, text_col):
+    # Taken from https://github.com/Idilismiguzel/NLP-with-Python/blob/master/Text-Classification.ipynb
+    # apply this after the method above
+    # trigrams with ngram_range=[3,3] or bigrams and trigrams with [2, 3]
+    bigram_converter = CountVectorizer(tokenizer=lambda doc: doc, ngram_range=[2, 2], lowercase=False)
+    bigram_bow = bigram_converter.fit_transform(df[text_col])
+    # print(bigram_converter.get_feature_names_out())
+
+    # convert to tf-idf
+    tfidf_transform = TfidfTransformer(norm=None)
+    bigram_tfidf = tfidf_transform.fit_transform(bigram_bow)
+    return bigram_tfidf
+
+
+def create_bigrams_gensim(texts: list[str]):
+    # Taken from https://dataknowsall.com/blog/topicmodels.html
+    # Add bigrams to docs (only ones that appear 20 times or more).
+    bigram = Phrases(texts, min_count=20)
+    for idx in range(len(texts)):
+        for token in bigram[texts[idx]]:
+            if '_' in token:
+                # Token is a bigram, add to document.
+                texts[idx].append(token)
+
+
+def apply_tf_idf(train, test):
+    # train and test are cleaned and lemmatized lists
+    tf_bigram = TfidfVectorizer(max_features=8000, ngram_range=(1, 2))
+    X_train_bigram = pd.DataFrame(tf_bigram.fit_transform(train).todense(), columns=tf_bigram.get_feature_names_out())
+    X_test_bigram = pd.DataFrame(tf_bigram.transform(test).todense(), columns=tf_bigram.get_feature_names_out())
+    return X_train_bigram, X_test_bigram
+
+
+############################################ Other random utils #######################################################
 
 
 def filter_paragraph(p):
@@ -29,6 +229,9 @@ def filter_paragraph(p):
     Returns:
       True if we should remove the paragraph.
     """
+    _SOME_ALPHA_RE = re.compile(r'[A-Za-z]+')
+    _ONLY_ALPHA_RE = re.compile(r'^[A-Za-z]*$')
+
     # Expect a minimum number of words.
     tokens = p.split()
     if len(tokens) < 6:
@@ -71,21 +274,7 @@ def identify_low_effort(text):
     return label
 
 
-def normalize_text(text):
-    text = text.lower()
-    # remove html markup
-    text = re.sub("(<.*?>)", "", text)
-    # remove non-ascii and digits
-    text = re.sub("(\\W|\\d)", " ", text)
-    # Space around punctuation
-    text = re.sub("[%s]" % re.escape(string.punctuation), r" \g<0> ", text)
-    text = re.sub(r"\s+", " ", text)
-    # remove whitespace
-    text = text.strip()
-    return text
-
-
-def preprocess_text(text):
+def preprocess_steam_review(text):
     # method taken from https://github.com/MullerAC/video-game-review-analysis/
     text = re.sub(r'\[.*?\]', '', text)  # remove markdown tags, only needed for Steam reviews
     text = text.translate(str.maketrans('', '', ''.join(punctuation_list)))  # remove all punctuation
@@ -93,24 +282,14 @@ def preprocess_text(text):
     return tokenizer.tokenize(text.lower())
 
 
-def apply_text_preprocessing(df: pd.DataFrame, text_col: str):
-    # apply some basic text processing on a specific column of a dataframe (e.g. review_text)
-    X = df[text_col].to_numpy()
-    processed_column = list(map(preprocess_text, X))
-    return processed_column
-
-
-def remove_url(txt):
-    # Taken from
-    # https://www.earthdatascience.org/courses/use-data-open-source-python/intro-to-apis/calculate-tweet-word-frequencies-in-python/
-    """Replace URLs found in a text string with nothing (i.e. it will remove the URL from the string).
-    """
-    return " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", txt).split())
-
-
 def get_most_frequent_words(text_list: list[str]):
     # see https://www.earthdatascience.org/courses/use-data-open-source-python/intro-to-apis/calculate-tweet-word
     # -bigrams/
+    def remove_url(txt):
+        """Replace URLs found in a text string with nothing (i.e. it will remove the URL from the string).
+        """
+        return " ".join(re.sub(r"([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", txt).split())
+
     texts_no_urls = [remove_url(text) for text in text_list]
     words_in_text = [text.lower().split() for text in texts_no_urls]
 
@@ -141,20 +320,6 @@ def check_contains_most_frequent_words(document_words: list, all_documents):
     for word in word_features:
         features[word] = (word in document_words)
     return features
-
-
-def get_pos_tags(text: str):
-    blob = TextBlob(text)
-    pos_tags = blob.tags
-    return pos_tags
-
-
-def textblob_utils(text: str):
-    blob = TextBlob(text)
-    print(blob.words)  # split into words
-    print(blob.sentences)  # split into sentences
-    lemmata = [word.lemmatize() for word in blob.words]
-    print(lemmata)
 
 
 def test_semantic_similarity():
@@ -191,21 +356,10 @@ def extract_keywords(text: str):
             print(f"Score: {score}, Phrase:{phrase}\n")
 
 
-def extract_keywords_with_tf_idf(df: pd.DataFrame):
-    # Extract the most common keywords from a large number of texts by calculating the tf-idf.
-    # See https://github.com/kavgan/nlp-in-practice/blob/master/tf-idf
-    pass  # TODO
-
-
-def clean_tweet(tweet):
-    # Taken from https://www.kaggle.com/code/j13mehul/bert-fine-tuning-using-peft#Freezing-the-head
-    # Use like: df['text'] = df['text'].apply(lambda s: clean(s))
-
-    # Special characters
-    tweet = re.sub(r"https?:\/\/t.co\/[A-Za-z0-9]+", "", tweet)
-
-    Special = '@#!?+&*[]-%:/()$=><|{}^'
-    for s in Special:
-        tweet = tweet.replace(s, "")
-
-    return tweet
+def textblob_utils(text: str):
+    # only for reference
+    blob = TextBlob(text)
+    print(blob.words)  # split into words
+    print(blob.sentences)  # split into sentences
+    lemmata = [word.lemmatize() for word in blob.words]
+    print(lemmata)

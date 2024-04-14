@@ -1,12 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import string
 import time
 import pandas as pd
 import torch
 import torch.nn as nn
-import torchtext
 # noinspection PyPep8Naming
 from datasets import Dataset as ds
 from torch.utils.data import DataLoader
@@ -19,46 +17,7 @@ from classification.classification_utils import split_data_scikit, encode_target
     get_pytorch_device
 from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
-from sentiment_analysis_and_nlp import nltk_utils
-from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
 from utils import utils
-
-
-########################## Text Standardization (cleaning up text) ##############################
-
-def preprocess_categorical_data(df: pd.DataFrame, column_names: list[str], use_word_split=True, use_spacy=True):
-    """
-    1) Tokenizing sentences to break text down into sentences, words, or other units such as tokens
-    2) Removing stop words
-    3) Normalizing words by condensing all forms of a word into a single form (i.e. stemming or lemmatization)
-    4) Vectorizing text by turning the text into a numerical representation
-    """
-    data_test = df["review"][0]
-
-    if use_spacy:
-        spacy_utils = SpacyUtils()
-        if use_word_split:
-            tokens, lemmata = spacy_utils.split_into_words(data_test)
-            vector_representation = tokens[1].vector
-        else:
-            # else use tokenizer
-            tokens = spacy_utils.english_tokenize(data_test)
-            # df["review"] = df["review"].apply(english_tokenize)
-            # todo stopword removal and lemmatization still missing here ? check tokens!
-
-    else:
-        # TODO keep punctuation?
-        review_without_punct = [" " if char in string.punctuation else char for char in data_test]
-        review_without_punct = "".join(review_without_punct)
-        # then split into words, remove stopwords and lemmatize
-        tokenized_text = nltk_utils.split_into_words(review_without_punct)
-        tokenized_text_without_stop = nltk_utils.remove_stopwords(tokenized_text)
-        lemmatized_text = nltk_utils.lemmatize_text(tokenized_text_without_stop)
-        # TODO vectorization still missing here
-
-    return df
-
-##############################################################################
 
 
 def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, tag: str,
@@ -170,8 +129,10 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
     test_x = test_x.reset_index(drop=True)
     test_y = test_y.reset_index(drop=True)
 
-    # TODO Reihenfolge der Reviews für Review Analyse wichtig? **Temporal splitting** (i.e. Trainingsreviews am
-    #  ältesten, Testreviews am neuesten)  -> kein Random Split oder K-Fold-Crossvalidation !
+    # TODO Reihenfolge der Reviews für Review Analyse wichtig! Temporal splitting (z.B. nur Reviews bis zu einem
+    #  bestimmten Zeitpunkt fürs Training nutzen und alle neueren als Testdaten)
+    #  -> kein Random Split oder K-Fold-Crossvalidation  (problematisch, da so im Train Set Daten (aus Sicht der
+    #  Testdaten) zukünftigen Informationen verwendet werden könnten)
 
     ######################## create custom dataset and dataloader #######################
     # TODO also test other ways to vectorize with word embeddings such as word2vec or GloVe ?

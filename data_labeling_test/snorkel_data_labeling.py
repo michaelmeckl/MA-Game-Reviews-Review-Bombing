@@ -99,7 +99,7 @@ def lf_regex(x):
 @labeling_function()
 def lf_contains_review_bomb(x):
     """If the Review Bomb is explicitly mentioned."""
-    return REVIEW_BOMB if re.search(r"review\s*bomb", x.review, flags=re.I) else ABSTAIN
+    return REVIEW_BOMB if re.search(r"(review[\s-]*bomb\w*)", x.review, flags=re.I) else ABSTAIN
 
 
 @labeling_function()
