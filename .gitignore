@@ -7,6 +7,7 @@ __pycache__/
 # ML models and data
 sentiment_analysis_and_nlp/checkpoints/
 sentiment_analysis_and_nlp/checkpoints.json
+sentiment_analysis_and_nlp/trained_topic_models
 classification/model_test/
 classification/trained_models/
 classification/runs/

@@ -24,7 +24,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
                             num_epochs=2):
     total_steps = len(train_dataloader) * num_epochs
     loss_function = nn.CrossEntropyLoss()   # nn.BCELoss()  # use binary cross entropy ?
-    optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 5e-5  # see BERT paper for learning rates
+    optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 3e-5, 5e-5  # see BERT paper for learning rates
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
     best_accuracy = -1

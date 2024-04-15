@@ -27,9 +27,9 @@ class BERTClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        pooled_output = outputs.pooler_output  # pooled output represents each input sequence as a whole
+        pooled_output = outputs.pooler_output  # pooled output represents each input sequence / review as an embedding
         x = self.dropout(pooled_output)
-        # TODO use this instead of the two lines above ?
+        # TODO test this instead of the two lines above as an alternative
         # x = self.dropout(outputs['last_hidden_state'][:, 0, :])  # Use the [CLS] token representation
         logits = self.fc(x)
         return logits

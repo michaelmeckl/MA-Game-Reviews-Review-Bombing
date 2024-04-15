@@ -11,6 +11,7 @@ from textblob import TextBlob
 from gensim.models import Phrases
 from sentiment_analysis_and_nlp import nltk_utils
 from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
+from num2words import num2words
 
 
 punctuation_list = list(string.punctuation) + ['`', '’', '…']
@@ -150,7 +151,8 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool):
         text_cleaned = " ".join(new_text)
 
     # Format words and remove unwanted characters
-    text_cleaned = re.sub(r'https?:\/\/.*[\r\n]*', '', text_cleaned, flags=re.MULTILINE)
+    # text_cleaned = re.sub(r'https?:\/\/.*[\r\n]*', '', text_cleaned, flags=re.MULTILINE)   # remove url
+    text_cleaned = re.sub(r'(?:www|https?)\S+', '', text_cleaned, flags=re.MULTILINE)   # better remove url
     text_cleaned = re.sub(r'\<a href', ' ', text_cleaned)
     text_cleaned = re.sub(r'&amp;', '', text_cleaned)
     text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
@@ -163,11 +165,14 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool):
     # remove everything that isn't an alphabetic character, a number or a whitespace
     # text_alternative = re.sub(r'[^a-zA-Z0-9\s]', '', text_cleaned)
 
-    # TODO replace numbers (up to 100?) with words (i.e. 1 with "one")
+    # replace numbers with words (i.e. 1 with "one")
+    text_cleaned = re.sub(r"(\d+)", lambda number: num2words(int(number.group(0))), text_cleaned)
 
     # remove string.punctuation characters
     text_cleaned = text_cleaned.translate(str.maketrans('', '', ''.join(punctuation_list)))
-    # TODO remove single characters surrounded by whitespaces after the cleaning ? such as " i t " -> ""
+
+    # remove single characters surrounded by whitespaces after the cleaning ? such as " i t " -> ""
+    # text_cleaned = re.sub(r'\s+.\s+', '', text_cleaned)
     return text_cleaned.strip()
 
 
@@ -175,7 +180,8 @@ def combine_stopword_lists(spacy_utils: SpacyUtils):
     # combine stopwords from nltk, spacy and gensim into one set
     from gensim.parsing.preprocessing import STOPWORDS
     stop_words = spacy_utils.get_stopwords().union(STOPWORDS).union(nltk_utils.get_nltk_stop_words())
-    stopwords_set = set(stop_words) - {'one', 'two', 'three'}   # retain 'one', 'two', 'three' for making n-grams
+    # retain some words for making n-grams
+    stopwords_set = set(stop_words) - {'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'}
     return stopwords_set
 
 
