@@ -121,7 +121,7 @@ def apply_lemmatization_nltk(text: str, is_social_media_data):
     return lemmatized_text
 
 
-def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool):
+def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool, remove_punctuation=False):
     """
     Adapted from https://github.com/Idilismiguzel/NLP-with-Python/blob/master/Text-Classification.ipynb
     Use like this:
@@ -155,21 +155,19 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool):
     text_cleaned = re.sub(r'(?:www|https?)\S+', '', text_cleaned, flags=re.MULTILINE)   # better remove url
     text_cleaned = re.sub(r'\<a href', ' ', text_cleaned)
     text_cleaned = re.sub(r'&amp;', '', text_cleaned)
-    text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
+    # text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
+    # replace duplicate special characters:
+    text_cleaned = re.sub(r'([!()\-{};:,<>./?@#$%\^&*_~]){2,}', lambda x: x.group()[0], text_cleaned)
     text_cleaned = re.sub(r'<br />', ' ', text_cleaned)
     text_cleaned = re.sub(r'\'', ' ', text_cleaned)
     text_cleaned = re.sub(r'\s+', ' ', text_cleaned)
-    # text_cleaned = re.sub(r'RT', '', text_cleaned)
-    # text_cleaned = re.sub(r"([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", text_cleaned)  # remove urls
-
-    # remove everything that isn't an alphabetic character, a number or a whitespace
-    # text_alternative = re.sub(r'[^a-zA-Z0-9\s]', '', text_cleaned)
 
     # replace numbers with words (i.e. 1 with "one")
     text_cleaned = re.sub(r"(\d+)", lambda number: num2words(int(number.group(0))), text_cleaned)
 
-    # remove string.punctuation characters
-    text_cleaned = text_cleaned.translate(str.maketrans('', '', ''.join(punctuation_list)))
+    if remove_punctuation:
+        # remove string.punctuation characters
+        text_cleaned = text_cleaned.translate(str.maketrans('', '', ''.join(punctuation_list)))
 
     # remove single characters surrounded by whitespaces after the cleaning ? such as " i t " -> ""
     # text_cleaned = re.sub(r'\s+.\s+', '', text_cleaned)
