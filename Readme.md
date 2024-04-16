@@ -21,6 +21,16 @@ entsprechenden Ordnern (Steam, Metacritic, Twitter, Reddit).
 * Der [sentiment_analysis_and_nlp](./sentiment_analysis_and_nlp) - Ordner enthält verschiedene NLP-Utilities (wie 
   Tokenization, Stopword Removal, Sentence Splitting, Spracherkennung, etc.) sowie ein paar Tests mit 
   Aspekt-basierter Sentiment-Analyse.
+  * Da hierbei sowohl NLTK als auch Spacy verwendet werden, müssen einmalig die entsprechenden Corpora 
+    heruntergeladen werden mit:
+    ```python
+    import nltk
+    nltk.download(["stopwords", "wordnet", "vader_lexicon", "punkt"])
+    ```
+    und 
+    ```commandline
+    python -m spacy download en_core_web_sm
+    ```
 * Der [cleanup_analyze_data](./cleanup_analyze_data) - Ordner enthält den Code zur Analyse der Reviews und Social 
   Media - Daten sowie die Vorverarbeitung und Auswahl der Reviews für die Annotation in [Label Studio](https://labelstud.io/).
 * Im [label_studio_study](./label_studio_study) - Ordner sind sowohl der Code für das Label Studio - SDK (welches 
