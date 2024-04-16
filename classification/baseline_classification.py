@@ -23,11 +23,12 @@ from utils import utils
 def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, tag: str,
                             num_epochs=2):
     total_steps = len(train_dataloader) * num_epochs
-    loss_function = nn.CrossEntropyLoss()   # nn.BCELoss()  # use binary cross entropy ?
+    # TODO use nn.BCEWithLogitsLoss() instead? -> switch num_classes to 1 and adjust loss calculation in train/eval loop
+    loss_function = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 3e-5, 5e-5  # see BERT paper for learning rates
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
-    best_accuracy = -1
+    best_loss = 100
     writer = SummaryWriter(f"runs/baseline-{tag}")
 
     train_history = {
@@ -56,9 +57,9 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
 
         classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
                                                    output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}.pt")
-        if val_accuracy > best_accuracy:
-            best_accuracy = val_accuracy
-            print(f"Best val accuracy is now: {val_accuracy:.2f}% \n")
+        if val_loss < best_loss:
+            best_loss = val_loss
+            print(f"Best val loss is now: {val_loss:.2f} (val accuracy: {val_accuracy:.2f}% \n")
             classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
                                                        output_path=MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
     print("Finished training the model!\n")
@@ -73,7 +74,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     # plot the training history (loss and accuracy)
     classification_utils.show_training_plot(train_history["train_accuracy"], train_history["val_accuracy"],
                                             train_history["train_loss"], train_history["val_loss"],
-                                            output_folder=MODEL_FOLDER, output_name=f"train_history_{tag}.png",
+                                            output_folder=MODEL_FOLDER, output_name=f"train_history_{tag}",
                                             show=False)
 
     return optimizer
@@ -119,6 +120,8 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
     # tokenized_dataset.set_format("torch")  # convert to pytorch dataset
     X_data = tokenized_dataset.to_pandas()
     y_data = df[[target_col]]
+
+    # TODO move split data before tokenizing to make sure nothing leaks!
 
     ######################## split into train and test set ########################
     # TODO save test set as a separate csv file to make sure none of the classifiers will see it

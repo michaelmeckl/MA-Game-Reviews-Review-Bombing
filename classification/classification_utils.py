@@ -13,6 +13,7 @@ import tensorflow as tf
 import torch.backends.cudnn
 import torch.backends.cuda
 from matplotlib import pyplot as plt
+import seaborn as sns
 from sklearn import metrics
 from torch.utils.data import random_split
 from sklearn.preprocessing import LabelEncoder
@@ -143,7 +144,8 @@ def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: li
 
 
 def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, output_folder=".",
-                       output_name="train_history.png", show=True):
+                       output_name="train_history", show=True):
+    """
     plt.figure(figsize=(8, 8))
     plt.subplot(1, 2, 1)
     plt.plot(train_accuracy, label='Training Accuracy')
@@ -158,9 +160,36 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, outpu
     plt.title('Training and Validation Loss')
 
     # save plot to file and show in a new window
-    plt.savefig(os.path.join(output_folder, output_name))
+    plt.savefig(os.path.join(output_folder, f"{output_name}.svg"), format="svg")
     if show:
         plt.show()
+    """
+
+    # use seaborn instead of matplotlib to make it prettier
+    sns.set(style='darkgrid')
+    sns.set(font_scale=1.5)
+    plt.rcParams["figure.figsize"] = (8, 6)
+
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+    ax1.plot(train_loss, 'b-o', label="Training loss")
+    ax1.plot(val_loss, 'g-o', label="Validation loss")
+    ax2.plot(train_accuracy, 'b-o', label="Training accuracy")
+    ax2.plot(val_accuracy, 'g-o', label="Validation loss")
+    fig.suptitle("Training & Validation Results")
+    ax1.set_ylabel("Loss")
+    ax2.set_ylabel("Accuracy")
+    ax1.set_xlabel("Epoch")
+    ax2.set_xlabel("Epoch")
+    ax1.set_xticks(np.arange(len(train_loss)))
+    ax2.set_xticks(np.arange(len(train_accuracy)))
+    ax1.legend()
+    ax2.legend()
+
+    plt.tight_layout()
+    # save plot to file and show in a new window
+    plt.savefig(os.path.join(output_folder, f"{output_name}.svg"), format="svg")
+    if show:
+        fig.show()
 
 
 def plot_confusion_matrix(cm, class_names, output_folder="."):
