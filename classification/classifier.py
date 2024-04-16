@@ -174,6 +174,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device, torch.long).squeeze()
+            # labels = batch['labels'].to(device, torch.float)   # for BCEWithLogitsLoss loss
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             _, preds = torch.max(outputs, dim=1)
             # for batch with 2 reviews outputs is tensor([[-0.1297,  0.0863],
@@ -182,6 +183,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
             #  => labels: [1, 0]
             all_predictions.extend(preds.cpu().tolist())
             actual_labels.extend(labels.cpu().tolist())
+            # actual_labels.extend(labels.squeeze().cpu().tolist())   # for BCEWithLogitsLoss loss
             metric.add_batch(predictions=preds, references=labels)
 
             # calculate validation loss and accuracy

@@ -387,17 +387,15 @@ def start_topic_modeling(use_option=2):
         incident_folder = INPUT_FOLDER / rb_name
         twitter_data = pd.read_csv(incident_folder / f"twitter_combined_{rb_name}.csv",
                                    nrows=100)   # TODO use all later
-        """
         reddit_submission_data = pd.read_csv(incident_folder / f"reddit_submissions_combined_{rb_name}.csv",
                                              nrows=500)
         reddit_comment_data = pd.read_csv(incident_folder / f"combined_reddit_comments_{rb_name}.csv",
                                           nrows=500)
-        """
 
         # TODO also use reddit comments and submissions! add "combined_content" to the twitter list?
 
         # test multilingual topic modeling too ? (e.g. for bertopic set language parameter to multilingual)
-        english_data = twitter_data[twitter_data["detected_language"] == "english"]
+        english_data = reddit_submission_data[reddit_submission_data["detected_language"] == "english"]
         print(f"Using {len(english_data)} documents for topic modeling for incident {rb_name}...")
 
         # Todo also only use in rb time period?
