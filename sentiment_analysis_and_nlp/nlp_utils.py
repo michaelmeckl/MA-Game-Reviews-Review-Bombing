@@ -94,11 +94,11 @@ contractions = {
 }
 
 
-def apply_standard_text_preprocessing(df: pd.DataFrame, text_col: str, remove_stopwords=True, use_spacy=True,
-                                      is_social_media_data=False):
+def apply_standard_text_preprocessing(df: pd.DataFrame, text_col: str, remove_stopwords=True, remove_punctuation=False,
+                                      use_spacy=True, is_social_media_data=False):
     spacy_utils = SpacyUtils()
     df[text_col] = df[text_col].astype(str)
-    df['text_cleaned'] = df[text_col].apply(lambda text: clean_text(text, spacy_utils, remove_stopwords))
+    df['text_cleaned'] = df[text_col].apply(lambda text: clean_text(text, spacy_utils, remove_stopwords, remove_punctuation))
 
     if use_spacy:
         df['text_preprocessed'] = df['text_cleaned'].apply(lambda text: apply_lemmatization_spacy(text, spacy_utils))
@@ -157,7 +157,9 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool, remov
     text_cleaned = re.sub(r'&amp;', '', text_cleaned)
     # text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
     # replace duplicate special characters:
-    text_cleaned = re.sub(r'([!()\-{};:,<>./?@#$%\^&*_~]){2,}', lambda x: x.group()[0], text_cleaned)
+    text_cleaned = re.sub(r'([!()\-{};:,<>./?@#%\^&*_~]){2,}', lambda x: x.group()[0], text_cleaned)
+    text_cleaned = re.sub(r'\$', ' dollar', text_cleaned)
+    text_cleaned = re.sub(r'€', ' euro', text_cleaned)
     text_cleaned = re.sub(r'<br />', ' ', text_cleaned)
     text_cleaned = re.sub(r'\'', ' ', text_cleaned)
     text_cleaned = re.sub(r'\s+', ' ', text_cleaned)

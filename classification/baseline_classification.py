@@ -17,11 +17,12 @@ from classification.classification_utils import split_data_scikit, encode_target
     get_pytorch_device
 from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
+from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
 from utils import utils
 
 
 def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_dataloader: DataLoader, tag: str,
-                            num_epochs=2):
+                            num_epochs=3):
     total_steps = len(train_dataloader) * num_epochs
     # TODO use nn.BCEWithLogitsLoss() instead? -> switch num_classes to 1 and adjust loss calculation in train/eval loop
     loss_function = nn.CrossEntropyLoss()
@@ -59,7 +60,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
                                                    output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}.pt")
         if val_loss < best_loss:
             best_loss = val_loss
-            print(f"Best val loss is now: {val_loss:.2f} (val accuracy: {val_accuracy:.2f}% \n")
+            print(f"Best val loss is now: {val_loss:.2f} (val accuracy: {val_accuracy:.2f}%) \n")
             classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
                                                        output_path=MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
     print("Finished training the model!\n")
@@ -222,6 +223,8 @@ if __name__ == "__main__":
     num_rows = 30    # TODO for testing
     combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
                                           nrows=num_rows)
+
+    # apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False, remove_punctuation=False)
 
     reviews_to_use = "both"   # "steam" / "metacritic" / "both"
     if reviews_to_use == "steam":

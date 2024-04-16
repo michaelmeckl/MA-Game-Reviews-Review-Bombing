@@ -142,7 +142,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         total_samples += labels.shape[0]   # len(labels)
 
         progress_bar.update(1)
-        if batch_number % 10 == 0:
+        if batch_number % 100 == 0:
             current_num = (batch_number + 1) * len(input_ids)
             print(f"\nbatch loss: {batch_loss:>7f}  [{current_num:>4d}/{dataset_size:>4d}]")
 
@@ -195,7 +195,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     avg_val_loss = sum(validation_losses) / dataset_size
     val_accuracy = round(total_correct / total_samples, 4) * 100
     print(f"Average val loss: {avg_val_loss:.4f}\nVal Accuracy:{val_accuracy:.2f}%")
-    print(accuracy_score(actual_labels, all_predictions))   # should be the same as the calculated accuracy above
+    # print(accuracy_score(actual_labels, all_predictions))   # should be the same as the calculated accuracy above
 
     # Calculate additional metrics
     f1 = f1_score(actual_labels, all_predictions)

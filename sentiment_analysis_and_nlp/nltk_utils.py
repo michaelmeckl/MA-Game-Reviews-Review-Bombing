@@ -8,7 +8,7 @@ def download_nltk_data():
     nltk.download([
         "stopwords",
         "wordnet",
-        "averaged_perceptron_tagger",
+        # "averaged_perceptron_tagger",
         "vader_lexicon",  # vader is a sentiment lexicon specifically for social media data
         "punkt",
     ])

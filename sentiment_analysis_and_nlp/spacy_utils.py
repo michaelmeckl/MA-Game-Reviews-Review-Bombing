@@ -3,7 +3,7 @@ import spacy
 
 class SpacyUtils:
     def __init__(self):
-        # spacy.download("en_core_web_sm")
+        # requires python -m spacy download en_core_web_sm
         self.spacy_nlp = spacy.load("en_core_web_sm")
 
     def get_stopwords(self):
