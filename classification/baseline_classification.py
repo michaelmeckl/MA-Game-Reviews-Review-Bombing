@@ -14,9 +14,8 @@ from transformers import AutoTokenizer, get_linear_schedule_with_warmup, DataCol
 from classification import classification_utils
 from classification.classification_constants import MODEL_FOLDER, INPUT_DATA_FOLDER, annotation_questions
 from classification.classification_utils import split_data_scikit, encode_target_variable, split_data_pytorch, \
-    get_pytorch_device
-from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model, \
-    get_pretrained_bert_for_sequence
+    get_pytorch_device, show_class_distributions
+from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
 from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
 from utils import utils
@@ -116,7 +115,7 @@ def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, 
     # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
     # not have to be performed for every batch while training!
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    dataset = ds.from_pandas(df[[text_col, "review_bomb_type", "source"]])
+    dataset = ds.from_pandas(df[[text_col, "review_bombing_incident", "review_bomb_type", "source"]])
     # don't use padding here already, instead a data collator is later used for dynamic padding
     tokenized_dataset = dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
                                     batched=True)
@@ -129,7 +128,9 @@ def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, 
     ######################## split into train and test set ########################
     # TODO save test set as a separate csv file to make sure none of the classifiers will see it
     #  while training! and to make sure it's the same for all! (which reviews should be used as the test set ?)
-    train_x, test_x, train_y, test_y = split_data_scikit(X_data, y_data, stratify_on=y_data)
+    # unfortunately it seems only one additional column can be specified here! "review_bombing_incident" seems to be
+    # the best one for the resulting strata
+    train_x, test_x, train_y, test_y = split_data_scikit(X_data, y_data, stratify_on=df[[target_column, "review_bombing_incident"]])  # "source"
     train_x = train_x.reset_index(drop=True)
     train_y = train_y.reset_index(drop=True)
     test_x = test_x.reset_index(drop=True)
@@ -137,15 +138,7 @@ def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, 
 
     debug_stratify = True
     if debug_stratify:
-        # make sure stratification works
-        print(f"\nOriginal y data: {y_data[target_col].value_counts()}")
-        ratio_og = y_data[target_col].value_counts(normalize=True)
-        print(f"ratio_percentage: {ratio_og.round(4) * 100}")
-        print("\nAfter stratifying on y data:")
-        print(f"Train y: {train_y[target_col].value_counts()}")
-        print(f"ratio_percentage: {train_y[target_col].value_counts(normalize=True).round(4) * 100}")
-        print(f"\nTest y: {test_y[target_col].value_counts()}")
-        print(f"ratio_percentage: {test_y[target_col].value_counts(normalize=True).round(4) * 100}")
+        show_class_distributions(X_data, y_data, train_x, train_y, test_x, test_y, target_col)
 
     # TODO Reihenfolge der Reviews für Review Analyse wichtig! Temporal splitting (z.B. nur Reviews bis zu einem
     #  bestimmten Zeitpunkt fürs Training nutzen und alle neueren als Testdaten)

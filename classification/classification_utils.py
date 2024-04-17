@@ -250,3 +250,47 @@ def calculate_prediction_results(true_labels, predicted_labels, class_names=None
         plot_confusion_matrix(conf_matrix, label_names)
     except Exception as e:
         sys.stderr.write(f"Failed to compute confusion matrix: {e}")
+
+
+def show_class_distributions(x_data, y_data, train_x, train_y, test_x, test_y, target_col):
+    # make sure stratification works
+    print(f"\nOriginal y data: {y_data[target_col].value_counts()}")
+    label_class_distribution = y_data[target_col].value_counts(normalize=True) * 100
+    label_class_distribution = label_class_distribution.rename({0: 'Ja', 1: 'Nein'})  # for better readability
+    print(f"ratio_percentage: {label_class_distribution}")
+    print("\nAfter stratifying on y data:")
+    print(f"Train y: {train_y[target_col].value_counts()}")
+    print(f"ratio_percentage: {train_y[target_col].value_counts(normalize=True).round(4) * 100}")
+    print(f"\nTest y: {test_y[target_col].value_counts()}")
+    print(f"ratio_percentage: {test_y[target_col].value_counts(normalize=True).round(4) * 100}")
+
+    # convert index to a column and add new column for plotting below
+    label_class_distribution_df = label_class_distribution.reset_index()
+    label_class_distribution_df.columns = ['class', 'percentage']  # rename the columns so they can be unified
+    label_class_distribution_df['group'] = target_col
+
+    class_distributions = [label_class_distribution_df]
+    print("\nOverview - x data stratified:")
+    for column_name in ["source", "review_bombing_incident", "review_bomb_type"]:
+        print(f"\nOriginal ratio_percentage: {x_data[column_name].value_counts(normalize=True).round(4) * 100}")
+        print(f"Train ratio_percentage: {train_x[column_name].value_counts(normalize=True).round(4) * 100}")
+        print(f"Test ratio_percentage: {test_x[column_name].value_counts(normalize=True).round(4) * 100}\n")
+
+        original_class_distribution = x_data[column_name].value_counts(normalize=True).round(4) * 100
+        original_class_distribution = original_class_distribution.reset_index()
+        original_class_distribution.columns = ['class', 'percentage']
+        original_class_distribution['group'] = column_name
+        class_distributions.append(original_class_distribution)
+
+    # plot the class distributions
+    distribution_df = pd.concat(class_distributions)
+    sns.set_style("whitegrid")
+    plot = sns.catplot(data=distribution_df, x="class", y="percentage", col="group", hue="group",
+                       kind="bar", col_wrap=2, aspect=.8, dodge=False, sharex=False)
+    plot.set_axis_labels("", "Percentage")
+    plot.fig.suptitle('Train Validation Data - Class Distribution')
+    plot.set_titles("{col_name}")
+    plot.tick_params(axis='x', rotation=35)
+    plot.tight_layout()
+    plt.savefig("train_val_data_class_dist.svg", format="svg")
+    # plt.show()
