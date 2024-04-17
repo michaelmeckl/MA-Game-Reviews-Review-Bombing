@@ -108,8 +108,8 @@ def load_model_checkpoint(model_object, optimizer_object, model_path: str | path
     return epoch
 
 
-def split_data_scikit(x_data, y_data, test_split=0.2):
-    return train_test_split(x_data, y_data, test_size=test_split, stratify=y_data)
+def split_data_scikit(x_data, y_data, stratify_on=None, test_split=0.2):
+    return train_test_split(x_data, y_data, test_size=test_split, stratify=stratify_on)
 
 
 def split_data_pandas(data: pd.DataFrame, test_split=0.2):

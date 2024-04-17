@@ -15,7 +15,8 @@ from classification import classification_utils
 from classification.classification_constants import MODEL_FOLDER, INPUT_DATA_FOLDER, annotation_questions
 from classification.classification_utils import split_data_scikit, encode_target_variable, split_data_pytorch, \
     get_pytorch_device
-from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model
+from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model, \
+    get_pretrained_bert_for_sequence
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
 from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
 from utils import utils
@@ -81,9 +82,9 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     return optimizer
 
 
-def preprocess_data_version_2(df: pd.DataFrame, target_col: str):
+def preprocess_data_version_2(df: pd.DataFrame, text_col: str, target_col: str):
     batch_size = 16
-    relevant_columns = df.filter(["review", *annotation_questions])
+    relevant_columns = df.filter([text_col, *annotation_questions])
     print("==============================================")
     print(f'The shape of the relevant columns is: {relevant_columns.shape}')
     print("==============================================")
@@ -104,7 +105,7 @@ def preprocess_data_version_2(df: pd.DataFrame, target_col: str):
     return train_dataloader, test_dataloader
 
 
-def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
+def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, tokenizer):
     batch_size = 8  # 16
 
     ###################### encode categorical variables #####################
@@ -114,9 +115,9 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
     # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
     # not have to be performed for every batch while training!
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    dataset = ds.from_pandas(df[["review"]])
+    dataset = ds.from_pandas(df[[text_col, "review_bomb_type", "source"]])
     # don't use padding here already, instead a data collator is later used for dynamic padding
-    tokenized_dataset = dataset.map(lambda data: tokenizer(data["review"], truncation=True, max_length=max_tokens),
+    tokenized_dataset = dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
                                     batched=True)
     # tokenized_dataset.set_format("torch")  # convert to pytorch dataset
     X_data = tokenized_dataset.to_pandas()
@@ -127,7 +128,7 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
     ######################## split into train and test set ########################
     # TODO save test set as a separate csv file to make sure none of the classifiers will see it
     #  while training! and to make sure it's the same for all! (which reviews should be used as the test set ?)
-    train_x, test_x, train_y, test_y = split_data_scikit(X_data, y_data)
+    train_x, test_x, train_y, test_y = split_data_scikit(X_data, y_data, stratify_on=y_data)
     train_x = train_x.reset_index(drop=True)
     train_y = train_y.reset_index(drop=True)
     test_x = test_x.reset_index(drop=True)
@@ -164,12 +165,13 @@ def preprocess_data_version_1(df: pd.DataFrame, target_col: str, tokenizer):
     # test if the batches have the correct shape
     for batch in train_dataloader:
         print({k: v.shape for k, v in batch.items()})
+        print(tokenizer.decode(batch['input_ids'][0]))  # show the encoded version of one review
         break
     """
     return train_dataloader, test_dataloader
 
 
-def train_and_predict(data: pd.DataFrame, tag: str):
+def train_and_predict(data: pd.DataFrame, text_col: str, tag: str):
     # create tokenizer for preprocessing the data
     # bert_tokenizer = BertTokenizer.from_pretrained(checkpoint)
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)  # uses a Rust-based fast tokenizer version instead of Python
@@ -183,11 +185,12 @@ def train_and_predict(data: pd.DataFrame, tag: str):
 
         # TODO also split per rb incident for training?
 
-        train_data_loader, test_data_loader = preprocess_data_version_1(shuffled_data, target_column, tokenizer)
+        train_data_loader, test_data_loader = preprocess_data_version_1(shuffled_data, text_col, target_column, tokenizer)
 
         # create the model as well as the training parameters and start training
         num_classes = shuffled_data[target_column].nunique()
         model = BERTClassifier(num_classes, model_checkpoint=checkpoint).to(device)
+        # model = get_pretrained_bert_for_sequence(num_classes, model_checkpoint=checkpoint).to(device)   # use this for BertForSequenceClassification
         classify_review_bombing(model, train_data_loader, test_data_loader, tag)
 
         # load the best model for further code
@@ -217,7 +220,7 @@ if __name__ == "__main__":
         MODEL_FOLDER.mkdir()
 
     device = get_pytorch_device()
-    checkpoint = "google-bert/bert-base-cased"
+    checkpoint = "google-bert/bert-base-uncased"
 
     # load relevant data
     num_rows = 30    # TODO for testing
@@ -225,6 +228,7 @@ if __name__ == "__main__":
                                           nrows=num_rows)
 
     # apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False, remove_punctuation=False)
+    text_column = "review"
 
     reviews_to_use = "both"   # "steam" / "metacritic" / "both"
     if reviews_to_use == "steam":
@@ -245,4 +249,4 @@ if __name__ == "__main__":
     classify_rb = True     # if False classify off_topic column
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
 
-    train_and_predict(relevant_data, model_tag)
+    train_and_predict(relevant_data, text_column, model_tag)

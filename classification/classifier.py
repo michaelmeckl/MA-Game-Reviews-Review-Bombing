@@ -4,7 +4,12 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import evaluate
 from torch import nn
 from torch.utils.data import SequentialSampler, DataLoader
-from transformers import BertModel, EvalPrediction, TrainingArguments, Trainer, AutoModelForSequenceClassification
+from transformers import BertModel, EvalPrediction, TrainingArguments, Trainer, AutoModelForSequenceClassification, \
+    BertForSequenceClassification
+
+
+def get_pretrained_bert_for_sequence(n_classes, model_checkpoint):
+    return BertForSequenceClassification.from_pretrained(model_checkpoint, num_labels=n_classes)
 
 
 # Taken from https://medium.com/@khang.pham.exxact/text-classification-with-bert-7afaacc5e49b and https://wellsr.com/python/fine-tuning-bert-for-sentiment-analysis-with-pytorch/
@@ -30,7 +35,7 @@ class BERTClassifier(nn.Module):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         pooled_output = outputs.pooler_output  # pooled output represents each input sequence / review as an embedding
         x = self.dropout(pooled_output)
-        # TODO test this instead of the two lines above as an alternative
+        # use this instead of the two lines above as an alternative
         # x = self.dropout(outputs['last_hidden_state'][:, 0, :])  # Use the [CLS] token representation
         logits = self.fc(x)
         return logits
@@ -125,6 +130,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
 
         # calculate the forward pass of the model
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+        # logits = outputs.logits   # use this with BertForSequenceClassification instead of outputs
         _, preds = torch.max(outputs, dim=1)
         loss = criterion(outputs, labels)
         loss.backward()  # backpropagate the loss and compute the gradients
@@ -176,6 +182,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
             labels = batch['labels'].to(device, torch.long).squeeze()
             # labels = batch['labels'].to(device, torch.float)   # for BCEWithLogitsLoss loss
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            # logits = outputs.logits   # use this with BertForSequenceClassification instead of outputs
             _, preds = torch.max(outputs, dim=1)
             # for batch with 2 reviews outputs is tensor([[-0.1297,  0.0863],
             #                                             [-0.1276,  0.0026]])
