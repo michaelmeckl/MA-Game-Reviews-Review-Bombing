@@ -4,7 +4,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import evaluate
 from torch import nn
 from torch.utils.data import SequentialSampler, DataLoader
-from transformers import BertModel, EvalPrediction, TrainingArguments, Trainer, AutoModelForSequenceClassification, \
+from transformers import BertModel, RobertaModel, DistilBertModel, EvalPrediction, TrainingArguments, Trainer, AutoModelForSequenceClassification, \
     BertForSequenceClassification
 
 
@@ -16,7 +16,10 @@ def get_pretrained_bert_for_sequence(n_classes, model_checkpoint):
 class BERTClassifier(nn.Module):
     def __init__(self, num_classes, model_checkpoint):
         super(BERTClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained(model_checkpoint)
+        # self.bert = BertModel.from_pretrained(model_checkpoint)
+        self.bert = DistilBertModel.from_pretrained(model_checkpoint)
+        # self.bert = RobertaModel.from_pretrained(model_checkpoint)
+
         self.dropout = nn.Dropout(0.1)
         self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
         """
@@ -33,10 +36,10 @@ class BERTClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        pooled_output = outputs.pooler_output  # pooled output represents each input sequence / review as an embedding
-        x = self.dropout(pooled_output)
-        # use this instead of the two lines above as an alternative
-        # x = self.dropout(outputs['last_hidden_state'][:, 0, :])  # Use the [CLS] token representation
+        # pooled_output = outputs.pooler_output  # pooled output represents each input sequence / review as an embedding
+        # use this instead for DistilBERT and RoBERTa
+        hidden_state_output = outputs['last_hidden_state'][:, 0, :]
+        x = self.dropout(hidden_state_output)
         logits = self.fc(x)
         return logits
 
@@ -207,7 +210,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     # print(accuracy_score(actual_labels, all_predictions))   # should be the same as the calculated accuracy above
 
     # Calculate additional metrics
-    f1 = f1_score(actual_labels, all_predictions)
+    f1 = f1_score(actual_labels, all_predictions, average='micro')
     print(f'F1-score: {f1}')
     print(confusion_matrix(actual_labels, all_predictions))
     metrics = metric.compute()
@@ -218,6 +221,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     # save loss and accuracy per epoch to plot later
     history["val_loss"].append(avg_val_loss)
     history["val_accuracy"].append(val_accuracy)
+    history["f1_score"].append(f1)
     writer.add_scalar("Loss/val", avg_val_loss, epoch)
     writer.add_scalar("Accuracy/val", val_accuracy, epoch)
     return avg_val_loss, val_accuracy

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import re
 import time
 import pandas as pd
 import torch
@@ -31,13 +31,14 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
     best_loss = 100
-    writer = SummaryWriter(f"runs/baseline-{tag}")
 
+    writer = SummaryWriter(f"runs/baseline-{tag}-{ckp_clean}")
     train_history = {
         "train_accuracy": [],
         "val_accuracy": [],
         "train_loss": [],
         "val_loss": [],
+        "f1_score": [],
     }
 
     # load a previous checkpoint to resume training by setting the start_epoch to a different value than 0
@@ -45,7 +46,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     if start_epoch > 0:
         resume_epoch = start_epoch - 1
         start_epoch = classification_utils.load_model_checkpoint(bert_model, optimizer, MODEL_FOLDER /
-                                                                 f"baseline-{tag}-epoch-{resume_epoch}.pt")
+                                                                 f"baseline-{tag}-epoch-{resume_epoch}_{ckp_clean}.pt")
         print(f"Resuming training with epoch {start_epoch} ...")
 
     # train model
@@ -58,12 +59,12 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
                                                 train_history)
 
         classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
-                                                   output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}.pt")
+                                                   output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}_{ckp_clean}.pt")
         if val_loss < best_loss:
             best_loss = val_loss
             print(f"Best val loss is now: {val_loss:.2f} (val accuracy: {val_accuracy:.2f}%) \n")
             classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
-                                                       output_path=MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
+                                                       output_path=MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
     print("Finished training the model!\n")
     finish_time = time.time()
     total_time = finish_time - start_time
@@ -75,8 +76,8 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     writer.close()
     # plot the training history (loss and accuracy)
     classification_utils.show_training_plot(train_history["train_accuracy"], train_history["val_accuracy"],
-                                            train_history["train_loss"], train_history["val_loss"],
-                                            output_folder=MODEL_FOLDER, output_name=f"train_history_{tag}",
+                                            train_history["train_loss"], train_history["val_loss"], train_history["f1_score"],
+                                            output_folder=MODEL_FOLDER, output_name=f"train_history_{tag}_{ckp_clean}",
                                             show=False)
 
     return optimizer
@@ -106,7 +107,7 @@ def preprocess_data_version_2(df: pd.DataFrame, text_col: str, target_col: str):
 
 
 def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, tokenizer):
-    batch_size = 8  # 16
+    batch_size = 16  # 8
 
     ###################### encode categorical variables #####################
     encode_target_variable(df, target_col, annotation_questions, use_label_encoder=False)
@@ -133,6 +134,18 @@ def preprocess_data_version_1(df: pd.DataFrame, text_col: str, target_col: str, 
     train_y = train_y.reset_index(drop=True)
     test_x = test_x.reset_index(drop=True)
     test_y = test_y.reset_index(drop=True)
+
+    debug_stratify = True
+    if debug_stratify:
+        # make sure stratification works
+        print(f"\nOriginal y data: {y_data[target_col].value_counts()}")
+        ratio_og = y_data[target_col].value_counts(normalize=True)
+        print(f"ratio_percentage: {ratio_og.round(4) * 100}")
+        print("\nAfter stratifying on y data:")
+        print(f"Train y: {train_y[target_col].value_counts()}")
+        print(f"ratio_percentage: {train_y[target_col].value_counts(normalize=True).round(4) * 100}")
+        print(f"\nTest y: {test_y[target_col].value_counts()}")
+        print(f"ratio_percentage: {test_y[target_col].value_counts(normalize=True).round(4) * 100}")
 
     # TODO Reihenfolge der Reviews für Review Analyse wichtig! Temporal splitting (z.B. nur Reviews bis zu einem
     #  bestimmten Zeitpunkt fürs Training nutzen und alle neueren als Testdaten)
@@ -199,9 +212,9 @@ def train_and_predict(data: pd.DataFrame, text_col: str, tag: str):
     should_predict = False
     if should_predict:
         # load local model
-        n_classes = 2
+        n_classes = data[target_column].nunique()
         model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
-        model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model.pt")
+        model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
         model.load_state_dict(model_checkpoint['model_state_dict'])
         # model.eval()  # switch to inference mode to not resume training
 
@@ -220,12 +233,16 @@ if __name__ == "__main__":
         MODEL_FOLDER.mkdir()
 
     device = get_pytorch_device()
-    checkpoint = "google-bert/bert-base-uncased"
+    # checkpoint = "google-bert/bert-base-uncased"
+    checkpoint = "distilbert-base-uncased"
+    # checkpoint = "FacebookAI/roberta-base"    # there is no uncased version
+    ckp_clean = re.sub("/", "-", checkpoint)  # "clean" version without the / so it can be used in filenames
 
     # load relevant data
     num_rows = 30    # TODO for testing
     combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv",
                                           nrows=num_rows)
+    print(f"Using {len(combined_annotated_data)} rows/reviews for training ...")
 
     # apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False, remove_punctuation=False)
     text_column = "review"

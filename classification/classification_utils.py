@@ -143,13 +143,14 @@ def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: li
     # encoded_df = pd.concat([data, encoded_cols], axis=1).reset_index(drop=True)
 
 
-def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, output_folder=".",
+def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_score=None, output_folder=".",
                        output_name="train_history", show=True):
     """
     plt.figure(figsize=(8, 8))
     plt.subplot(1, 2, 1)
     plt.plot(train_accuracy, label='Training Accuracy')
     plt.plot(val_accuracy, label='Validation Accuracy')
+    plt.plot(f1_score, label='F1 Score')
     plt.legend(loc='lower right')
     plt.title('Training and Validation Accuracy')
 
@@ -175,6 +176,7 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, outpu
     ax1.plot(val_loss, 'g-o', label="Val loss")
     ax2.plot(train_accuracy, 'b-o', label="Train accuracy")
     ax2.plot(val_accuracy, 'g-o', label="Val accuracy")
+    ax2.plot(f1_score, 'r-o', label="F1 score")
     fig.suptitle("Training & Validation Results")
     ax1.set_ylabel("Loss")
     ax2.set_ylabel("Accuracy")
