@@ -5,6 +5,7 @@ import pathlib
 from enum import Enum
 
 RANDOM_SEED = 42
+VALIDATION_SPLIT = 0.2   # use 20% as validation data
 
 INPUT_DATA_FOLDER = pathlib.Path(__file__).parent.parent
 MODEL_FOLDER = pathlib.Path(__file__).parent / "trained_models"

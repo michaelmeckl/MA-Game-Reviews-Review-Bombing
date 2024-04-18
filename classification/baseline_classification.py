@@ -15,7 +15,7 @@ from classification import classification_utils
 from classification.classification_constants import MODEL_FOLDER, INPUT_DATA_FOLDER, annotation_questions
 from classification.classification_utils import split_data_scikit, encode_target_variable, split_data_pytorch, \
     get_pytorch_device, show_class_distributions
-from classification.classifier import BERTClassifier, predict_label, evaluate_model, train_model
+from classification.bert_classifier import BERTClassifier, predict_label, evaluate_model, train_model
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
 from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
 from utils import utils
@@ -260,3 +260,7 @@ if __name__ == "__main__":
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
 
     train_and_predict(relevant_data, text_column, model_tag)
+
+    # TODO split one entire incicdent as testset
+
+    # TODO implement predict on testset

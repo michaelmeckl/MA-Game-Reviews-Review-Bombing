@@ -1,18 +1,19 @@
 import numpy as np
 import torch
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 import evaluate
 from torch import nn
 from torch.utils.data import SequentialSampler, DataLoader
-from transformers import BertModel, RobertaModel, DistilBertModel, EvalPrediction, TrainingArguments, Trainer, AutoModelForSequenceClassification, \
-    BertForSequenceClassification
+from transformers import BertModel, RobertaModel, DistilBertModel, BertForSequenceClassification
+from classification.classification_utils import calculate_prediction_results
 
 
 def get_pretrained_bert_for_sequence(n_classes, model_checkpoint):
     return BertForSequenceClassification.from_pretrained(model_checkpoint, num_labels=n_classes)
 
 
-# Taken from https://medium.com/@khang.pham.exxact/text-classification-with-bert-7afaacc5e49b and https://wellsr.com/python/fine-tuning-bert-for-sentiment-analysis-with-pytorch/
+# Adapted from https://medium.com/@khang.pham.exxact/text-classification-with-bert-7afaacc5e49b and
+# https://wellsr.com/python/fine-tuning-bert-for-sentiment-analysis-with-pytorch/
 class BERTClassifier(nn.Module):
     def __init__(self, num_classes, model_checkpoint):
         super(BERTClassifier, self).__init__()
@@ -22,6 +23,7 @@ class BERTClassifier(nn.Module):
 
         self.dropout = nn.Dropout(0.1)
         self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
+        # TODO use a bit more layers on top of BERT?
         """
         self.classifier = nn.Sequential(
             nn.Linear(in_features=self.bert.config.hidden_size, out_features=300),
@@ -42,78 +44,6 @@ class BERTClassifier(nn.Module):
         x = self.dropout(hidden_state_output)
         logits = self.fc(x)
         return logits
-
-
-class NeuralNetwork(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(28*28, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10)
-        )
-
-    def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
-        return logits
-
-
-class ReviewNeuralNetwork(nn.Module):
-    # based on https://andrew-muller.medium.com/video-game-review-analysis-3c7602184668
-    def __init__(self):
-        super().__init__()
-        self.dropout = nn.Dropout(0.5)
-        self.sequential = nn.Sequential(
-            nn.Linear(500, 250),
-            nn.ReLU(),
-            self.dropout,
-            nn.Linear(250, 125),
-            nn.ReLU(),
-            self.dropout,
-            nn.Linear(125, 250),
-            nn.ReLU(),
-            self.dropout,
-            nn.Linear(250, 1),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        logits = self.sequential(x)
-        return logits
-
-
-class MLP(nn.Module):
-    # define model elements
-    def __init__(self, n_inputs):
-        super(MLP, self).__init__()
-        # input to first hidden layer
-        self.hidden1 = nn.Linear(n_inputs, 10)
-        nn.init.kaiming_uniform_(self.hidden1.weight, nonlinearity='relu')
-        self.act1 = nn.ReLU()
-        # second hidden layer
-        self.hidden2 = nn.Linear(10, 8)
-        nn.init.kaiming_uniform_(self.hidden2.weight, nonlinearity='relu')
-        self.act2 = nn.ReLU()
-        # third hidden layer and output
-        self.hidden3 = nn.Linear(8, 1)
-        nn.init.xavier_uniform_(self.hidden3.weight)
-        self.act3 = nn.Sigmoid()
-
-    def forward(self, X):
-        # input to first hidden layer
-        X = self.hidden1(X)
-        X = self.act1(X)
-        # second hidden layer
-        X = self.hidden2(X)
-        X = self.act2(X)
-        # third hidden layer and output
-        X = self.hidden3(X)
-        X = self.act3(X)
-        return X
 
 
 def train_model(model, data_loader, optimizer, scheduler, criterion, device, epoch, writer, history, progress_bar):
@@ -210,7 +140,7 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     # print(accuracy_score(actual_labels, all_predictions))   # should be the same as the calculated accuracy above
 
     # Calculate additional metrics
-    f1 = f1_score(actual_labels, all_predictions, average='micro')
+    f1 = f1_score(actual_labels, all_predictions, average='binary')
     print(f'F1-score: {f1}')
     print(confusion_matrix(actual_labels, all_predictions))
     metrics = metric.compute()
@@ -289,69 +219,6 @@ def predict_test_labels(model, test_dataset, batch_size, device, target_col):
     f1 = f1_score(flat_true_labels, flat_predictions)
     print('F1 Score: %.3f' % f1)
 
+    calculate_prediction_results(true_labels, predictions)
+
     # TODO show some predictions
-
-
-############################ The example code below uses the Huggingface Trainer API #############################
-
-# Methods below taken from https://github.com/NielsRogge/Transformers-Tutorials/blob/master/BERT/Fine_tuning_BERT_(
-# and_friends)_for_multi_label_text_classification.ipynb
-def start_training_trainer_api(encoded_dataset, tokenizer, labels, id2label: dict, label2id: dict):
-    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
-                                                               problem_type="multi_label_classification",
-                                                               num_labels=len(labels),
-                                                               id2label=id2label,
-                                                               label2id=label2id)
-    batch_size = 8
-    metric_name = "f1"
-    args = TrainingArguments(
-        f"bert-finetuned-sem_eval-english",
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        learning_rate=2e-5,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        num_train_epochs=5,
-        weight_decay=0.01,
-        load_best_model_at_end=True,
-        metric_for_best_model=metric_name,
-    )
-
-    trainer = Trainer(
-        model,
-        args,
-        train_dataset=encoded_dataset["train"],
-        eval_dataset=encoded_dataset["test"],
-        tokenizer=tokenizer,
-        compute_metrics=compute_metrics
-    )
-
-    trainer.train()
-    eval_results = trainer.evaluate()
-    print(eval_results)
-
-
-def compute_metrics(p: EvalPrediction):
-    preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-    result = multi_label_metrics(predictions=preds, labels=p.label_ids)
-    return result
-
-
-def multi_label_metrics(predictions, labels, threshold=0.5):
-    # source: https://jesusleal.io/2021/04/21/Longformer-multilabel-classification/
-    # first, apply sigmoid on predictions which are of shape (batch_size, num_labels)
-    sigmoid = torch.nn.Sigmoid()
-    probs = sigmoid(torch.Tensor(predictions))
-    # next, use threshold to turn them into integer predictions
-    y_pred = np.zeros(probs.shape)
-    y_pred[np.where(probs >= threshold)] = 1
-    # finally, compute metrics
-    y_true = labels
-    f1_micro_average = f1_score(y_true=y_true, y_pred=y_pred, average='micro')
-    roc_auc = roc_auc_score(y_true, y_pred, average='micro')
-    accuracy = accuracy_score(y_true, y_pred)
-    # return as dictionary
-    metrics = {'f1': f1_micro_average,
-               'roc_auc': roc_auc,
-               'accuracy': accuracy}
-    return metrics

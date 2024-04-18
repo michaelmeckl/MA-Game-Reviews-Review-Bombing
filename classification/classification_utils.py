@@ -18,7 +18,7 @@ from sklearn import metrics
 from torch.utils.data import random_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from classification.classification_constants import RANDOM_SEED
+from classification.classification_constants import RANDOM_SEED, VALIDATION_SPLIT
 
 
 def set_random_seed(seed: int = RANDOM_SEED, is_pytorch: bool = True) -> None:
@@ -108,11 +108,11 @@ def load_model_checkpoint(model_object, optimizer_object, model_path: str | path
     return epoch
 
 
-def split_data_scikit(x_data, y_data, stratify_on=None, test_split=0.2):
+def split_data_scikit(x_data, y_data, stratify_on=None, test_split=VALIDATION_SPLIT):
     return train_test_split(x_data, y_data, test_size=test_split, stratify=stratify_on)
 
 
-def split_data_pandas(data: pd.DataFrame, test_split=0.2):
+def split_data_pandas(data: pd.DataFrame, test_split=VALIDATION_SPLIT):
     # alternative with pandas sample
     train_set = data.sample(frac=1 - test_split)
     test_set = data.drop(train_set.index).sample(frac=1.0)
@@ -127,7 +127,7 @@ def split_data_pytorch(data: pd.DataFrame, test_split=0.2):
     return train_set, test_set
 
 
-def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: list[str], use_label_encoder=True):
+def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: list[str], use_label_encoder=False):
     if use_label_encoder:
         encoder = LabelEncoder()
         # fit on one column first and use transform afterwards so all "Ja"/"Nein" are encoded the same way in each column
@@ -194,7 +194,7 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_sc
         fig.show()
 
 
-def plot_confusion_matrix(cm, class_names, output_folder="."):
+def plot_confusion_matrix(cm, class_names, output_folder=".", show=True):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     Taken from https://www.tensorflow.org/tensorboard/image_summaries#building_an_image_classifier and slightly adjusted
@@ -225,8 +225,10 @@ def plot_confusion_matrix(cm, class_names, output_folder="."):
     # plt.tight_layout()
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
+    # TODO save at same location as train history plot above
     plt.savefig(os.path.join(output_folder, "confusion_matrix.png"))
-    plt.show()
+    if show:
+        plt.show()
 
 
 def calculate_prediction_results(true_labels, predicted_labels, class_names=None):
@@ -234,9 +236,9 @@ def calculate_prediction_results(true_labels, predicted_labels, class_names=None
 
     print(f"\nAccuracy score on test data: {metrics.accuracy_score(true_labels, predicted_labels) * 100:.2f} %")
     print(f"Balanced accuracy score on test data: {metrics.balanced_accuracy_score(true_labels, predicted_labels):.2f}")
-    print(f"Precision score on test data: "
+    print(f"Weighted Precision score on test data: "
           f"{metrics.precision_score(true_labels, predicted_labels, average='weighted'):.2f}")
-    print(f"F1 score on test data: {metrics.f1_score(true_labels, predicted_labels, average='weighted'):.2f}")
+    print(f"Weighted F1 score on test data: {metrics.f1_score(true_labels, predicted_labels, average='weighted'):.2f}")
     try:
         print(f"\nClassification Report:\n"
               f"{metrics.classification_report(true_labels, predicted_labels, target_names=label_names)}")
