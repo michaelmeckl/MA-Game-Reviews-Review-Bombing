@@ -578,41 +578,48 @@ def analyze_aggregated_annotation_information():
         num_review_bombing_reviews = project["is-review-bombing"].value_counts().get("Ja", 0)
         print(f"Number of reviews marked as 'Review Bombing': {num_review_bombing_reviews}")
 
-        # remove reviews that were annotated only once first to not bias the agreement results
-        filtered_project = project[project["num_annotators"] > 1]
-        agreement = round(np.average(filtered_project["annotation_certainty"]), 2)
-        print(f"Average Annotation Agreement: {agreement} (IMPORTANT: Only reviews that were annotated by three "
-              f"annotators are included here!)")
+        num_off_topic_reviews = project["is-rating-game-related"].value_counts().get("Nein", 0)
+        print(f"Number of reviews marked as 'Off Topic': {num_off_topic_reviews}")
 
         project_info_dict = {
             "Project": project_name,
-            "percentage_rb_reviews": (num_review_bombing_reviews / len(project)) * 100,
-            "avg_agreement": agreement,
+            "Review Bombing Reviews": (num_review_bombing_reviews / len(project)) * 100,
+            "Off Topic Reviews": (num_off_topic_reviews / len(project)) * 100,
         }
         project_info_list.append(project_info_dict)
 
     project_info_df = pd.DataFrame(project_info_list)
+    """
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
-    sns.barplot(data=project_info_df, x="Project", y="percentage_rb_reviews", hue="Project", ax=ax1)
-    sns.barplot(data=project_info_df, x="Project", y="avg_agreement", hue="Project", ax=ax2)
-    fig.suptitle("Aggregated Features per Project", fontsize=12)
+    sns.barplot(data=project_info_df, x="Project", y="Review Bombing Reviews", hue="Project", ax=ax1)
+    sns.barplot(data=project_info_df, x="Project", y="Off Topic Reviews", hue="Project", ax=ax2)
+    fig.suptitle("Target Label Annotation per Project", fontsize=12)
     ax1.set_ylabel("Percentage of Review Bombing - Reviews")
-    ax2.set_ylabel("Annotator Agreement in %")
+    ax2.set_ylabel("Percentage of Off Topic - Reviews")
     ax1.set_xlabel("")
     ax2.set_xlabel("")
     ax1.set(xticklabels=[])
     ax2.set(xticklabels=[])
     # ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
     # ax2.set_xticks(ax2.get_xticks(), ax2.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-    ax2.set_ylim([60, 100])
+    # ax2.set_ylim([60, 100])
 
     ax1.get_legend().remove()
     sns.move_legend(
-        ax2, "upper right",
+        ax2, "upper center",
         bbox_to_anchor=(1, 1), ncol=1, title=None, frameon=False, borderaxespad=0.,
     )
+    """
+    project_info_df_long = pd.melt(project_info_df, id_vars=['Project'])
+    project_info_df_long = project_info_df_long.rename(columns={"variable": "Percentage"})
+    ax = sns.catplot(data=project_info_df_long, x="Project", y="value", hue="Percentage",
+                     kind="bar", dodge=True, legend_out=False)
+    ax.set_axis_labels("", "Percentage of all Reviews")
+    ax.fig.suptitle('Target Label Annotation per Project')
+    ax.tick_params(axis='x', rotation=45)
+
     plt.tight_layout()
-    plt.savefig(PLOT_FOLDER / "grouped_project_features.svg", format="svg")
+    plt.savefig(PLOT_FOLDER / "grouped_target_project_features.svg", format="svg")
 
     # plt.show()
     ############################################################################
@@ -622,6 +629,48 @@ def analyze_aggregated_annotation_information():
     combined_cleaned_df.to_csv(OUTPUT_FOLDER / "combined_cleaned_all_projects.csv", index=False)
     combined_final_df.to_csv(OUTPUT_FOLDER / "combined_final_annotation_all_projects.csv", index=False)
     print("################################################################\n")
+
+
+def plot_annotator_agreement():
+    all_incidents = pd.read_csv(OUTPUT_FOLDER / "combined_final_annotation_all_projects.csv")
+    project_agreement = list()
+
+    def calculate_agreement_per_project(group_df: pd.DataFrame):
+        incident_name = group_df.name
+        group_df = group_df.reset_index(drop=True)
+        test = group_df["annotation_certainty"]
+        avg_agreement_overall = round(np.average(test), 2)
+        rb_s = group_df[group_df["is-review-bombing"] == "Ja"]["annotation_certainty"]
+        not_rb_s = group_df[group_df["is-review-bombing"] == "Nein"]["annotation_certainty"]
+        avg_agreement_rb_reviews = round(np.average(rb_s), 2)
+        avg_agreement_not_rb_reviews = round(np.average(not_rb_s), 2)
+
+        project_agreement_dict = {
+            "Project": incident_name,
+            "Avg Agreement Overall": avg_agreement_overall,
+            "Avg Agreement Is-Review-Bombing": avg_agreement_rb_reviews,
+            "Avg Agreement Is-Not-Review-Bombing": avg_agreement_not_rb_reviews,
+        }
+        project_agreement.append(project_agreement_dict)
+
+    # remove reviews that were annotated only once first to not bias the agreement results
+    filtered_incidents = all_incidents[all_incidents["num_annotators"] > 1]
+    filtered_incidents.groupby("project").apply(calculate_agreement_per_project)
+
+    project_agreement_df = pd.DataFrame(project_agreement)
+    project_agreement_df_long = pd.melt(project_agreement_df, id_vars=['Project'])
+    project_agreement_df_long = project_agreement_df_long.rename(columns={"variable": "Type"})
+
+    # plt.rcParams["figure.figsize"] = (8, 12)
+    plot = sns.catplot(data=project_agreement_df_long, x="Project", y="value", hue="Type",
+                       kind="bar", dodge=True, legend_out=False, aspect=11.7/8.27)
+    plot.set_axis_labels("", "Agreement in %")
+    plot.fig.suptitle('Annotator agreement for all projects')
+    plot.tick_params(axis='x', rotation=40)
+    plot.set(ylim=(60, 100))
+    plot.tight_layout()
+    plt.savefig(PLOT_FOLDER / "annotator_agreement_per_project.svg", format="svg")
+    # plt.show()
 
 
 """
@@ -666,6 +715,7 @@ if __name__ == "__main__":
     analyze_aggregated_information = True
     if analyze_aggregated_information:
         analyze_aggregated_annotation_information()
+        plot_annotator_agreement()
 
     calculate_krippendorff_metric = False
     if calculate_krippendorff_metric:
