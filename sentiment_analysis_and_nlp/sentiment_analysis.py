@@ -13,13 +13,11 @@ from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessi
 
 def classify_sentiment_score(score: float, result_as_number=True):
     """
-    Use like this after the function above:
-     df["sentiment_score_vader"] = pd.to_numeric(df["sentiment_score_vader"], errors="coerce")
-     df["sentiment_classification_vader"] = df["sentiment_score_vader"].apply(classify_sentiment_score)
+    Cutoffs were chosen according to the official VADER github repository: https://github.com/cjhutto/vaderSentiment/tree/master
     """
-    if score > 0.2:
+    if score > 0.05:
         class_result = "positive", 1
-    elif score < -0.2:
+    elif score < -0.05:
         class_result = "negative", -1
     else:
         class_result = "neutral", 0
@@ -30,7 +28,6 @@ def classify_sentiment_score(score: float, result_as_number=True):
 def textblob_sentiment_analysis(df, df_text_col):
     def get_textblob_sentiment(post):
         blob = TextBlob(post)
-        # TODO calc at sent level too ? -> for now only calc at whole text level
         # print(blob.sentences)  # split into sentences
         # lemmata = [word.lemmatize() for word in blob.words]
         text_sentiment = blob.sentiment
@@ -57,22 +54,22 @@ def vader_sentiment_analysis(df, df_text_col):
         sentiment = analyzer.polarity_scores(post)
         return sentiment['compound']
 
-    df['sentiment_score'] = df[df_text_col].apply(lambda x: get_sentiment_score(x))
+    df['sentiment_score_whole'] = df[df_text_col].apply(lambda x: get_sentiment_score(x))
     # create a new column to classify the polarity scores
-    df[["label_text_whole", "label_whole"]] = df["sentiment_score"].apply(lambda score: pd.Series(classify_sentiment_score(
+    df[["label_text_whole", "label_whole"]] = df["sentiment_score_whole"].apply(lambda score: pd.Series(classify_sentiment_score(
         score)))
 
-    sentiment_mean = df['sentiment_score'].mean()
+    sentiment_mean = df['sentiment_score_whole'].mean()
     print(f"Mean sentiment score for all texts: {sentiment_mean:.2f}")
     print(df["label_whole"].value_counts())
     print(df["label_whole"].value_counts(normalize=True) * 100)  # show label distribution (i.e. as percentage)
 
     # Plot a histogram of sentiment scores
-    plt.hist(df['sentiment_score'], bins=20, color='blue', alpha=0.5)
+    plt.hist(df['sentiment_score_whole'], bins=20, color='blue', alpha=0.5)
     plt.xlabel('Sentiment Score')
     plt.ylabel('Frequency')
     plt.title('Distribution of Vader Sentiment Scores')
-    plt.show()
+    # plt.show()
 
 
 def vader_sentiment_analysis_sentence_level(df: pd.DataFrame, df_text_col, debug=False):
@@ -136,38 +133,82 @@ def vader_sentiment_analysis_sentence_level(df: pd.DataFrame, df_text_col, debug
         print(f"Most frequent negative words: {frequent_neg_words.most_common(20)}")
 
 
-if __name__ == "__main__":
-    # nlp_utils.download_nltk_data()
+def compare_sentiment_analysis_results():
     INPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "posts"
-    rb_incidents = ["Assassins-Creed-Unity"]
 
     for rb_name in rb_incidents:
         incident_folder = INPUT_FOLDER / rb_name
         twitter_data = pd.read_csv(incident_folder / f"twitter_combined_{rb_name}.csv",
-                                   nrows=20)  # TODO use all later
+                                   nrows=30)
+        reddit_submission_data = pd.read_csv(incident_folder / f"reddit_submissions_combined_{rb_name}.csv",
+                                             nrows=30)
+        reddit_comment_data = pd.read_csv(incident_folder / f"combined_reddit_comments_{rb_name}.csv",
+                                          nrows=30)
 
-        english_data = twitter_data[twitter_data["detected_language"] == "english"]
-        # posts_in_rb_time = english_data[english_data["in_rb_time_period"]]   # TODO
+        english_twitter_data = twitter_data[twitter_data["detected_language"] == "english"]
+        english_reddit_submissions = reddit_submission_data[reddit_submission_data["detected_language"] == "english"]
+        english_reddit_comments = reddit_comment_data[reddit_comment_data["detected_language"] == "english"]
 
         # remove stop words, clean text and lemmatize
-        apply_standard_text_preprocessing(english_data, text_col="combined_content", is_social_media_data=True)
+        apply_standard_text_preprocessing(english_twitter_data, text_col="combined_content", remove_punctuation=False,
+                                          remove_stopwords=False, is_social_media_data=True)
+        apply_standard_text_preprocessing(english_reddit_submissions, text_col="combined_content",
+                                          remove_punctuation=False,
+                                          remove_stopwords=False, is_social_media_data=True)
+        apply_standard_text_preprocessing(english_reddit_comments, text_col="combined_content",
+                                          remove_punctuation=False,
+                                          remove_stopwords=False, is_social_media_data=True)
 
-        docs_original = list(english_data["combined_content"])
-        docs_lemmatized = list(english_data["text_preprocessed"])
+        use_cleaned = False
+        if use_cleaned:
+            col = "text_cleaned"
+        else:
+            # use original text
+            col = "combined_content"
 
-        is_reddit_data = False
-        source_tag = ""
-        if english_data["source"].iloc[0] == "Twitter":
-            source_tag = "tw_"
-        elif english_data["source"].iloc[0] == "Reddit":
-            source_tag = "red_"
-            is_reddit_data = True
+        for data in [english_twitter_data, english_reddit_submissions, english_reddit_comments]:
+            # compare different sentiment analysis options
+            vader_sentiment_analysis_sentence_level(data, col)
+            vader_sentiment_analysis(data, col)
+            # textblob_sentiment_analysis(data, col)
 
-        # TODO compare different sentiment analysis options
-        vader_sentiment_analysis_sentence_level(english_data, "combined_content")
-        vader_sentiment_analysis(english_data, "combined_content")
-        # vader_sentiment_analysis(english_data, "text_preprocessed")   # compare lemmatized
+            # create small df with only text columns and sentiment results for comparison
+            subset_df = data[[col, "sentiment_score_sentence_level", "sentiment_score_whole"]]
+            print("debug")
 
-        textblob_sentiment_analysis(english_data, "combined_content")
+        # test on review data for this incident too
+        # choose 30 reviews randomly for testing the sentiment analysis
+        sampled_review_data = review_data[review_data["review_bombing_incident"] == rb_name].sample(frac=1, random_state=42).head(30)
+        apply_standard_text_preprocessing(sampled_review_data, text_col="review",
+                                          remove_punctuation=True, remove_stopwords=False)
+        col = "text_cleaned" if use_cleaned else "review"
+        vader_sentiment_analysis_sentence_level(sampled_review_data, col)
+        vader_sentiment_analysis(sampled_review_data, col)
+        # textblob_sentiment_analysis(sampled_review_data, col)
+        subset_review_df = sampled_review_data[[col, "sentiment_score_sentence_level", "sentiment_score_whole"]]
 
-        print("debug")
+        print("debug outer")
+
+
+def apply_sentiment_analysis(df: pd.DataFrame, text_col: str, col_for_sentiment_analysis: str,
+                             perform_preprocessing=False, social_media_data=True):
+    # based on tests, preprocessing ususally does not improve much (or makes it even worse)
+    if perform_preprocessing:
+        apply_standard_text_preprocessing(df, text_col=text_col, remove_stopwords=False, remove_punctuation=False,
+                                          is_social_media_data=social_media_data)
+
+    vader_sentiment_analysis_sentence_level(df, col_for_sentiment_analysis)
+    # vader_sentiment_analysis(df, col_for_sentiment_analysis)
+    df.drop(columns=['label_text'], axis=1, inplace=True)
+    # return df
+
+
+if __name__ == "__main__":
+    # rb_incidents = ["Skyrim-Paid-Mods", "Assassins-Creed-Unity", "Firewatch", "Mortal-Kombat-11",
+    #                 "Borderlands-Epic-Exclusivity", "Ukraine-Russia-Conflict"]
+    rb_incidents = ["Borderlands-Epic-Exclusivity", "Assassins-Creed-Unity"]  # for faster testing
+
+    review_data = pd.read_csv(pathlib.Path(__file__).parent.parent /
+                              "combined_final_annotation_all_projects_updated.csv")
+
+    compare_sentiment_analysis_results()

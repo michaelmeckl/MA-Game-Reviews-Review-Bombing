@@ -155,9 +155,9 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool, remov
     text_cleaned = re.sub(r'(?:www|https?)\S+', '', text_cleaned, flags=re.MULTILINE)   # better remove url
     text_cleaned = re.sub(r'\<a href', ' ', text_cleaned)
     text_cleaned = re.sub(r'&amp;', '', text_cleaned)
-    # text_cleaned = re.sub(r'["\-;%(){}^|+&=*.,!?:#$@\[\]/]', ' ', text_cleaned)
+    text_cleaned = re.sub(r'["(){}\[\]^|<>]', ' ', text_cleaned)
     # replace duplicate special characters:
-    text_cleaned = re.sub(r'([!()\-{};:,<>./?@#%\^&*_~]){2,}', lambda x: x.group()[0], text_cleaned)
+    text_cleaned = re.sub(r'([\-;:,./!?@#%&*+_~]){2,}', lambda x: x.group()[0], text_cleaned)
     text_cleaned = re.sub(r'\$', ' dollar', text_cleaned)
     text_cleaned = re.sub(r'€', ' euro', text_cleaned)
     text_cleaned = re.sub(r'<br />', ' ', text_cleaned)
@@ -171,8 +171,8 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool, remov
         # remove string.punctuation characters
         text_cleaned = text_cleaned.translate(str.maketrans('', '', ''.join(punctuation_list)))
 
-    # remove single characters surrounded by whitespaces after the cleaning ? such as " i t " -> ""
-    # text_cleaned = re.sub(r'\s+.\s+', '', text_cleaned)
+    # remove single characters surrounded by whitespaces after the cleaning; such as " i t " -> " "
+    text_cleaned = re.sub(r'\s[a-z]\s', ' ', text_cleaned)
     return text_cleaned.strip()
 
 
