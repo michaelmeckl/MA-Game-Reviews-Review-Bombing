@@ -24,8 +24,10 @@ class BERTClassifier(nn.Module):
         self.seq_fc = nn.Sequential(
             nn.Linear(in_features=self.bert.config.hidden_size, out_features=300),
             nn.ReLU(),
+            # self.dropout,
             nn.Linear(300, 100),
             nn.ReLU(),
+            # self.dropout,
             nn.Linear(100, num_classes)
         )
 

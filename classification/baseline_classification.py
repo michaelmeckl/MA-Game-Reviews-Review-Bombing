@@ -114,20 +114,11 @@ def preprocess_data_version_2(df: pd.DataFrame, text_col: str, target_col: str):
 
 
 def preprocess_data(df: pd.DataFrame, text_col: str, target_col: str, tokenizer):
-    ############################################
-    # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
-    # not have to be performed for every batch while training!
-    max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    dataset = ds.from_pandas(df[[text_col, "review_bombing_incident", "review_bomb_type", "source"]])
-    # don't use padding here already, instead a data collator is later used for dynamic padding
-    tokenized_dataset = dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
-                                    batched=True)
-    # tokenized_dataset.set_format("torch")  # convert to pytorch dataset
-    X_data = tokenized_dataset.to_pandas()
+    ######################## split into train and validation set ########################
+    # X_data = df[[text_col, "review_bombing_incident", "review_bomb_type", "source"]]
+    X_data = df.loc[:, df.columns != target_col]   # select everything but target col
     y_data = df[[target_col]]
 
-    # TODO move split data before tokenizing to make sure nothing leaks!
-    ######################## split into train and validation set ########################
     # unfortunately it seems only one additional column can be specified here! "review_bombing_incident" seems to be
     # the best one for the resulting strata
     train_x, val_x, train_y, val_y = split_data_scikit(X_data, y_data, stratify_on=df[[target_column, "review_bombing_incident"]])  # "source"
@@ -139,6 +130,21 @@ def preprocess_data(df: pd.DataFrame, text_col: str, target_col: str, tokenizer)
     debug_stratify = False
     if debug_stratify:
         show_class_distributions(X_data, y_data, train_x, train_y, val_x, val_y, target_col)
+
+    ############################################
+    # tokenize the review column already here instead of in __getitem__ with the tokenize function below, so it does
+    # not have to be performed for every batch while training!
+    max_tokens = tokenizer.max_model_input_sizes[checkpoint]
+    train_dataset = ds.from_pandas(train_x)
+    val_dataset = ds.from_pandas(val_x)
+    # don't use padding here already, instead a data collator is later used for dynamic padding
+    tokenized_train_dataset = train_dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
+                                                batched=True)
+    tokenized_val_dataset = val_dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
+                                            batched=True)
+    # tokenized_train_dataset.set_format("torch")  # convert to pytorch dataset
+    train_x_tokenized = tokenized_train_dataset.to_pandas()
+    val_x_tokenized = tokenized_val_dataset.to_pandas()
 
     ######################## create custom dataset and dataloader #######################
     """
@@ -156,8 +162,8 @@ def preprocess_data(df: pd.DataFrame, text_col: str, target_col: str, tokenizer)
     # use a data collator to pad the tokens to the longest per batch (see "Dynamic Padding" on https://huggingface.co/learn/nlp-course/en/chapter3/2?fw=pt#dynamic-padding)
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-    train_dataset = CustomDataset(train_x, train_y)  # transform=tokenize_review
-    val_dataset = CustomDataset(val_x, val_y)  # transform=tokenize_review
+    train_dataset = CustomDataset(train_x_tokenized, train_y)  # transform=tokenize_review
+    val_dataset = CustomDataset(val_x_tokenized, val_y)  # transform=tokenize_review
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=data_collator)  # num_workers = 2
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=data_collator)
 
@@ -279,7 +285,7 @@ if __name__ == "__main__":
 
     use_subset = False  # True for testing
 
-    batch_size = 8  # 16  # TODO use 16 later
+    batch_size = 16  # 8
 
     device = get_pytorch_device()
     checkpoint = "google-bert/bert-base-uncased"
@@ -301,7 +307,6 @@ if __name__ == "__main__":
         print(f"Using {len(train_set)} reviews as train set.")
         print(f"Using {len(test_set)} reviews as test set.")
 
-    # TODO only for testing
     # train_set = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv", nrows=1843)
     # encode_target_variable(train_set, target_column, annotation_questions, use_label_encoder=False)
 

@@ -248,7 +248,7 @@ def calculate_prediction_results(true_labels, predicted_labels, class_names=None
     try:
         conf_matrix = metrics.confusion_matrix(predicted_labels, true_labels, normalize="all")
         print(f"Confusion Matrix:\n{conf_matrix}")
-        plot_confusion_matrix(conf_matrix, label_names)
+        plot_confusion_matrix(conf_matrix, label_names, show=False)
     except Exception as e:
         sys.stderr.write(f"Failed to compute confusion matrix: {e}")
 
