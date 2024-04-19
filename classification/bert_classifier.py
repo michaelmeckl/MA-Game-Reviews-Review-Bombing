@@ -1,9 +1,6 @@
-import numpy as np
 import torch
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
-import evaluate
 from torch import nn
-from torch.utils.data import SequentialSampler, DataLoader
 from transformers import BertModel, RobertaModel, DistilBertModel, BertForSequenceClassification
 from classification.classification_utils import calculate_prediction_results
 
@@ -17,24 +14,20 @@ def get_pretrained_bert_for_sequence(n_classes, model_checkpoint):
 class BERTClassifier(nn.Module):
     def __init__(self, num_classes, model_checkpoint):
         super(BERTClassifier, self).__init__()
-        # self.bert = BertModel.from_pretrained(model_checkpoint)
-        self.bert = DistilBertModel.from_pretrained(model_checkpoint)
+        self.bert = BertModel.from_pretrained(model_checkpoint)
+        # self.bert = DistilBertModel.from_pretrained(model_checkpoint)
         # self.bert = RobertaModel.from_pretrained(model_checkpoint)
 
-        self.dropout = nn.Dropout(0.1)
-        self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
-        # TODO use a bit more layers on top of BERT?
-        """
-        self.classifier = nn.Sequential(
+        self.dropout = nn.Dropout(0.1)   # increase this in case of overfitting
+        # TODO use more than one layer on top of BERT?
+        # self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
+        self.seq_fc = nn.Sequential(
             nn.Linear(in_features=self.bert.config.hidden_size, out_features=300),
             nn.ReLU(),
             nn.Linear(300, 100),
             nn.ReLU(),
-            nn.Linear(100, 50),
-            nn.ReLU(),
-            nn.Linear(50, num_classes)
+            nn.Linear(100, num_classes)
         )
-        """
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
@@ -42,7 +35,8 @@ class BERTClassifier(nn.Module):
         # use this instead for DistilBERT and RoBERTa
         hidden_state_output = outputs['last_hidden_state'][:, 0, :]
         x = self.dropout(hidden_state_output)
-        logits = self.fc(x)
+        # logits = self.fc(x)
+        logits = self.seq_fc(x)
         return logits
 
 
@@ -58,7 +52,7 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device, torch.long)  # make sure this is a Long Tensor as loss function expects it
-        labels = labels.squeeze()  # squeeze label tensor to remove the outer dimension
+        labels = labels.flatten()  # flatten label tensor to remove the outer dimension
         # labels = batch['labels'].to(device, torch.float)   # for BCEWithLogitsLoss loss
 
         # calculate the forward pass of the model
@@ -99,7 +93,6 @@ def train_model(model, data_loader, optimizer, scheduler, criterion, device, epo
 
 
 def evaluate_model(model, data_loader, criterion, device, epoch, writer, history):
-    metric = evaluate.load("glue", "mrpc")
     all_predictions = []
     actual_labels = []
     validation_losses = []
@@ -112,7 +105,9 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
         for batch in data_loader:
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device, torch.long).squeeze()
+            # use flatten() instead of squeeze() here, otherwise a last batch with size 1 will get converted to a
+            # scalar instead of a list and throw an error!
+            labels = batch['labels'].to(device, torch.long).flatten()
             # labels = batch['labels'].to(device, torch.float)   # for BCEWithLogitsLoss loss
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             # logits = outputs.logits   # use this with BertForSequenceClassification instead of outputs
@@ -124,7 +119,6 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
             all_predictions.extend(preds.cpu().tolist())
             actual_labels.extend(labels.cpu().tolist())
             # actual_labels.extend(labels.squeeze().cpu().tolist())   # for BCEWithLogitsLoss loss
-            metric.add_batch(predictions=preds, references=labels)
 
             # calculate validation loss and accuracy
             loss = criterion(outputs, labels)
@@ -143,18 +137,16 @@ def evaluate_model(model, data_loader, criterion, device, epoch, writer, history
     f1 = f1_score(actual_labels, all_predictions, average='binary')
     print(f'F1-score: {f1}')
     print(confusion_matrix(actual_labels, all_predictions))
-    metrics = metric.compute()
-    print(f"Computed metrics: {metrics}")
     report = classification_report(actual_labels, all_predictions)
     print(f"Classification Report:\n{report}")
 
     # save loss and accuracy per epoch to plot later
     history["val_loss"].append(avg_val_loss)
     history["val_accuracy"].append(val_accuracy)
-    history["f1_score"].append(f1)
+    history["f1_score"].append(round(f1 * 100, 4))
     writer.add_scalar("Loss/val", avg_val_loss, epoch)
     writer.add_scalar("Accuracy/val", val_accuracy, epoch)
-    return avg_val_loss, val_accuracy
+    return avg_val_loss, val_accuracy, classification_report(actual_labels, all_predictions, output_dict=True)
 
 
 def predict_label(text, target_col: str, model, tokenizer, device, max_length=512):
@@ -174,51 +166,22 @@ def predict_label(text, target_col: str, model, tokenizer, device, max_length=51
         return label_encoding[preds.item()]
 
 
-def predict_test_labels(model, test_dataset, batch_size, device, target_col):
-    # Taken from https://mccormickml.com/2021/06/29/combining-categorical-numerical-features-with-bert/#342-training-loop
-    # Create a DataLoader to batch our test samples for us. We'll use a sequential sampler this time--don't need this
-    # to be random!
-    prediction_sampler = SequentialSampler(test_dataset)
-    prediction_dataloader = DataLoader(test_dataset, sampler=prediction_sampler, batch_size=batch_size)
-
-    print('Predicting labels for {:,} test reviews ...'.format(len(test_dataset)))
-    # Put model in evaluation mode
+def predict_test_labels(model, test_dataloader, device):
     model.eval()
     predictions, true_labels = [], []
 
-    for batch in prediction_dataloader:
-        # Add batch to GPU
-        batch = tuple(t.to(device) for t in batch)
-        # Unpack the inputs from our dataloader
-        input_ids, input_mask, labels = batch
+    with torch.no_grad():
+        for batch in test_dataloader:
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device).squeeze()
+            outputs = model(input_ids, attention_mask=attention_mask)
+            _, preds = torch.max(outputs, dim=1)
 
-        with torch.no_grad():
-            # Forward pass, calculate logit predictions.
-            result = model(input_ids,
-                           token_type_ids=None,
-                           attention_mask=input_mask,
-                           return_dict=True)
+            predictions.extend(preds.cpu().tolist())
+            true_labels.extend(labels.cpu().tolist())
 
-        logits = result.logits
-        # Move logits and labels to CPU
-        logits = logits.detach().cpu().numpy()
-        label_ids = labels.to('cpu').numpy()
-
-        predictions.append(logits)
-        true_labels.append(label_ids)
-
-    print('DONE.')
-    # Combine the results across all batches.
-    flat_predictions = np.concatenate(predictions, axis=0)
-    # For each sample, pick the label (0 or 1) with the higher score.
-    flat_predictions = np.argmax(flat_predictions, axis=1).flatten()
-    # Combine the correct labels for each batch into a single list.
-    flat_true_labels = np.concatenate(true_labels, axis=0)
-
-    # Calculate the F1
-    f1 = f1_score(flat_true_labels, flat_predictions)
-    print('F1 Score: %.3f' % f1)
-
+    f1 = f1_score(true_labels, predictions)
+    print(f'F1 Score: {f1:.3f}')
     calculate_prediction_results(true_labels, predictions)
-
-    # TODO show some predictions
+    return predictions

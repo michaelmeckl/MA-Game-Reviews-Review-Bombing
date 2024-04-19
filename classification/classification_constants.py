@@ -9,6 +9,8 @@ VALIDATION_SPLIT = 0.2   # use 20% as validation data
 
 INPUT_DATA_FOLDER = pathlib.Path(__file__).parent.parent
 MODEL_FOLDER = pathlib.Path(__file__).parent / "trained_models"
+PLOT_FOLDER = pathlib.Path(__file__).parent / "plots"
+TRAIN_TEST_DATA_FOLDER = pathlib.Path(__file__).parent / "train_test_data"
 
 # the colum names that contain the annotation results
 annotation_questions = ["is-review-bombing", "is-rating-game-related", "criticism-praise-game-content",

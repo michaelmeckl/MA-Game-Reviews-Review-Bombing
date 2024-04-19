@@ -18,7 +18,7 @@ from sklearn import metrics
 from torch.utils.data import random_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from classification.classification_constants import RANDOM_SEED, VALIDATION_SPLIT
+from classification.classification_constants import RANDOM_SEED, VALIDATION_SPLIT, PLOT_FOLDER
 
 
 def set_random_seed(seed: int = RANDOM_SEED, is_pytorch: bool = True) -> None:
@@ -143,7 +143,7 @@ def encode_target_variable(data: pd.DataFrame, target_col: str, column_names: li
     # encoded_df = pd.concat([data, encoded_cols], axis=1).reset_index(drop=True)
 
 
-def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_score=None, output_folder=".",
+def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_score=None, output_folder=PLOT_FOLDER,
                        output_name="train_history", show=True):
     """
     plt.figure(figsize=(8, 8))
@@ -194,7 +194,7 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_sc
         fig.show()
 
 
-def plot_confusion_matrix(cm, class_names, output_folder=".", show=True):
+def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, show=True):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     Taken from https://www.tensorflow.org/tensorboard/image_summaries#building_an_image_classifier and slightly adjusted
@@ -225,8 +225,7 @@ def plot_confusion_matrix(cm, class_names, output_folder=".", show=True):
     # plt.tight_layout()
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
-    # TODO save at same location as train history plot above
-    plt.savefig(os.path.join(output_folder, "confusion_matrix.png"))
+    plt.savefig(os.path.join(output_folder, "test_prediction_confusion_matrix.png"))
     if show:
         plt.show()
 
@@ -292,7 +291,7 @@ def show_class_distributions(x_data, y_data, train_x, train_y, test_x, test_y, t
     plot.set_axis_labels("", "Percentage")
     plot.fig.suptitle('Train Validation Data - Class Distribution')
     plot.set_titles("{col_name}")
-    plot.tick_params(axis='x', rotation=35)
+    plot.tick_params(axis='x', rotation=75)
     plot.tight_layout()
-    plt.savefig("train_val_data_class_dist.svg", format="svg")
+    plt.savefig(PLOT_FOLDER / "train_val_data_class_dist.svg", format="svg")
     # plt.show()
