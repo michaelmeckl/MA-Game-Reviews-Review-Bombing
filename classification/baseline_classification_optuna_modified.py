@@ -27,9 +27,8 @@ best_results = {'loss': float('inf'), 'model': None}
 
 
 def classify_review_bombing(trial: optuna.Trial, hyperparams, bert_model, train_dataloader: DataLoader,
-                            test_dataloader: DataLoader, tag: str):
-    # num_epochs = 3
-    num_epochs = hyperparams['epoch']
+                            test_dataloader: DataLoader, tag: str, num_epochs=3):
+    # num_epochs = hyperparams['epoch']
     print("Using num_epochs: ", num_epochs)
 
     total_steps = len(train_dataloader) * num_epochs
@@ -233,8 +232,14 @@ def suggest_hyperparameters(trial: optuna.Trial):
 
 
 def optuna_optim():
-    n_trials = 10
-    study: optuna.Study = optuna.create_study(study_name="baseline-hyperparameter-optimization")
+    n_trials = 6
+    # TODO use GridSampler to prevent duplicate combinations; always adjust dict to values in function above
+    sampler = optuna.samplers.GridSampler({
+        'learning_rate': [2e-5, 3e-5, 5e-5],
+        'batch_size': [8, 16],
+        # 'epoch': [3, 4, 5, 8],
+    })
+    study: optuna.Study = optuna.create_study(study_name="baseline-hyperparameter-optimization", sampler=sampler)
     study.optimize(train_baseline_model, n_trials=n_trials)
     # train_baseline_model(train_set, pre_trained_tokenizer, text_column, model_tag)
 
@@ -318,7 +323,7 @@ if __name__ == "__main__":
     text_column = "review"
     # text_column = "text_cleaned"
 
-    use_subset = False  # True for testing
+    use_subset = True  # True for testing
 
     device = get_pytorch_device()
     checkpoint = "google-bert/bert-base-uncased"
