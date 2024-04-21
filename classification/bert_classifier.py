@@ -20,7 +20,8 @@ class BERTClassifier(nn.Module):
 
         self.dropout = nn.Dropout(0.1)   # increase this in case of overfitting
         # TODO use more than one layer on top of BERT?
-        # self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
+        self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
+        """
         self.seq_fc = nn.Sequential(
             nn.Linear(in_features=self.bert.config.hidden_size, out_features=300),
             nn.ReLU(),
@@ -30,6 +31,7 @@ class BERTClassifier(nn.Module):
             # self.dropout,
             nn.Linear(100, num_classes)
         )
+        """
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
@@ -37,8 +39,8 @@ class BERTClassifier(nn.Module):
         # use this instead for DistilBERT and RoBERTa
         hidden_state_output = outputs['last_hidden_state'][:, 0, :]
         x = self.dropout(hidden_state_output)
-        # logits = self.fc(x)
-        logits = self.seq_fc(x)
+        logits = self.fc(x)
+        # logits = self.seq_fc(x)
         return logits
 
 

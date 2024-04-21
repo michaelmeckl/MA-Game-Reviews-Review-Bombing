@@ -110,6 +110,7 @@ def load_model_checkpoint(model_object, optimizer_object, model_path: str | path
 
 def split_data_scikit(x_data, y_data, stratify_on=None, test_split=VALIDATION_SPLIT):
     return train_test_split(x_data, y_data, test_size=test_split, stratify=stratify_on)
+    # return train_test_split(x_data, y_data, test_size=0.001)    # to train on entire train + val set
 
 
 def split_data_pandas(data: pd.DataFrame, test_split=VALIDATION_SPLIT):

@@ -238,6 +238,14 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     # show some predictions
     prediction_results = test_data[[text_col, target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
+
+    # convert 0 and 1 back to categorical label
+    encoding = {
+        0: "Is Review Bombing" if target_column == "is-review-bombing" else "Is Off-Topic",
+        1: "Not Review Bombing" if target_column == "is-review-bombing" else "Not Off-Topic"
+    }
+    prediction_results = prediction_results.replace(encoding)
+
     for idx, row in prediction_results.iloc[:10].iterrows():
         print(f'Review: {row[text_col]}\nActual label: {row[target_column]}\nPredicted label: {row["predictions"]}\n')
 
