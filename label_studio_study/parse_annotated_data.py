@@ -520,8 +520,8 @@ def analyze_aggregated_annotation_information():
             info_dict = {
                 "group": group_name,
                 "annotation_question": question,
-                "Applies to review - yes": aggr_question_info.get("Ja", 0),
-                "Applies to review - no": aggr_question_info.get("Nein", 0),
+                "Yes": aggr_question_info.get("Ja", 0),  # Applies to review - yes
+                "No": aggr_question_info.get("Nein", 0),  # Applies to review - no
             }
             plot_info.append(info_dict)
 

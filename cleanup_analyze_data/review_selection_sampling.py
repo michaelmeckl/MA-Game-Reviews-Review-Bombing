@@ -137,12 +137,12 @@ def create_combined_data_for_rb_incident(rb_incident_name: str, data_folder: pat
 
     if use_very_negative_reviews and use_very_positive_reviews:
         # take < 4 instead of < 3 to get more reviews ?
-        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 4) | (
+        filtered_metacritic_review_data = metacritic_reviews[(metacritic_reviews["rating"] < 3) | (
                 metacritic_reviews["rating"] > 8)]
     elif use_very_positive_reviews:
         filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] > 8]
     else:
-        filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] < 4]
+        filtered_metacritic_review_data = metacritic_reviews[metacritic_reviews["rating"] < 3]
 
     # make sure the metacritic reviews are all in the time range of the corresponding review bombing incident (steam
     # reviews are already retrieved correctly from Steam)
