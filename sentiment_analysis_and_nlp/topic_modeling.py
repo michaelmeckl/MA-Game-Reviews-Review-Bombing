@@ -400,13 +400,11 @@ def start_topic_modeling(use_option=2):
         reddit_comment_data = pd.read_csv(incident_folder / f"combined_reddit_comments_{rb_name}.csv",
                                           nrows=500)
 
-        # TODO also use reddit comments and submissions! add "combined_content" to the twitter list?
-
         # test multilingual topic modeling too ? (e.g. for bertopic set language parameter to multilingual)
         english_data = reddit_submission_data[reddit_submission_data["detected_language"] == "english"]
         print(f"Using {len(english_data)} documents for topic modeling for incident {rb_name}...")
 
-        # Todo also only use in rb time period?
+        # also only use in rb time period?
         # posts_in_rb_time = english_data[english_data["in_rb_time_period"]]
 
         # remove stop words, clean text and lemmatize
@@ -455,6 +453,51 @@ def start_topic_modeling(use_option=2):
                     # perform_topic_modeling_bertopic(docs_lemmatized, tag=f"{source_tag}lemmatized_{rb_name}", output_folder=OUTPUT_FOLDER,is_reddit=is_reddit_data)
             case _:
                 print("No suitable option found!")
+
+
+def apply_topic_modeling_social_media(df: pd.DataFrame, rb_name: str, text_col: str, col_for_modeling: str,
+                                      perform_preprocessing=False, social_media_data=True):
+    out_folder = pathlib.Path(__file__).parent / "trained_topic_models"
+    if not out_folder.is_dir():
+        out_folder.mkdir()
+
+    if perform_preprocessing:
+        apply_standard_text_preprocessing(df, text_col=text_col, remove_stopwords=False, remove_punctuation=False,
+                                          is_social_media_data=social_media_data)
+
+    source_tag = ""
+    plot_name_tag = ""
+    is_reddit_data = False
+    if df["source"].iloc[0] == "Twitter":
+        source_tag = "tw_"
+        plot_name_tag = "Twitter"
+    elif df["source"].iloc[0] == "Reddit":
+        source_tag = "red_"
+        plot_name_tag = "Reddit"
+        is_reddit_data = True
+
+    docs = list(df[col_for_modeling])
+    # TODO Reddit
+    """
+    if is_reddit_data:
+        print("\nTraining on sentence-level for reddit ....")
+        # split into sentences first
+        sentence_list = [sent_tokenize(post) for post in docs]
+        sentences = [sentence for doc in sentence_list for sentence in doc]
+    """
+    topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"{source_tag}custom_tfidf_{rb_name}",
+                                                             plot_tag=f"{plot_name_tag} - {rb_name}",
+                                                             output_folder=out_folder, use_custom_tf_idf=True,
+                                                             use_custom_vectorizer=False,
+                                                             is_reddit=is_reddit_data)
+
+    combined_topics = set()
+    for topic_list in [main, aspect]:
+        for topic_name in topic_list:
+            cleaned_topic = topic_name.split('--', 1)[1]
+            combined_topics.add(cleaned_topic)
+
+    return topic_df, list(combined_topics)
 
 
 def apply_topic_modeling_reviews(df: pd.DataFrame, rb_name: str, text_col: str, col_for_modeling: str,
