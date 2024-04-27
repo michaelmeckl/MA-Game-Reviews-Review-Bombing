@@ -471,6 +471,7 @@ def apply_topic_modeling_reviews(df: pd.DataFrame, rb_name: str, text_col: str, 
     topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"review_custom_tfidf_{rb_name}",
                                                              plot_tag=f"Reviews - {rb_name}",
                                                              output_folder=out_folder, use_custom_tf_idf=True,
+                                                             use_custom_vectorizer=False,
                                                              is_reddit=False)
 
     combined_topics = set()

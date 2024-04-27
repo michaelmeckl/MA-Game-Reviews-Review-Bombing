@@ -248,7 +248,7 @@ def analyze_review(review: pd.Series):
 
 
 def start_review_analysis(dataframe: pd.DataFrame):
-    """
+    text_column = "review"
     dataframe['readability_flesch_reading'] = dataframe[text_column].apply(lambda x: calculate_readability(x))
     dataframe['num_spelling_errors'] = dataframe[text_column].apply(lambda x: get_num_spelling_errors(x))
     dataframe['contains_profanity'] = dataframe[text_column].apply(lambda x: check_profanity(x))
@@ -256,14 +256,13 @@ def start_review_analysis(dataframe: pd.DataFrame):
 
     apply_sentiment_analysis(dataframe, text_column, col_for_sentiment_analysis="text_cleaned", perform_preprocessing=False,
                              social_media_data=False)
-    """
 
     # add columns for each incident with the top n topics for this incident
     topics_per_incident_list = list()
 
     def get_topics_for_incident(incident_df: pd.DataFrame):
         rb_name = incident_df.name
-        topics_df, combined_topics = apply_topic_modeling_reviews(incident_df, rb_name, "review",
+        topics_df, combined_topics = apply_topic_modeling_reviews(incident_df, rb_name, text_column,
                                                                   col_for_modeling="text_cleaned",
                                                                   perform_preprocessing=False,
                                                                   social_media_data=False)
@@ -281,7 +280,6 @@ def start_review_analysis(dataframe: pd.DataFrame):
 
     topics_per_incident_df = pd.DataFrame(topics_per_incident_list)
     df_with_topics = dataframe.merge(topics_per_incident_df, how="inner")
-    print("debug")
 
     # save as a new csv for now; probably saver than overwriting the existing one
     df_with_topics.to_csv(pathlib.Path(__file__).parent.parent / "final_annotation_all_projects_review_analysis.csv",
