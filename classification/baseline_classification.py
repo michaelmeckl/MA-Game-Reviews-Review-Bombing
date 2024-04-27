@@ -213,7 +213,7 @@ def train_baseline_model(data: pd.DataFrame, tokenizer, text_col: str, tag: str)
         print(f"Predicted label: \"{predicted_label}\"")
 
 
-def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag: str):
+def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag: str, incident_positive=False):
     # tokenize
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
     dataset = ds.from_pandas(test_data[[text_col]])
@@ -227,14 +227,14 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, collate_fn=data_collator)
-    print('Predicting labels for {:,} test reviews ...'.format(len(test_dataset)))
+    print('\nPredicting labels for {:,} test reviews ...'.format(len(test_dataset)))
 
     n_classes = test_data[target_column].nunique()
     model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
     model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
     model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    predicted_labels = predict_test_labels(model, test_dataloader, device)
+    predicted_labels = predict_test_labels(model, test_dataloader, device, incident_positive)
     # show some predictions
     prediction_results = test_data[[text_col, target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
@@ -263,12 +263,12 @@ def create_test_train_set(target_col="is-review-bombing"):
     ###################### encode annotated columns #####################
     encode_target_variable(combined_annotated_data, target_col, annotation_questions, use_label_encoder=False)
 
-    test_incident = "Ukraine-Russia-Conflict"
-    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"] == test_incident]
-    test_data.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+    test_incidents = ["Assassins-Creed-Unity", "Firewatch"]
+    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"].isin(test_incidents)]
+    test_data = test_data.reset_index(drop=True)
     
     train_data = combined_annotated_data[
-        ~(combined_annotated_data["review_bombing_incident"] == test_incident)].reset_index(drop=True)
+        ~(combined_annotated_data["review_bombing_incident"].isin(test_incidents))].reset_index(drop=True)
     
     print(f"Using {len(train_data)} reviews as train set.")
     print(f"Using {len(test_data)} reviews as test set.")
@@ -288,8 +288,8 @@ if __name__ == "__main__":
 
     classify_rb = True  # if False classify off_topic column
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
-    text_column = "review"
-    # text_column = "text_cleaned"
+    # text_column = "review"
+    text_column = "text_cleaned"
 
     use_subset = False  # True for testing
 
@@ -339,4 +339,11 @@ if __name__ == "__main__":
 
     train_baseline_model(train_set, pre_trained_tokenizer, text_column, model_tag)
 
-    predict_on_test_data(test_set, pre_trained_tokenizer, text_column, model_tag)
+    # predict on positive and on negative test incident
+    test_set_positive = test_set[test_set["review_bomb_type"] == "positiv"]
+    test_set_negative = test_set[test_set["review_bomb_type"] == "negativ"]
+    test_set_positive = test_set_positive.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+    test_set_negative = test_set_negative.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+
+    predict_on_test_data(test_set_positive, pre_trained_tokenizer, text_column, model_tag, incident_positive=True)
+    predict_on_test_data(test_set_negative, pre_trained_tokenizer, text_column, model_tag)

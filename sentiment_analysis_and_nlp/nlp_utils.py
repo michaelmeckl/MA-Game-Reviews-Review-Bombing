@@ -165,7 +165,7 @@ def clean_text(text: str, spacy_utils: SpacyUtils, remove_stopwords: bool, remov
     text_cleaned = re.sub(r'\s+', ' ', text_cleaned)
 
     # replace numbers with words (i.e. 1 with "one")
-    text_cleaned = re.sub(r"(\d+)", lambda number: num2words(int(number.group(0))), text_cleaned)
+    # text_cleaned = re.sub(r"(\d+)", lambda number: num2words(int(number.group(0))), text_cleaned)
 
     if remove_punctuation:
         # remove string.punctuation characters

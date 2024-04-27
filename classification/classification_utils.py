@@ -195,7 +195,7 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_sc
         fig.show()
 
 
-def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, show=True):
+def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, incident_positive=False, show=True):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     Taken from https://www.tensorflow.org/tensorboard/image_summaries#building_an_image_classifier and slightly adjusted
@@ -226,15 +226,17 @@ def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, show=True)
     # plt.tight_layout()
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
-    plt.savefig(os.path.join(output_folder, "test_prediction_confusion_matrix.png"))
+    output_tag = 'positive' if incident_positive else 'negative'
+    plt.savefig(os.path.join(output_folder, f"test_prediction_confusion_matrix_{output_tag}.svg"), format="svg")
     if show:
         plt.show()
 
 
-def calculate_prediction_results(true_labels, predicted_labels, class_names=None):
+def calculate_prediction_results(true_labels, predicted_labels, class_names=None, incident_positive=False):
     label_names = class_names if class_names is not None else ["Ja", "Nein"]
 
-    print(f"\nAccuracy score on test data: {metrics.accuracy_score(true_labels, predicted_labels) * 100:.2f} %")
+    print(f"\n######## Prediction results for {'positive' if incident_positive else 'negative'} incident:")
+    print(f"Accuracy score on test data: {metrics.accuracy_score(true_labels, predicted_labels) * 100:.2f} %")
     print(f"Balanced accuracy score on test data: {metrics.balanced_accuracy_score(true_labels, predicted_labels):.2f}")
     print(f"Weighted Precision score on test data: "
           f"{metrics.precision_score(true_labels, predicted_labels, average='weighted'):.2f}")
@@ -249,7 +251,7 @@ def calculate_prediction_results(true_labels, predicted_labels, class_names=None
     try:
         conf_matrix = metrics.confusion_matrix(predicted_labels, true_labels, normalize="all")
         print(f"Confusion Matrix:\n{conf_matrix}")
-        plot_confusion_matrix(conf_matrix, label_names, show=False)
+        plot_confusion_matrix(conf_matrix, label_names, incident_positive=incident_positive, show=False)
     except Exception as e:
         sys.stderr.write(f"Failed to compute confusion matrix: {e}")
 

@@ -27,8 +27,8 @@ best_results = {'loss': float('inf'), 'model': None}
 
 
 def classify_review_bombing(trial: optuna.Trial, hyperparams, bert_model, train_dataloader: DataLoader,
-                            test_dataloader: DataLoader, tag: str, num_epochs=3):
-    # num_epochs = hyperparams['epoch']
+                            test_dataloader: DataLoader, tag: str, num_epochs=5):
+    num_epochs = hyperparams['epoch']
     print("Using num_epochs: ", num_epochs)
 
     total_steps = len(train_dataloader) * num_epochs
@@ -227,22 +227,23 @@ def suggest_hyperparameters(trial: optuna.Trial):
     return {
         'learning_rate': trial.suggest_categorical('learning_rate', [2e-5, 3e-5, 5e-5]),
         'batch_size': trial.suggest_categorical('batch_size', [8, 16]),
-        # 'epoch': trial.suggest_categorical('epoch', [3, 4, 5, 8]),
+        'epoch': trial.suggest_categorical('epoch', [3, 4, 5]),
     }
 
 
 def optuna_optim():
-    n_trials = 6
+    n_trials = 18
     # TODO use GridSampler to prevent duplicate combinations; always adjust dict to values in function above
     sampler = optuna.samplers.GridSampler({
         'learning_rate': [2e-5, 3e-5, 5e-5],
         'batch_size': [8, 16],
-        # 'epoch': [3, 4, 5, 8],
+        'epoch': [3, 4, 5],
     })
     study: optuna.Study = optuna.create_study(study_name="baseline-hyperparameter-optimization", sampler=sampler)
     study.optimize(train_baseline_model, n_trials=n_trials)
     # train_baseline_model(train_set, pre_trained_tokenizer, text_column, model_tag)
 
+    print("\n#####################################################\n")
     # Gives the best loss value
     print(study.best_value)
 
@@ -253,7 +254,7 @@ def optuna_optim():
     print(study.best_trial)
 
 
-def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag: str, batch_size=16):
+def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag: str, batch_size=16, incident_positive=False):
     # tokenize
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
     dataset = ds.from_pandas(test_data[[text_col]])
@@ -274,10 +275,18 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
     model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    predicted_labels = predict_test_labels(model, test_dataloader, device)
+    predicted_labels = predict_test_labels(model, test_dataloader, device, incident_positive)
     # show some predictions
     prediction_results = test_data[[text_col, target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
+
+    # convert 0 and 1 back to categorical label
+    encoding = {
+        0: "Is Review Bombing" if target_column == "is-review-bombing" else "Is Off-Topic",
+        1: "Not Review Bombing" if target_column == "is-review-bombing" else "Not Off-Topic"
+    }
+    prediction_results = prediction_results.replace(encoding)
+
     for idx, row in prediction_results.iloc[:10].iterrows():
         print(f'Review: {row[text_col]}\nActual label: {row[target_column]}\nPredicted label: {row["predictions"]}\n')
 
@@ -295,12 +304,12 @@ def create_test_train_set(target_col="is-review-bombing"):
     ###################### encode annotated columns #####################
     encode_target_variable(combined_annotated_data, target_col, annotation_questions, use_label_encoder=False)
 
-    test_incident = "Ukraine-Russia-Conflict"
-    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"] == test_incident]
-    test_data.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+    test_incidents = ["Assassins-Creed-Unity", "Firewatch"]
+    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"].isin(test_incidents)]
+    test_data = test_data.reset_index(drop=True)
 
     train_data = combined_annotated_data[
-        ~(combined_annotated_data["review_bombing_incident"] == test_incident)].reset_index(drop=True)
+        ~(combined_annotated_data["review_bombing_incident"].isin(test_incidents))].reset_index(drop=True)
 
     print(f"Using {len(train_data)} reviews as train set.")
     print(f"Using {len(test_data)} reviews as test set.")
@@ -320,10 +329,10 @@ if __name__ == "__main__":
 
     classify_rb = True  # if False classify off_topic column
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
-    text_column = "review"
-    # text_column = "text_cleaned"
+    # text_column = "review"
+    text_column = "text_cleaned"
 
-    use_subset = True  # True for testing
+    use_subset = False  # True for testing
 
     device = get_pytorch_device()
     checkpoint = "google-bert/bert-base-uncased"
@@ -344,9 +353,6 @@ if __name__ == "__main__":
         test_set = pd.read_csv(TRAIN_TEST_DATA_FOLDER / "test_data.csv")
         print(f"Using {len(train_set)} reviews as train set.")
         print(f"Using {len(test_set)} reviews as test set.")
-
-    # train_set = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv", nrows=1843)
-    # encode_target_variable(train_set, target_column, annotation_questions, use_label_encoder=False)
 
     reviews_to_use = "both"  # "steam" / "metacritic" / "both"
     if reviews_to_use == "steam":
@@ -372,21 +378,13 @@ if __name__ == "__main__":
 
     optuna_optim()
 
-    # predict_on_test_data(test_set, pre_trained_tokenizer, text_column, model_tag)
-
     """
-    should_predict = False
-    if should_predict:
-        # load local model
-        n_classes = train_set[target_column].nunique()
-        model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
-        model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{model_tag}-best-model_{ckp_clean}.pt")
-        model.load_state_dict(model_checkpoint['model_state_dict'])
-        # model.eval()  # switch to inference mode to not resume training
+    # predict on positive and on negative test incident
+    test_set_positive = test_set[test_set["review_bomb_type"] == "positiv"]
+    test_set_negative = test_set[test_set["review_bomb_type"] == "negativ"]
+    test_set_positive = test_set_positive.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
+    test_set_negative = test_set_negative.sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
 
-        # test prediction
-        test_review = "The game was great and I really enjoyed the combat and the story."
-        predicted_label = predict_label(test_review, target_column, model, pre_trained_tokenizer, device)
-        print(test_review)
-        print(f"Predicted label: \"{predicted_label}\"")
+    predict_on_test_data(test_set_positive, pre_trained_tokenizer, text_column, model_tag, incident_positive=True)
+    predict_on_test_data(test_set_negative, pre_trained_tokenizer, text_column, model_tag)
     """

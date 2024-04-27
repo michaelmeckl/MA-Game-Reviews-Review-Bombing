@@ -18,20 +18,18 @@ class BERTClassifier(nn.Module):
         # self.bert = DistilBertModel.from_pretrained(model_checkpoint)
         # self.bert = RobertaModel.from_pretrained(model_checkpoint)
 
-        self.dropout = nn.Dropout(0.1)   # increase this in case of overfitting
+        self.dropout = nn.Dropout(0.3)   # increase this in case of overfitting
         # TODO use more than one layer on top of BERT?
-        self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
-        """
+        # self.fc = nn.Linear(in_features=self.bert.config.hidden_size, out_features=num_classes)
         self.seq_fc = nn.Sequential(
             nn.Linear(in_features=self.bert.config.hidden_size, out_features=300),
             nn.ReLU(),
-            # self.dropout,
+            self.dropout,
             nn.Linear(300, 100),
             nn.ReLU(),
-            # self.dropout,
+            self.dropout,
             nn.Linear(100, num_classes)
         )
-        """
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
@@ -39,8 +37,8 @@ class BERTClassifier(nn.Module):
         # use this instead for DistilBERT and RoBERTa
         hidden_state_output = outputs['last_hidden_state'][:, 0, :]
         x = self.dropout(hidden_state_output)
-        logits = self.fc(x)
-        # logits = self.seq_fc(x)
+        # logits = self.fc(x)
+        logits = self.seq_fc(x)
         return logits
 
 
@@ -170,7 +168,7 @@ def predict_label(text, target_col: str, model, tokenizer, device, max_length=51
         return label_encoding[preds.item()]
 
 
-def predict_test_labels(model, test_dataloader, device):
+def predict_test_labels(model, test_dataloader, device, incident_positive):
     model.eval()
     predictions, true_labels = [], []
 
@@ -187,5 +185,5 @@ def predict_test_labels(model, test_dataloader, device):
 
     f1 = f1_score(true_labels, predictions)
     print(f'F1 Score: {f1:.3f}')
-    calculate_prediction_results(true_labels, predictions)
+    calculate_prediction_results(true_labels, predictions, incident_positive=incident_positive)
     return predictions
