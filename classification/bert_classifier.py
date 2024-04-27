@@ -158,8 +158,8 @@ def predict_label(text, target_col: str, model, tokenizer, device, max_length=51
     attention_mask = encoding['attention_mask'].to(device)
     # depends on how it was encoded during training!
     label_encoding = {
-        0: "Is Review Bombing" if target_col == "is-review-bombing" else "Is Off-Topic",
-        1: "Not Review Bombing" if target_col == "is-review-bombing" else "Not Off-Topic"
+        0: "Is Review Bombing" if target_col == "is-review-bombing" else "Is Game-Related",
+        1: "Not Review Bombing" if target_col == "is-review-bombing" else "Not Game-Related"
     }
 
     with torch.no_grad():

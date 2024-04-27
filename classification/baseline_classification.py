@@ -28,7 +28,7 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
     total_steps = len(train_dataloader) * num_epochs
     # use nn.BCEWithLogitsLoss() instead? -> switch num_classes to 1 and adjust loss calculation in train/eval loop
     loss_function = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(bert_model.parameters(), lr=2e-5)  # 3e-5, 5e-5  # see BERT paper for learning rates
+    optimizer = torch.optim.AdamW(bert_model.parameters(), lr=5e-5)  # 3e-5, 2e-5  # see BERT paper for learning rates
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
     progress_bar = tqdm(range(total_steps))
     best_loss = 100
@@ -59,8 +59,8 @@ def classify_review_bombing(bert_model, train_dataloader: DataLoader, test_datal
         val_loss, val_accuracy, report = evaluate_model(bert_model, test_dataloader, loss_function, device, epoch, writer,
                                                         train_history)
 
-        classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
-                                                   output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}_{ckp_clean}.pt")
+        # classification_utils.save_model_checkpoint(bert_model, optimizer, epoch,
+        #                                            output_path=MODEL_FOLDER / f"baseline-{tag}-epoch-{epoch}_{ckp_clean}.pt")
         if val_loss < best_loss:
             best_loss = val_loss
             print(f"Best val loss is now: {val_loss:.2f} (val accuracy: {val_accuracy:.2f}%) \n")
@@ -234,15 +234,16 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
     model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    predicted_labels = predict_test_labels(model, test_dataloader, device, tag, incident_positive)
+    tag_for_confusion = f"{tag}--{ckp_clean}"
+    predicted_labels = predict_test_labels(model, test_dataloader, device, tag_for_confusion, incident_positive)
     # show some predictions
     prediction_results = test_data[[text_col, target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
 
     # convert 0 and 1 back to categorical label
     encoding = {
-        0: "Is Review Bombing" if target_column == "is-review-bombing" else "Is Off-Topic",
-        1: "Not Review Bombing" if target_column == "is-review-bombing" else "Not Off-Topic"
+        0: "Is Review Bombing" if target_column == "is-review-bombing" else "Is Game-Related",
+        1: "Not Review Bombing" if target_column == "is-review-bombing" else "Not Game-Related"
     }
     prediction_results = prediction_results.replace(encoding)
 
@@ -300,6 +301,7 @@ if __name__ == "__main__":
     # checkpoint = "distilbert-base-uncased"
     # checkpoint = "FacebookAI/roberta-base"    # there is no uncased version
     ckp_clean = re.sub("/", "-", checkpoint)  # "clean" version without the / so it can be used in filenames
+    print(f"[INFO] Using checkpoint: {checkpoint}")
 
     # bert_tokenizer = BertTokenizer.from_pretrained(checkpoint)
     # uses a Rust-based fast tokenizer version instead of Python
