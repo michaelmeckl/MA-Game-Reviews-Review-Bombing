@@ -195,7 +195,7 @@ def show_training_plot(train_accuracy, val_accuracy, train_loss, val_loss, f1_sc
         fig.show()
 
 
-def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, incident_positive=False, show=True):
+def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, model_tag="no_tag", incident_positive=False, show=True):
     """
     Returns a matplotlib figure containing the plotted confusion matrix.
     Taken from https://www.tensorflow.org/tensorboard/image_summaries#building_an_image_classifier and slightly adjusted
@@ -204,9 +204,13 @@ def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, incident_p
     cm (array, shape = [n, n]): a confusion matrix of integer classes
     class_names (array, shape = [n]): String names of the integer classes
     """
+    incident_tag = 'positive' if incident_positive else 'negative'
+    # depends on which incidents are chosen for the testset
+    incident_name = "Assassin's Creed Unity" if incident_positive else "Firewatch"
+
     figure = plt.figure(figsize=(10, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    plt.title("Confusion matrix")
+    plt.title(f"{incident_name} - Kombination \"{model_tag}\"")
     plt.colorbar()
     tick_marks = np.arange(len(class_names))
     plt.xticks(tick_marks, class_names, rotation=45)
@@ -226,13 +230,13 @@ def plot_confusion_matrix(cm, class_names, output_folder=PLOT_FOLDER, incident_p
     # plt.tight_layout()
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
-    output_tag = 'positive' if incident_positive else 'negative'
-    plt.savefig(os.path.join(output_folder, f"test_prediction_confusion_matrix_{output_tag}.svg"), format="svg")
+    plt.savefig(os.path.join(output_folder, f"prediction_confusion_matrix_{incident_tag}_{model_tag}.svg"), format="svg")
     if show:
         plt.show()
 
 
-def calculate_prediction_results(true_labels, predicted_labels, class_names=None, incident_positive=False):
+def calculate_prediction_results(true_labels, predicted_labels, class_names=None, model_tag="no_tag",
+                                 incident_positive=False):
     label_names = class_names if class_names is not None else ["Ja", "Nein"]
 
     print(f"\n######## Prediction results for {'positive' if incident_positive else 'negative'} incident:")
@@ -251,7 +255,7 @@ def calculate_prediction_results(true_labels, predicted_labels, class_names=None
     try:
         conf_matrix = metrics.confusion_matrix(predicted_labels, true_labels, normalize="all")
         print(f"Confusion Matrix:\n{conf_matrix}")
-        plot_confusion_matrix(conf_matrix, label_names, incident_positive=incident_positive, show=False)
+        plot_confusion_matrix(conf_matrix, label_names, model_tag=model_tag, incident_positive=incident_positive, show=False)
     except Exception as e:
         sys.stderr.write(f"Failed to compute confusion matrix: {e}")
 

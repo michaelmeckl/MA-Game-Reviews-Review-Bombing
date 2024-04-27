@@ -234,7 +234,7 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     model_checkpoint = torch.load(MODEL_FOLDER / f"baseline-{tag}-best-model_{ckp_clean}.pt")
     model.load_state_dict(model_checkpoint['model_state_dict'])
 
-    predicted_labels = predict_test_labels(model, test_dataloader, device, incident_positive)
+    predicted_labels = predict_test_labels(model, test_dataloader, device, tag, incident_positive)
     # show some predictions
     prediction_results = test_data[[text_col, target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
