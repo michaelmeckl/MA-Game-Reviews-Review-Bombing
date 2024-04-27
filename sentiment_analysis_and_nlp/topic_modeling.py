@@ -326,7 +326,7 @@ def perform_topic_modeling_bertopic(input_data: list[str], tag: str, plot_tag: s
     def visualize_modeling_results(model, run=""):
         # replace default topic names ("Topic 1") with custom labels
         # topic_words = model.generate_topic_labels(nr_words=2, separator=" - ")  # , word_length=15
-        topic_words = model.generate_topic_labels(nr_words=2, separator=" -- ", aspect="main")
+        topic_words = model.generate_topic_labels(nr_words=2, separator=" -- ", aspect="main", word_length=20)
         model.set_topic_labels(topic_words)
 
         # visualize the topics with plotly
@@ -477,19 +477,26 @@ def apply_topic_modeling_social_media(df: pd.DataFrame, rb_name: str, text_col: 
         is_reddit_data = True
 
     docs = list(df[col_for_modeling])
-    # TODO Reddit
-    """
+
     if is_reddit_data:
         print("\nTraining on sentence-level for reddit ....")
         # split into sentences first
-        sentence_list = [sent_tokenize(post) for post in docs]
-        sentences = [sentence for doc in sentence_list for sentence in doc]
-    """
-    topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"{source_tag}custom_tfidf_{rb_name}",
-                                                             plot_tag=f"{plot_name_tag} - {rb_name}",
-                                                             output_folder=out_folder, use_custom_tf_idf=True,
-                                                             use_custom_vectorizer=False,
-                                                             is_reddit=is_reddit_data)
+        # sentence_list = [sent_tokenize(post) for post in docs]
+        # sentences = [sentence for doc in sentence_list for sentence in doc]
+
+        # doesnt really work well either so for now we'll just use the whole text ...
+        topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"{source_tag}custom_tfidf_{rb_name}",
+                                                                 plot_tag=f"{plot_name_tag} - {rb_name}",
+                                                                 # for now use both here
+                                                                 output_folder=out_folder, use_custom_tf_idf=True,
+                                                                 use_custom_vectorizer=True,
+                                                                 is_reddit=is_reddit_data)
+    else:
+        topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"{source_tag}custom_tfidf_{rb_name}",
+                                                                 plot_tag=f"{plot_name_tag} - {rb_name}",
+                                                                 output_folder=out_folder, use_custom_tf_idf=True,
+                                                                 use_custom_vectorizer=False,
+                                                                 is_reddit=is_reddit_data)
 
     combined_topics = set()
     for topic_list in [main, aspect]:

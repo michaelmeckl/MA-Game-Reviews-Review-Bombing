@@ -116,7 +116,7 @@ def analyze_twitter_posts(twitter_posts_df: pd.DataFrame):
     # only on english data and only in rb time period
     english_in_rb_time_df = twitter_posts_df[(twitter_posts_df["in_rb_time_period"]) & (twitter_posts_df["detected_language"] == "english")]
 
-    apply_sentiment_analysis(english_in_rb_time_df, "combined_content", col_for_sentiment_analysis="text_cleaned",
+    apply_sentiment_analysis(english_in_rb_time_df, "combined_content", col_for_sentiment_analysis="combined_content",
                              perform_preprocessing=False, social_media_data=True)
     avg_sentiment_for_incident = english_in_rb_time_df['sentiment_score_sentence_level'].mean()
     social_media_info_dict["avg_sentiment_rb_period - Twitter"].append(avg_sentiment_for_incident)
@@ -124,10 +124,9 @@ def analyze_twitter_posts(twitter_posts_df: pd.DataFrame):
     should_perform_topic_modeling = True
     if should_perform_topic_modeling:
         # topic modeling only on english data
-        # TODO use combined_content instead of text_cleaned ?
         topics_df, combined_topics = apply_topic_modeling_social_media(english_twitter_posts, rb_name,
                                                                        "combined_content",
-                                                                       col_for_modeling="text_cleaned",
+                                                                       col_for_modeling="combined_content",
                                                                        perform_preprocessing=False,
                                                                        social_media_data=True)
 
@@ -178,9 +177,7 @@ def analyze_twitter_posts(twitter_posts_df: pd.DataFrame):
     plt.xticks(rotation=10)
     ax = plt.gca()
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.%Y'))
-    plt.savefig(OUTPUT_FOLDER / f"daily_sentiment_{rb_incident_key}.svg", format="svg")
-
-    print("breakpoint")
+    plt.savefig(OUTPUT_FOLDER / f"twitter_daily_sentiment_{rb_incident_key}.svg", format="svg")
 
 
 def analyze_reddit_submissions(reddit_submission_df: pd.DataFrame):
@@ -191,8 +188,76 @@ def analyze_reddit_submissions(reddit_submission_df: pd.DataFrame):
     "num_comments"
     -> use "combined_content" column here instead of "content"
     """
-    # TODO create plot here too as for twitter but maybe combine both reddit comments and submissions into one plot?
-    pass
+    rb_incident_key = reddit_submission_df.at[0, "review_bombing_incident"]
+
+    reddit_submission_df["created_date"] = pd.to_datetime(reddit_submission_df["created_at"], dayfirst=True,
+                                                          format='mixed').dt.strftime('%d.%m.%Y')
+
+    english_reddit_posts = reddit_submission_df[reddit_submission_df["detected_language"] == "english"]
+    non_english_reddit_posts = reddit_submission_df[reddit_submission_df["detected_language"] == "other"]
+    reddit_posts_rb_time = reddit_submission_df[reddit_submission_df["in_rb_time_period"]]
+    reddit_posts_not_rb_time = reddit_submission_df[~reddit_submission_df.index.isin(reddit_submission_df.index)]
+
+    english_in_rb_time_df = reddit_submission_df[
+        (reddit_submission_df["in_rb_time_period"]) & (reddit_submission_df["detected_language"] == "english")]
+
+    apply_sentiment_analysis(english_in_rb_time_df, "combined_content", col_for_sentiment_analysis="combined_content",
+                             perform_preprocessing=False, social_media_data=True)
+    avg_sentiment_for_incident = english_in_rb_time_df['sentiment_score_sentence_level'].mean()
+    social_media_info_dict["avg_sentiment_rb_period - Reddit Posts"].append(avg_sentiment_for_incident)
+    
+    should_perform_topic_modeling = True
+    if should_perform_topic_modeling:
+        # topic modeling only on english data
+        topics_df, combined_topics = apply_topic_modeling_social_media(english_reddit_posts, rb_name,
+                                                                       "combined_content",
+                                                                       col_for_modeling="combined_content",
+                                                                       perform_preprocessing=False,
+                                                                       social_media_data=True)
+
+        social_media_info_dict["Topic 0 - Reddit Posts"].append(combined_topics[0] if 1 < len(combined_topics) else "")
+        social_media_info_dict["Topic 1 - Reddit Posts"].append(combined_topics[1] if 2 < len(combined_topics) else "")
+        social_media_info_dict["Topic 2 - Reddit Posts"].append(combined_topics[2] if 3 < len(combined_topics) else "")
+        
+    reddit_counts = reddit_posts_rb_time.groupby('created_date').size()
+    reddit_counts.index = pd.to_datetime(reddit_counts.index, dayfirst=True)
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(reddit_counts.index, reddit_counts.values, align="center")
+    plt.xlabel('Date')
+    plt.ylabel('Number of Reddit Posts')
+    plt.title(f'Reddit Activity for {rb_incident_key} during time of incident')
+    plt.xticks(rotation=0)
+    ax = plt.gca()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.%Y'))
+    plt.savefig(OUTPUT_FOLDER / f"reddit_posts_activity_{rb_incident_key}.svg", format="svg")
+
+    daily_sentiment_scores = list()
+
+    def calculate_daily_sentiment(day_df: pd.DataFrame):
+        day = day_df.name
+        avg_sentiment_for_day = day_df["sentiment_score_sentence_level"].mean()
+        daily_sentiment_dict = {
+            "Date": day,
+            "Avg Daily Sentiment": avg_sentiment_for_day,
+        }
+        daily_sentiment_scores.append(daily_sentiment_dict)
+
+    english_in_rb_time_df.groupby("created_date").apply(calculate_daily_sentiment)
+    daily_sentiment_df = pd.DataFrame(daily_sentiment_scores)
+    # convert to datetime to sort the dataframe
+    daily_sentiment_df["Datetime"] = pd.to_datetime(daily_sentiment_df["Date"], dayfirst=True)
+    daily_sentiment_df = daily_sentiment_df.sort_values(by='Datetime')
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(daily_sentiment_df["Datetime"], daily_sentiment_df["Avg Daily Sentiment"])
+    plt.xlabel('Date')
+    plt.ylabel('Avg Daily Sentiment')
+    plt.title(f'Average daily sentiment for {rb_incident_key} during time of incident')
+    plt.xticks(rotation=10)
+    ax = plt.gca()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.%Y'))
+    plt.savefig(OUTPUT_FOLDER / f"reddit_posts_daily_sentiment_{rb_incident_key}.svg", format="svg")
 
 
 def analyze_reddit_comments(reddit_comment_df: pd.DataFrame):
@@ -204,9 +269,32 @@ def analyze_reddit_comments(reddit_comment_df: pd.DataFrame):
 
     "upvote_score": upvotes - downvotes (can be negative)
     """
+    rb_incident_key = reddit_comment_df.at[0, "review_bombing_incident"]
+    reddit_comment_df["created_date"] = pd.to_datetime(reddit_comment_df["created_at"], dayfirst=True,
+                                                       format='mixed').dt.strftime('%d.%m.%Y')
+
+    english_reddit_comments = reddit_comment_df[reddit_comment_df["detected_language"] == "english"]
+    non_english_reddit_comments = reddit_comment_df[reddit_comment_df["detected_language"] == "other"]
+    reddit_comments_rb_time = reddit_comment_df[reddit_comment_df["in_rb_time_period"]]
+    reddit_comments_not_rb_time = reddit_comment_df[~reddit_comment_df.index.isin(reddit_comment_df.index)]
+
+    english_in_rb_time_df = reddit_comment_df[
+        (reddit_comment_df["in_rb_time_period"]) & (reddit_comment_df["detected_language"] == "english")]
+
+    apply_sentiment_analysis(english_in_rb_time_df, "combined_content", col_for_sentiment_analysis="combined_content",
+                             perform_preprocessing=False, social_media_data=True)
+    avg_sentiment_for_incident = english_in_rb_time_df['sentiment_score_sentence_level'].mean()
+    # social_media_info_dict["avg_sentiment_rb_period - Reddit Comments"].append(avg_sentiment_for_incident)
+
     # TODO for reddit topic modeling: maybe combine all comments text with the original submission text where possible ?
     #  -> find original submission by merge at (original_post_date (+original_post_author_id))
-    pass
+    should_perform_topic_modeling = True
+    if should_perform_topic_modeling:
+        topics_df, combined_topics = apply_topic_modeling_social_media(english_reddit_comments, rb_name,
+                                                                       "combined_content",
+                                                                       col_for_modeling="combined_content",
+                                                                       perform_preprocessing=False,
+                                                                       social_media_data=True)
 
 
 if __name__ == "__main__":
@@ -219,23 +307,29 @@ if __name__ == "__main__":
 
     rb_incidents = ["Skyrim-Paid-Mods", "Assassins-Creed-Unity", "Firewatch", "Mortal-Kombat-11",
                     "Borderlands-Epic-Exclusivity", "Ukraine-Russia-Conflict"]
-    # rb_incidents = ["Assassins-Creed-Unity", "Skyrim-Paid-Mods"]
 
-    social_media_info_dict = {"review_bombing_incident": [], "avg_sentiment_rb_period - Twitter": [],
-                              "Topic 0 - Twitter": [], "Topic 1 - Twitter": [], "Topic 2 - Twitter": []}
+    social_media_info_dict = {"review_bombing_incident": [], 
+                              "avg_sentiment_rb_period - Twitter": [],
+                              "Topic 0 - Twitter": [], "Topic 1 - Twitter": [], "Topic 2 - Twitter": [],
+                              "avg_sentiment_rb_period - Reddit Posts": [],
+                              "Topic 0 - Reddit Posts": [], "Topic 1 - Reddit Posts": [], "Topic 2 - Reddit Posts": [],
+                              }
 
     for rb_name in rb_incidents:
         incident_folder = DATA_FOLDER / rb_name
         twitter_data = pd.read_csv(incident_folder / f"twitter_combined_{rb_name}.csv")
-        # TODO Reddit
-        # reddit_submission_data = pd.read_csv(incident_folder / f"reddit_submissions_combined_{rb_name}.csv")
+        reddit_submission_data = pd.read_csv(incident_folder / f"reddit_submissions_combined_{rb_name}.csv")
         # reddit_comment_data = pd.read_csv(incident_folder / f"combined_reddit_comments_{rb_name}.csv")
 
         apply_standard_text_preprocessing(twitter_data, text_col="combined_content", remove_punctuation=False,
                                           remove_stopwords=False, is_social_media_data=True)
+        apply_standard_text_preprocessing(reddit_submission_data, text_col="combined_content", remove_punctuation=False,
+                                          remove_stopwords=False, is_social_media_data=True)
+        # apply_standard_text_preprocessing(reddit_comment_data, text_col="combined_content", remove_punctuation=False,
+        #                                  remove_stopwords=False, is_social_media_data=True)
 
         analyze_twitter_posts(twitter_data)
-        # analyze_reddit_submissions(reddit_submission_data)
+        analyze_reddit_submissions(reddit_submission_data)
         # analyze_reddit_comments(reddit_comment_data)
 
     # combine everything into one dataframe for Twitter and Reddit
@@ -246,4 +340,4 @@ if __name__ == "__main__":
     df_with_social_media_data = dataframe.merge(social_media_info_df, how="inner")
     df_with_social_media_data.to_csv(pathlib.Path(__file__).parent.parent / 
                                      "final_annotation_all_projects_review_social_media_analysis.csv", index=False)
-
+    
