@@ -227,6 +227,8 @@ def perform_sklearn_lda_nmf(df: pd.DataFrame, text_col: str):
         top_terms = [vectorizer.get_feature_names_out()[i] for i in topic.argsort()][::-1][:top_n_terms]
         print(f"Topic {topic_id + 1}: {top_terms}")
 
+    # Todo show and save word clouds here
+
     get_coherence_score(df, text_col, most_representative_documents_nmf)
 
 
@@ -254,8 +256,9 @@ def get_coherence_score(df: pd.DataFrame, text_col: str, most_representative_doc
 
 ############################################# BERTopic #############################################
 
-def perform_topic_modeling_bertopic(input_data: list[str], tag: str, use_spacy_embedding=False,
-                                    use_custom_vectorizer=False, use_custom_tf_idf=False, is_reddit=False):
+def perform_topic_modeling_bertopic(input_data: list[str], tag: str, plot_tag: str, output_folder,
+                                    use_spacy_embedding=False, use_custom_vectorizer=False, use_custom_tf_idf=False,
+                                    is_reddit=False):
     # (1, 2) to use unigrams and bigrams; (1, 3) to use unigrams, bigrams and trigrams
     n_gram_range = (1, 3)
 
@@ -308,7 +311,7 @@ def perform_topic_modeling_bertopic(input_data: list[str], tag: str, use_spacy_e
         # Topic -1 declares outliers that could not be assigned to any topic
         topic_info_df = model.get_topic_info()
         pprint.pprint(topic_info_df)
-        topic_info_df.to_csv(OUTPUT_FOLDER / f"bertopic_topic_info_{run}_{tag}.csv", index=False)
+        topic_info_df.to_csv(output_folder / f"bertopic_topic_info_{run}_{tag}.csv", index=False)
         # print("#############\n")
         # document_info_df = model.get_document_info(input_data)
         # pprint.pprint(document_info_df)
@@ -318,26 +321,28 @@ def perform_topic_modeling_bertopic(input_data: list[str], tag: str, use_spacy_e
         print("Topic labels and representative words:")
         pprint.pprint(model.topic_labels_)
         print("#############\n")
+        return topic_info_df
 
     def visualize_modeling_results(model, run=""):
         # replace default topic names ("Topic 1") with custom labels
-        topic_words = model.generate_topic_labels(nr_words=2, separator=" - ")  # , word_length=15
+        # topic_words = model.generate_topic_labels(nr_words=2, separator=" - ")  # , word_length=15
+        topic_words = model.generate_topic_labels(nr_words=2, separator=" -- ", aspect="main")
         model.set_topic_labels(topic_words)
 
         # visualize the topics with plotly
         """
         try:
-            fig_1 = model.visualize_topics(title=f"<b>Intertopic Distance Map - {run} {tag}</b>")
+            fig_1 = model.visualize_topics(title=f"<b>Intertopic Distance Map - {run} {plot_tag}</b>")
             fig_1.show()
-            fig_1.write_html(OUTPUT_FOLDER / f"Intertopic Distance Map - {run} {tag}.html")
+            fig_1.write_html(output_folder / f"Intertopic Distance Map - {run} {plot_tag}.html")
         except Exception as e:
             print(f"[ERROR] plot 1: {e}")
         """
         try:
-            fig_2 = model.visualize_barchart(title=f"Topic Words - {run} {tag}", top_n_topics=10,
+            fig_2 = model.visualize_barchart(title=f"Topics - {run} {plot_tag}", top_n_topics=10,
                                              width=450, height=300, custom_labels=True)
             fig_2.show()
-            fig_2.write_html(OUTPUT_FOLDER / f"Topic Words - {run} {tag}.html")
+            fig_2.write_html(output_folder / f"Topics - {run} {plot_tag}.html")
         except Exception as e:
             print(f"[ERROR] plot 2: {e}")
 
@@ -345,23 +350,26 @@ def perform_topic_modeling_bertopic(input_data: list[str], tag: str, use_spacy_e
     # print_modeling_results(topic_model)
     # visualize_modeling_results(topic_model)
 
-    update_model = True
-    if update_model:
-        new_ngram_range = (2, 3)
-        """
-        custom_vectorizer_model = CountVectorizer(stop_words="english") if use_custom_vectorizer else None
-        custom_ctfidf_model = ClassTfidfTransformer(bm25_weighting=True,
-                                                    reduce_frequent_words=True) if use_custom_tf_idf else None
-        """
-        # update model with new_ngram_range
-        topic_model.update_topics(input_data, n_gram_range=new_ngram_range)
+    new_ngram_range = (2, 3)
+    """
+    custom_vectorizer_model = CountVectorizer(stop_words="english") if use_custom_vectorizer else None
+    custom_ctfidf_model = ClassTfidfTransformer(bm25_weighting=True,
+                                                reduce_frequent_words=True) if use_custom_tf_idf else None
+    """
+    # update model with new_ngram_range
+    topic_model.update_topics(input_data, n_gram_range=new_ngram_range)
 
-        # show the results of the updated run
-        print_modeling_results(topic_model, run="second run")
-        visualize_modeling_results(topic_model, run="Second run")
+    # show the results of the updated run
+    topic_info = print_modeling_results(topic_model, run="second run")
+    visualize_modeling_results(topic_model)    # run="second run"
+
+    # generate topic labels for the Main and Aspect representations for KeyBERT above
+    main_topic_labels = topic_model.generate_topic_labels(nr_words=5, separator="--", aspect="main")
+    aspect_topic_labels = topic_model.generate_topic_labels(nr_words=5, separator="--", aspect="aspect")
 
     # save the (updated) trained model
-    topic_model.save(OUTPUT_FOLDER / f"bertopic_{tag}", serialization="safetensors", save_ctfidf=True)
+    topic_model.save(output_folder / f"bertopic_{tag}", serialization="safetensors", save_ctfidf=True)
+    return topic_info, main_topic_labels, aspect_topic_labels
 
 
 def apply_trained_bertopic_model(input_text: str, tag: str):
@@ -381,7 +389,7 @@ def start_topic_modeling(use_option=2):
     INPUT_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "posts"
     rb_incidents = ["Skyrim-Paid-Mods", "Assassins-Creed-Unity", "Firewatch", "Mortal-Kombat-11",
                     "Borderlands-Epic-Exclusivity", "Ukraine-Russia-Conflict"]
-    rb_incidents = ["Assassins-Creed-Unity"]   # TODO testing
+    rb_incidents = ["Assassins-Creed-Unity"]   # for testing
 
     for rb_name in rb_incidents:
         incident_folder = INPUT_FOLDER / rb_name
@@ -432,20 +440,46 @@ def start_topic_modeling(use_option=2):
                     sentences = [sentence for doc in sentence_list for sentence in doc]
 
                     perform_topic_modeling_bertopic(sentences, tag=f"{source_tag}cleaned_custom_tfidf_{rb_name}",
+                                                    output_folder=OUTPUT_FOLDER,
                                                     use_custom_tf_idf=True, is_reddit=is_reddit_data)
                 else:
                     print("\nTraining with not-preprocessed input data ....")
-                    # perform_topic_modeling_bertopic(docs_original, tag=f"{source_tag}original_custom_vectorizer_{rb_name}",
+                    # perform_topic_modeling_bertopic(docs_original, tag=f"{source_tag}original_custom_vectorizer_{rb_name}", output_folder=OUTPUT_FOLDER,
                     #                                use_custom_vectorizer=True, is_reddit=is_reddit_data)
-                    perform_topic_modeling_bertopic(docs_original, tag=f"{source_tag}original_custom_tfidf_{rb_name}",
+                    perform_topic_modeling_bertopic(docs_original, tag=f"{source_tag}original_custom_tfidf_{rb_name}", output_folder=OUTPUT_FOLDER,
                                                     use_custom_tf_idf=True, is_reddit=is_reddit_data)
                     print("\nTraining with cleaned input data ....")
-                    perform_topic_modeling_bertopic(docs_cleaned, tag=f"{source_tag}cleaned_custom_tfidf_{rb_name}",
+                    perform_topic_modeling_bertopic(docs_cleaned, tag=f"{source_tag}cleaned_custom_tfidf_{rb_name}", output_folder=OUTPUT_FOLDER,
                                                     use_custom_tf_idf=True, is_reddit=is_reddit_data)
                     # print("\nTraining with cleaned and lemmatized input data ....")
-                    # perform_topic_modeling_bertopic(docs_lemmatized, tag=f"{source_tag}lemmatized_{rb_name}", is_reddit=is_reddit_data)
+                    # perform_topic_modeling_bertopic(docs_lemmatized, tag=f"{source_tag}lemmatized_{rb_name}", output_folder=OUTPUT_FOLDER,is_reddit=is_reddit_data)
             case _:
                 print("No suitable option found!")
+
+
+def apply_topic_modeling_reviews(df: pd.DataFrame, rb_name: str, text_col: str, col_for_modeling: str,
+                                 perform_preprocessing=False, social_media_data=True):
+    out_folder = pathlib.Path(__file__).parent / "trained_topic_models"
+    if not out_folder.is_dir():
+        out_folder.mkdir()
+
+    if perform_preprocessing:
+        apply_standard_text_preprocessing(df, text_col=text_col, remove_stopwords=False, remove_punctuation=False,
+                                          is_social_media_data=social_media_data)
+
+    docs = list(df[col_for_modeling])
+    topic_df, main, aspect = perform_topic_modeling_bertopic(docs, tag=f"review_custom_tfidf_{rb_name}",
+                                                             plot_tag=f"Reviews - {rb_name}",
+                                                             output_folder=out_folder, use_custom_tf_idf=True,
+                                                             is_reddit=False)
+
+    combined_topics = set()
+    for topic_list in [main, aspect]:
+        for topic_name in topic_list:
+            cleaned_topic = topic_name.split('--', 1)[1]
+            combined_topics.add(cleaned_topic)
+
+    return topic_df, list(combined_topics)
 
 
 if __name__ == "__main__":
@@ -457,8 +491,6 @@ if __name__ == "__main__":
 
     start_topic_modeling(use_option=2)
     # apply_trained_bertopic_model("thx ubi for notre dame", tag="original_custom_vec_Assassins-Creed-Unity")
-
-    # TODO bring exported topic modeling into a format where they can be used for training as additional metadata (how?)
 
     # TODO maybe train topic model on all tweets, submissions and comments and then apply it to the reviews? does
     #  this work to assign them to suitable topics? can this applied topic be used as an additional column for each

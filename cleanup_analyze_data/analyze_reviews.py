@@ -1,10 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pprint
 import pathlib
+from datetime import datetime
+import numpy as np
 import pandas as pd
+from spellchecker import SpellChecker
+from sentiment_analysis_and_nlp import nltk_utils
+from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
+from sentiment_analysis_and_nlp.sentiment_analysis import apply_sentiment_analysis
 from sentiment_analysis_and_nlp.spacy_utils import SpacyUtils
+from sentiment_analysis_and_nlp.topic_modeling import apply_topic_modeling_reviews
 from utils import utils
 from profanity_check import predict, predict_prob
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -12,22 +18,121 @@ from sklearn.metrics.pairwise import cosine_similarity
 from textstat import textstat
 from textblob import TextBlob, Word
 
+spell = SpellChecker()
 
-def analyze_reviewer(reviewer: pd.Series):
-    # TODO analyze combined with review !! look for the same username in metacritic & steam?
-    #  -> Auffälligkeiten: erst kurz vor review date erstellt, sehr wenige (< 3) reviews, average score sehr niedrig,
-    #  steam_playtime_at_review sehr kurz, real_name (steam) bekannt oder nicht? bzw. an sich ausführlicheres Profil
-    #  oder nicht (vgl. num_owned_games, num_friends, profil_private), ...
-    pass
+
+def analyze_reviewers(df: pd.DataFrame):
+    average_num_ratings = np.nanmean(df["author_ratings_overall"])
+    average_num_reviews_overall = np.nanmean(df["author_reviews_overall"])
+    average_num_reviews = np.nanmean(df["author_num_game_reviews"])
+
+    average_num_games = np.nanmean(df["author_num_owned_games"])
+    average_num_friends = np.nanmean(df["author_num_friends"])
+    average_steam_level = np.nanmean(df["author_steam_level"])
+
+    def calc_author_credibility_experience(row: pd.DataFrame):
+        """
+        Steam Columns: author_playtime_overall_min, author_playtime_at_review_min, username, author_steam_level,
+                       profile_created, profile_visibility, author_num_friends, author_num_owned_games
+        Metacritic Columns: author_ratings_overall, author_reviews_overall, author_average_score
+        Both: author_num_game_reviews
+        """
+        experience_score = 0.0
+        credibility_score = 0.0
+
+        if row["author_num_game_reviews"] > average_num_reviews:
+            credibility_score += 1
+            experience_score += 1
+        elif row["author_num_game_reviews"] < 2:   # if the author has no written other reviews
+            credibility_score -= 1
+            experience_score -= 1
+
+        review_date = row["review_date"]
+
+        # based on the platform we need different columns for the author
+        review_is_from_steam = True if row["source"] == "Steam" else False
+        if review_is_from_steam:
+            # refund time on Steam is below 2 hours, so everything above can be considered pretty credible
+            if row["author_playtime_at_review_min"] >= 120:
+                credibility_score += 1
+
+            # author continued playing the game after leaving the review  -> credible
+            if row["author_playtime_overall_min"] > row["author_playtime_at_review_min"]:
+                credibility_score += 1
+
+            # author account created shortly before review was posted ? -> not credible
+            account_creation_date = row["profile_created"]
+            if not pd.isnull(account_creation_date):
+                review_datetime = datetime.strptime(review_date, '%d.%m.%Y %H:%M:%S')
+                account_datetime = datetime.strptime(account_creation_date, '%d.%m.%Y %H:%M:%S')
+                delta = review_datetime - account_datetime
+                num_days_between = delta.days
+
+                if num_days_between >= 2:
+                    credibility_score += 1
+                    experience_score += 1
+                else:
+                    credibility_score -= 1
+                    experience_score -= 1
+
+            # author_num_friends, author_num_owned_games, author_steam_level  greater than average  -> credible
+            # if these are 0 or below 2  -> not credible
+            if row["author_steam_level"] > average_steam_level:
+                credibility_score += 1
+                experience_score += 1
+            elif row["author_steam_level"] < 2:
+                credibility_score -= 1
+                experience_score -= 1
+
+            if row["author_num_friends"] > average_num_friends:
+                credibility_score += 1
+            elif row["author_num_friends"] == 0:
+                credibility_score -= 1
+
+            if row["author_num_owned_games"] > average_num_games:
+                credibility_score += 1
+            elif row["author_num_owned_games"] < 2:    # author owns only this one game
+                credibility_score -= 1
+        else:
+            # check if author has more ratings than the average author -> credible
+            if row["author_ratings_overall"] > average_num_ratings:
+                credibility_score += 1
+                experience_score += 1
+            elif row["author_ratings_overall"] < 2:
+                credibility_score -= 1
+                experience_score -= 1
+
+            if row["author_reviews_overall"] > average_num_reviews_overall:
+                credibility_score += 1
+                experience_score += 1
+            elif row["author_reviews_overall"] < 2:
+                credibility_score -= 1
+                experience_score -= 1
+
+            # if average is extreme  -> not credible
+            if row["author_average_score"] > 8:
+                credibility_score -= 1
+            if row["author_average_score"] < 4:
+                credibility_score -= 1
+
+        # no negative credibility or experience, just use 0 in that case
+        credibility_score = credibility_score if credibility_score > 0.0 else 0.0
+        experience_score = experience_score if experience_score > 0.0 else 0.0
+        return credibility_score, experience_score
+
+    # check if author can be considered credible or experienced by using different conditions
+    df[["author_credibility", "author_experience"]] = df.apply(lambda row: pd.Series(calc_author_credibility_experience(row)), axis=1)
 
 
 def check_profanity(text: str):
-    contains_profanity = predict([text])
-    profanity_probability = predict_prob([text])
-    print(f"The text \"{text}\"\ncontains profanity: {contains_profanity} (with {profanity_probability[0] * 100} %)")
+    contains_profanity_label = predict([text])
+    # profanity_probability = predict_prob([text])
+    # print(f"The text \"{text}\"\ncontains profanity: {contains_profanity_label} (with {profanity_probability[0] * 100} %)")
+    contains_profanity = True if contains_profanity_label[0] == 1 else False
+    return contains_profanity
 
 
-def check_spelling_errors(text: str, correct_spelling=False):
+def check_spelling(text: str, correct_spelling=False):
     blob = TextBlob(text)
     num_spelling_errors = 0
     w: Word
@@ -38,7 +143,14 @@ def check_spelling_errors(text: str, correct_spelling=False):
     if correct_spelling:
         corrected_blob = blob.correct()
         return str(corrected_blob)
-    return text
+    return num_spelling_errors
+
+
+def get_num_spelling_errors(text: str):
+    tokenized_text = nltk_utils.tokenize_text(text, is_social_media_data=False)
+    # find those words that may be misspelled
+    misspelled = spell.unknown(tokenized_text)
+    return len(misspelled)
 
 
 def calculate_readability(text: str):
@@ -51,13 +163,14 @@ def calculate_readability(text: str):
     # TODO in der Literatur (vgl. Investigating Helpfulness of Video Game Reviews on the Steam Platform) werden
     #  deshalb alle Reviews mit weniger als 100 (!) Wörtern entfernt  => macht das Sinn? dann bleiben nur noch wenige...
     fre = textstat.flesch_reading_ease(text)
+    """
     fkg = textstat.flesch_kincaid_grade(text)
     gf = textstat.gunning_fog(text)
     si = textstat.smog_index(text)
     ari = textstat.automated_readability_index(text)
     cli = textstat.coleman_liau_index(text)
     lwf = textstat.linsear_write_formula(text)
-    # TODO how to combine all readability scores? taking average probably not good ? combine into one feature vector?
+    #  how to combine all readability scores?
     print(f"\nReadability Scores:\n"
           f"Flesch-Reading-Ease: {fre}\nFlesch-Kincaid-Grade: {fkg}\nGunning-Fog: {gf}\nSmog-Index: {si}\n"
           f"Automated-Readability-Index: {ari}\nColeman-Liau-Index: {cli}\nLinsear-Write-Formula: {lwf}\n")
@@ -69,6 +182,18 @@ def calculate_readability(text: str):
     avg_sentence_len = textstat.avg_sentence_length(text)  # combination of the two above
     print(f"Number of difficult words: {len(difficult_words)}\nCharacter Count: {char_count}\nWord Count: "
           f"{word_count}\nSentence Count: {sentence_count}\nAverage Sentence Length: {avg_sentence_len}\n")
+    """
+    # see https://github.com/textstat/textstat for these values
+    if fre >= 90:
+        return "Very Easy"
+    elif fre >= 70:
+        return "Easy"
+    elif fre >= 60:
+        return "Standard"
+    elif fre >= 30:
+        return "Difficult"
+    else:
+        return "Very Difficult"
 
 
 def calculate_cosine_similarity(text1: str, text2: str):
@@ -93,16 +218,6 @@ def calculate_cosine_similarity(text1: str, text2: str):
     return pairwise_similarity
 
 
-"""
-def create_similarity_heatmap(cosine_similarity, cmap="YlGnBu"):
-    df = pd.DataFrame(cosine_similarity)
-    df.columns = labels    # labels = [headline[:20] for headline in headlines]
-    df.index = labels
-    fig, ax = plt.subplots(figsize=(5, 5))
-    sns.heatmap(df, cmap=cmap)
-"""
-
-
 def calculate_text_similarity(text1: str, text2: str, spacy_nlp):
     """
     See https://www.newscatcherapi.com/blog/ultimate-guide-to-text-similarity-with-python for a good overview.
@@ -120,108 +235,67 @@ def calculate_text_similarity(text1: str, text2: str, spacy_nlp):
     # create_similarity_heatmap(cosine_similarity)
 
 
-def find_duplicate_or_similar_reviews():
-    # use something like text similarity to find near duplicate review texts from different users
-    pass
-
-
 def analyze_review(review: pd.Series):
-    # TODO calculate all necessary features for this review and return new pd.Series
+    # calculate all necessary features for this review and return new pd.Series
     #  with the calculated features (cosine similarity with other reviews?, profanity, length, readabiliy)
     print(f"Analyzing new review ...\n")
     game_description = review["game_description"]
     review_text = review["review"]
     check_profanity(review_text)
-    check_spelling_errors(review_text)
+    check_spelling(review_text)
     calculate_readability(review_text)
     # calculate_text_similarity(review_text, game_description)
 
-    # analyze_reviewer()
 
-
-def start_analysis():
-    review_df = pd.read_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv")
-    review_df.apply(lambda row: analyze_review(row), axis=1)
-    # review_df["profanity_in_percent"] = predict_prob(review_df["review"]) * 100
-    # print(review_df)
-
-
-def combine_metacritic_steam_reviews(reviews_steam: pd.DataFrame, reviews_metacritic: pd.DataFrame,
-                                     game_info_steam: pd.DataFrame, game_info_metacritic: pd.DataFrame):
+def start_review_analysis(dataframe: pd.DataFrame):
     """
-    Combine metacritic and steam reviews into one unified dataframe. As steam reviews have far more features the
-    Metacritic rows will contain a lot of empty values.
+    dataframe['readability_flesch_reading'] = dataframe[text_column].apply(lambda x: calculate_readability(x))
+    dataframe['num_spelling_errors'] = dataframe[text_column].apply(lambda x: get_num_spelling_errors(x))
+    dataframe['contains_profanity'] = dataframe[text_column].apply(lambda x: check_profanity(x))
+    analyze_reviewers(dataframe)
+
+    apply_sentiment_analysis(dataframe, text_column, col_for_sentiment_analysis="text_cleaned", perform_preprocessing=False,
+                             social_media_data=False)
     """
-    # pd.options.mode.chained_assignment = None  # disable some warnings
-    # add a common column to the dataframes for merging and to differentiate between the review platforms
-    merge_column = "source"
-    reviews_steam.insert(0, merge_column, ["Steam"] * len(reviews_steam))
-    reviews_metacritic.insert(0, merge_column, ["Metacritic"] * len(reviews_metacritic))
-    game_info_steam.insert(0, merge_column, ["Steam"] * len(game_info_steam))
-    game_info_metacritic.insert(0, merge_column, ["Metacritic"] * len(game_info_metacritic))
 
-    # rename columns so the same content from both dataframes ends up in the same column
-    reviews_steam = reviews_steam.rename(
-        columns={"content": "review", "created_at_formatted": "review_date", "rating_positive": "steam_rating_positive",
-                 "useful_score": "helpful_votes", "author_num_reviews": "author_num_game_reviews",
-                 "author_username": "username"})
-    game_info_steam = game_info_steam.rename(columns={"short_description": "game_description"})
+    # add columns for each incident with the top n topics for this incident
+    topics_per_incident_list = list()
 
-    merged_reviews_df = pd.concat([reviews_steam, reviews_metacritic], axis=0, ignore_index=True)
-    merged_game_info_df = pd.concat([game_info_steam, game_info_metacritic], axis=0, ignore_index=True)
-    # merge the reviews and the general info for the game
-    combined_df = merged_reviews_df.merge(merged_game_info_df, on=[merge_column], how='outer')
+    def get_topics_for_incident(incident_df: pd.DataFrame):
+        rb_name = incident_df.name
+        topics_df, combined_topics = apply_topic_modeling_reviews(incident_df, rb_name, "review",
+                                                                  col_for_modeling="text_cleaned",
+                                                                  perform_preprocessing=False,
+                                                                  social_media_data=False)
+        topics_per_incident_info = {
+            "project": rb_name,
+            "Topic 0": combined_topics[0] if 1 < len(combined_topics) else "",
+            "Topic 1": combined_topics[1] if 2 < len(combined_topics) else "",
+            "Topic 2": combined_topics[2] if 3 < len(combined_topics) else "",
+            "Topic 3": combined_topics[3] if 4 < len(combined_topics) else "",
+            "Topic 4": combined_topics[4] if 5 < len(combined_topics) else "",
+        }
+        topics_per_incident_list.append(topics_per_incident_info)
 
-    # drop unnecessary columns
-    combined_df = combined_df.drop(columns=["review_id", "created_at", "last_updated", "author_id",
-                                            "comment_count", "platform", "profile_visibility", "profile_url",
-                                            "game_id", "game_title", "price_euro"],
-                                   axis=1)
-    # add the game name as a new column at the start
-    # combined_df.insert(0, "Game", combined_df.pop('title'))
-    game_name = combined_df.at[0, "title"]
-    combined_df.insert(0, "Game", [game_name] * len(combined_df))
-    return combined_df
+    dataframe.groupby("project").apply(get_topics_for_incident)
 
+    topics_per_incident_df = pd.DataFrame(topics_per_incident_list)
+    df_with_topics = dataframe.merge(topics_per_incident_df, how="inner")
+    print("debug")
 
-def prepare_data():
-    # load metacritic and steam reviews
-    steam_review_data = pd.read_csv(DATA_FOLDER / "steam" / "steam_user_reviews_Cyberpunk_2077_12_2020_06_2023.csv")
-    steam_general_game_info = pd.read_csv(DATA_FOLDER / "steam" / "steam_general_info_Cyberpunk_2077.csv")
-    metacritic_review_data = pd.read_csv(
-        DATA_FOLDER / "metacritic" / "filtered_metacritic_user_reviews_pc_cyberpunk-2077.csv")
-    metacritic_game_info = pd.read_csv(DATA_FOLDER / "metacritic" / "game_info_pc_cyberpunk-2077.csv")
-
-    # manually select some reviews for testing:
-    test_reviews = ["dudejustin", "Marko156", "oslo1", "Cyberbug2020", "Alpha_Octav", "Ariegan", "Brzytwa",
-                    "spencieboi", "BahamutxD", "TheGamer98"]
-    filtered_metacritic = metacritic_review_data.loc[metacritic_review_data["username"].isin(test_reviews)]
-    print(filtered_metacritic)
-    print("\n######################\n")
-
-    test_steam_reviews = [139928616, 140225020, 140101316, 83758053, 83248147, 82899690, 81940229, 81948825,
-                          81950472, 81949288, 81958813]
-    steam_review_data = utils.remove_linebreaks_from_pd_cells(steam_review_data, column_name="content")
-    filtered_steam = steam_review_data.loc[steam_review_data["review_id"].isin(test_steam_reviews)]
-    # alternatively select a few rows randomly
-    # steam_review_data = steam_review_data.sample(n=10, random_state=1)
-    print(filtered_steam)
-    print("\n######################\n")
-
-    combined_review_df = combine_metacritic_steam_reviews(filtered_steam, filtered_metacritic,
-                                                          steam_general_game_info, metacritic_game_info)
-    combined_review_df.to_csv("combined_steam_metacritic_df_Cyberpunk_2077.csv", index=False)
+    # save as a new csv for now; probably saver than overwriting the existing one
+    df_with_topics.to_csv(pathlib.Path(__file__).parent.parent / "final_annotation_all_projects_review_analysis.csv",
+                          index=False)
 
 
 if __name__ == "__main__":
     utils.enable_max_pandas_display_size()
     DATA_FOLDER = pathlib.Path(__file__).parent.parent / "data_for_analysis_cleaned" / "reviews"
 
-    # prepare_data()
-    # start_analysis()
+    # load the final annotated data
+    combined_annotated_data = pd.read_csv(pathlib.Path(__file__).parent.parent /
+                                          "combined_final_annotation_all_projects_updated.csv")
+    apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False,
+                                      remove_punctuation=False)
 
-    """
-    df = get_combined_data_borderlands()
-    tag = "_Borderlands_new"
-    df.to_csv(f"combined_steam_metacritic_df{tag}.csv", index=False)
-    """
+    start_review_analysis(combined_annotated_data)

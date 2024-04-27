@@ -616,7 +616,7 @@ def analyze_aggregated_annotation_information():
                      kind="bar", dodge=True, legend_out=False)
     ax.set_axis_labels("", "Percentage of all Reviews")
     ax.fig.suptitle('Target Label Annotation per Project')
-    ax.tick_params(axis='x', rotation=45)
+    ax.tick_params(axis='x', rotation=65)
 
     plt.tight_layout()
     plt.savefig(PLOT_FOLDER / "grouped_target_project_features.svg", format="svg")
@@ -666,7 +666,7 @@ def plot_annotator_agreement():
                        kind="bar", dodge=True, legend_out=False, aspect=11.7/8.27)
     plot.set_axis_labels("", "Agreement in %")
     plot.fig.suptitle('Annotator agreement for all projects')
-    plot.tick_params(axis='x', rotation=40)
+    plot.tick_params(axis='x', rotation=65)
     plot.set(ylim=(60, 100))
     plot.tight_layout()
     plt.savefig(PLOT_FOLDER / "annotator_agreement_per_project.svg", format="svg")

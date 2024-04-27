@@ -192,7 +192,7 @@ def compare_sentiment_analysis_results():
 
 def apply_sentiment_analysis(df: pd.DataFrame, text_col: str, col_for_sentiment_analysis: str,
                              perform_preprocessing=False, social_media_data=True):
-    # based on tests, preprocessing ususally does not improve much (or makes it even worse)
+    # based on tests, preprocessing usually does not improve much (or makes it even worse)
     if perform_preprocessing:
         apply_standard_text_preprocessing(df, text_col=text_col, remove_stopwords=False, remove_punctuation=False,
                                           is_social_media_data=social_media_data)
