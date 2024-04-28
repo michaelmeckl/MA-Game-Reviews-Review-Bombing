@@ -246,9 +246,8 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
         1: "Not Review Bombing" if target_column == "is-review-bombing" else "Not Game-Related"
     }
     prediction_results = prediction_results.replace(encoding)
-
-    for idx, row in prediction_results.iloc[:10].iterrows():
-        print(f'Review: {row[text_col]}\nActual label: {row[target_column]}\nPredicted label: {row["predictions"]}\n')
+    # for idx, row in prediction_results.iloc[:10].iterrows():
+    #     print(f'Review: {row[text_col]}\nActual label: {row[target_column]}\nPredicted label: {row["predictions"]}\n')
 
 
 def create_test_train_set(target_col="is-review-bombing"):
@@ -256,7 +255,8 @@ def create_test_train_set(target_col="is-review-bombing"):
         TRAIN_TEST_DATA_FOLDER.mkdir()
     
     # load relevant data
-    combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv")
+    # combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv")
+    combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "final_annotation_all_projects_review_social_media_analysis.csv")
 
     apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False,
                                       remove_punctuation=False)
@@ -297,8 +297,8 @@ if __name__ == "__main__":
     batch_size = 16  # 8
 
     device = get_pytorch_device()
-    checkpoint = "google-bert/bert-base-uncased"
-    # checkpoint = "distilbert-base-uncased"
+    # checkpoint = "google-bert/bert-base-uncased"
+    checkpoint = "distilbert-base-uncased"
     # checkpoint = "FacebookAI/roberta-base"    # there is no uncased version
     ckp_clean = re.sub("/", "-", checkpoint)  # "clean" version without the / so it can be used in filenames
     print(f"[INFO] Using checkpoint: {checkpoint}")
@@ -320,7 +320,7 @@ if __name__ == "__main__":
     # train_set = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv", nrows=1843)
     # encode_target_variable(train_set, target_column, annotation_questions, use_label_encoder=False)
 
-    reviews_to_use = "both"   # "steam" / "metacritic" / "both"
+    reviews_to_use = "steam"   # "steam" / "metacritic" / "both"
     if reviews_to_use == "steam":
         print("[INFO] Training model with only steam reviews!\n")
         train_set = train_set[train_set["source"] == "Steam"].reset_index(drop=True)

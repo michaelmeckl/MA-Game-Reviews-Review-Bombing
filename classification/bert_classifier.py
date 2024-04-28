@@ -14,8 +14,8 @@ def get_pretrained_bert_for_sequence(n_classes, model_checkpoint):
 class BERTClassifier(nn.Module):
     def __init__(self, num_classes, model_checkpoint):
         super(BERTClassifier, self).__init__()
-        self.bert = BertModel.from_pretrained(model_checkpoint)
-        # self.bert = DistilBertModel.from_pretrained(model_checkpoint)
+        # self.bert = BertModel.from_pretrained(model_checkpoint)
+        self.bert = DistilBertModel.from_pretrained(model_checkpoint)
         # self.bert = RobertaModel.from_pretrained(model_checkpoint)
 
         self.dropout = nn.Dropout(0.3)   # increase this in case of overfitting
