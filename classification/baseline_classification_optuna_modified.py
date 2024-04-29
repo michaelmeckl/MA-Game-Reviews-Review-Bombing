@@ -15,7 +15,7 @@ from classification import classification_utils
 from classification.classification_constants import (MODEL_FOLDER, INPUT_DATA_FOLDER, annotation_questions, RANDOM_SEED,
                                                      TRAIN_TEST_DATA_FOLDER, PLOT_FOLDER)
 from classification.classification_utils import split_data_scikit, encode_target_variable, split_data_pytorch, \
-    get_pytorch_device, show_class_distributions
+    get_pytorch_device, show_class_distributions, create_test_train_set
 from classification.bert_classifier import BERTClassifier, predict_label, evaluate_model, train_model, \
     predict_test_labels
 from classification.custom_datasets import CustomBaselineDataset, CustomDataset
@@ -289,33 +289,6 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
 
     for idx, row in prediction_results.iloc[:10].iterrows():
         print(f'Review: {row[text_col]}\nActual label: {row[target_column]}\nPredicted label: {row["predictions"]}\n')
-
-
-def create_test_train_set(target_col="is-review-bombing"):
-    if not TRAIN_TEST_DATA_FOLDER.is_dir():
-        TRAIN_TEST_DATA_FOLDER.mkdir()
-
-    # load relevant data
-    combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv")
-
-    apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False,
-                                      remove_punctuation=False)
-
-    ###################### encode annotated columns #####################
-    encode_target_variable(combined_annotated_data, target_col, annotation_questions, use_label_encoder=False)
-
-    test_incidents = ["Assassins-Creed-Unity", "Firewatch"]
-    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"].isin(test_incidents)]
-    test_data = test_data.reset_index(drop=True)
-
-    train_data = combined_annotated_data[
-        ~(combined_annotated_data["review_bombing_incident"].isin(test_incidents))].reset_index(drop=True)
-
-    print(f"Using {len(train_data)} reviews as train set.")
-    print(f"Using {len(test_data)} reviews as test set.")
-    train_data.to_csv(TRAIN_TEST_DATA_FOLDER / "train_data.csv", index=False)
-    test_data.to_csv(TRAIN_TEST_DATA_FOLDER / "test_data.csv", index=False)
-    return train_data, test_data
 
 
 if __name__ == "__main__":

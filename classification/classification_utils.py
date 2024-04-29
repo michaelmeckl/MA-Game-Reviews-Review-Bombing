@@ -18,7 +18,46 @@ from sklearn import metrics
 from torch.utils.data import random_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from classification.classification_constants import RANDOM_SEED, VALIDATION_SPLIT, PLOT_FOLDER
+from classification.classification_constants import RANDOM_SEED, VALIDATION_SPLIT, PLOT_FOLDER, annotation_questions, \
+    INPUT_DATA_FOLDER, TRAIN_TEST_DATA_FOLDER
+from sentiment_analysis_and_nlp.nlp_utils import apply_standard_text_preprocessing
+
+
+def create_test_train_set(target_col="is-review-bombing", cols_to_encode=None):
+    if not TRAIN_TEST_DATA_FOLDER.is_dir():
+        TRAIN_TEST_DATA_FOLDER.mkdir()
+
+    # load relevant data
+    # combined_annotated_data = pd.read_csv(INPUT_DATA_FOLDER / "combined_final_annotation_all_projects_updated.csv")
+    combined_annotated_data = pd.read_csv(
+        INPUT_DATA_FOLDER / "final_annotation_all_projects_review_social_media_analysis.csv")
+
+    apply_standard_text_preprocessing(combined_annotated_data, text_col="review", remove_stopwords=False,
+                                      remove_punctuation=False)
+
+    ###################### encode annotated columns #####################
+    if cols_to_encode is None:
+        encode_target_variable(combined_annotated_data, target_col, annotation_questions, use_label_encoder=False)
+    else:
+        annotation_questions.remove(target_col)
+        combined_annotated_data[[*annotation_questions]] = combined_annotated_data[[*annotation_questions]].replace({"Ja": "yes", "Nein": "no"})
+        encode_target_variable(combined_annotated_data, target_col, cols_to_encode, use_label_encoder=False)
+
+    # convert to range [0, 1]
+    combined_annotated_data["annotation_certainty"] = combined_annotated_data["annotation_certainty"] / 100
+
+    test_incidents = ["Assassins-Creed-Unity", "Firewatch"]
+    test_data = combined_annotated_data[combined_annotated_data["review_bombing_incident"].isin(test_incidents)]
+    test_data = test_data.reset_index(drop=True)
+
+    train_data = combined_annotated_data[
+        ~(combined_annotated_data["review_bombing_incident"].isin(test_incidents))].reset_index(drop=True)
+
+    print(f"Using {len(train_data)} reviews as train set.")
+    print(f"Using {len(test_data)} reviews as test set.")
+    train_data.to_csv(TRAIN_TEST_DATA_FOLDER / "train_data.csv", index=False)
+    test_data.to_csv(TRAIN_TEST_DATA_FOLDER / "test_data.csv", index=False)
+    return train_data, test_data
 
 
 def set_random_seed(seed: int = RANDOM_SEED, is_pytorch: bool = True) -> None:

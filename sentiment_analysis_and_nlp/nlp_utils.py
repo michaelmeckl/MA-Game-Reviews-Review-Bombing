@@ -4,7 +4,7 @@ import collections
 import itertools
 from nltk import word_tokenize, RegexpTokenizer, bigrams, FreqDist
 from nltk.corpus import stopwords
-from rake_nltk import Rake
+# from rake_nltk import Rake
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 from textblob import TextBlob
@@ -349,17 +349,17 @@ def test_semantic_similarity():
     print(f"Testing semantic similarity: {sss('review bomb', 'controversial')}")
 
 
+"""
 def extract_keywords(text: str):
-    """
-    Uses the RAKE (Rapid Automatic Keyword Extraction) algorithm to extract the most suitable keywords from a text.
-    See https://csurfer.github.io/rake-nltk/_build/html/index.html
-    """
+    # Uses the RAKE (Rapid Automatic Keyword Extraction) algorithm to extract the most suitable keywords from a text.
+    # See https://csurfer.github.io/rake-nltk/_build/html/index.html
     # Uses stopwords for english from NLTK, and all punctuation characters by default
     r = Rake()
     r.extract_keywords_from_text(text)
     for score, phrase in r.get_ranked_phrases_with_scores():
         if score > 5:
             print(f"Score: {score}, Phrase:{phrase}\n")
+"""
 
 
 def textblob_utils(text: str):
