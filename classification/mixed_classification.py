@@ -311,10 +311,28 @@ def train_mixed_model(data: pd.DataFrame, tokenizer, text_col: str, tag: str, op
 
 
 def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag: str, incident_positive=False):
+    #  scale some columns in X_data before converting to text?
+    ct = ColumnTransformer(transformers=[
+        ("minmax", MinMaxScaler(), ["sentiment_score_sentence_level", "avg_sentiment_rb_period - Twitter",
+                                    "avg_sentiment_rb_period - Reddit Posts", "author_credibility"]),
+        ("standard", StandardScaler(), ["author_playtime_at_review_min"])
+    ])
+    test_data[["sentiment_score_sentence_level", "avg_sentiment_rb_period - Twitter",
+               "avg_sentiment_rb_period - Reddit Posts", "author_credibility",
+               "author_playtime_at_review_min"]] = ct.fit_transform(test_data)
+
+    sen_w_feats = []
+    for index, row in test_data.iterrows():
+        combined_text = get_feature_combination(row, text_col, option)
+        sen_w_feats.append(combined_text)
+
+    # add combined text features as a new column to use for training
+    test_data.insert(0, "combined_text", sen_w_feats)
+
     # tokenize
     max_tokens = tokenizer.max_model_input_sizes[checkpoint]
-    dataset = ds.from_pandas(test_data[[text_col]])
-    test_dataset = dataset.map(lambda data: tokenizer(data[text_col], truncation=True, max_length=max_tokens),
+    dataset = ds.from_pandas(test_data[["combined_text"]])
+    test_dataset = dataset.map(lambda data: tokenizer(data["combined_text"], truncation=True, max_length=max_tokens),
                                batched=True)
 
     test_x = test_dataset.to_pandas()
@@ -334,7 +352,7 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     tag_for_confusion = f"mixed-{tag}--{ckp_clean}"
     predicted_labels = predict_test_labels(model, test_dataloader, device, tag_for_confusion, incident_positive)
     # show some predictions
-    prediction_results = test_data[[text_col, target_column]]
+    prediction_results = test_data[["combined_text", target_column]]
     prediction_results.insert(2, "predictions", predicted_labels)
 
     # convert 0 and 1 back to categorical label
@@ -399,7 +417,7 @@ if __name__ == "__main__":
         raise ValueError("The specified reviews_to_use type is unknown!")
 
     CURRENT_OPTION = 0
-    for option in [5]:
+    for option in [5, 6]:
         CURRENT_OPTION = option
         # update the tag for the model save
         option_tag = f"option-{CURRENT_OPTION}-{model_tag}_review_bombing" if classify_rb else f"{model_tag}_game_related"
