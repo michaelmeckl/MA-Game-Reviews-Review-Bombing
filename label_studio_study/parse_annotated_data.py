@@ -662,6 +662,7 @@ def plot_annotator_agreement():
     project_agreement_df_long = project_agreement_df_long.rename(columns={"variable": "Type"})
 
     # plt.rcParams["figure.figsize"] = (8, 12)
+    sns.set_style("whitegrid")
     plot = sns.catplot(data=project_agreement_df_long, x="Project", y="value", hue="Type",
                        kind="bar", dodge=True, legend_out=False, aspect=11.7/8.27)
     plot.set_axis_labels("", "Agreement in %")

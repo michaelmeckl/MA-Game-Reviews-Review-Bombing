@@ -124,7 +124,10 @@ def get_feature_combination(row: pd.Series, text_col, option):
     if option == 1:
         combined = row[text_col]  # review text first
         combined += (f" [SEP] This text contains: {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
-        combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        if target_column == "is-review-bombing":
+            combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        else:
+            combined += f" [SEP] Is review bombing" if row['is-review-bombing'] == "yes" else "Not review bombing"
         combined += f" [SEP] Information from {row['num_annotators']} people"
         combined += f" [SEP] Agreement: {row['annotation_certainty']}"
         return combined
@@ -134,7 +137,10 @@ def get_feature_combination(row: pd.Series, text_col, option):
         # only separate with [SEP] tag and dont write paragraph for each? less context but more efficient
         combined = row[text_col]  # review text first
         combined += (f" [SEP] {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
-        combined += f" [SEP] Related to game: {row['is-rating-game-related']}"
+        if target_column == "is-review-bombing":
+            combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        else:
+            combined += f" [SEP] Is review bombing" if row['is-review-bombing'] == "yes" else "Not review bombing"
         combined += f" [SEP] {row['num_annotators']}"
         combined += f" [SEP] {row['annotation_certainty']}"
         return combined
@@ -163,7 +169,10 @@ def get_feature_combination(row: pd.Series, text_col, option):
     elif option == 4:
         combined = row[text_col]
         combined += (f" [SEP] This text contains: {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
-        combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        if target_column == "is-review-bombing":
+            combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        else:
+            combined += f" [SEP] Is review bombing" if row['is-review-bombing'] == "yes" else "Not review bombing"
         combined += f" [SEP] Sentiment Twitter: {row['avg_sentiment_rb_period - Twitter']}"
         combined += f" [SEP] Sentiment Reddit: {row['avg_sentiment_rb_period - Reddit Posts']}"
         combined += f" [SEP] Relevant Topics Twitter: {row['Topic 0 - Twitter']}"
@@ -174,7 +183,11 @@ def get_feature_combination(row: pd.Series, text_col, option):
     elif option == 5:
         combined = row[text_col]
         combined += (f" [SEP] This text contains: {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
-        combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        # combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        if target_column == "is-review-bombing":
+            combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        else:
+            combined += f" [SEP] Is review bombing" if row['is-review-bombing'] == "yes" else "Not review bombing"
         combined += f" [SEP] Playtime: {row['author_playtime_at_review_min']}"
         combined += f" [SEP] Author Credibility: {row['author_credibility']}"
         combined += f" [SEP] Game Sentiment: {row['sentiment_score_sentence_level']}"
@@ -374,7 +387,7 @@ if __name__ == "__main__":
     if not PLOT_FOLDER.is_dir():
         PLOT_FOLDER.mkdir()
 
-    classify_rb = True  # if False classify off_topic column
+    classify_rb = False  # if False classify off_topic column
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
     # text_column = "review"
     text_column = "text_cleaned"
@@ -390,9 +403,9 @@ if __name__ == "__main__":
     ckp_clean = re.sub("/", "-", checkpoint)  # "clean" version without the / so it can be used in filenames
     print(f"[INFO] Using checkpoint: {checkpoint}")
 
-    create_new_test_train_data = False
+    create_new_test_train_data = True
     if create_new_test_train_data:
-        train_set, test_set = create_test_train_set(cols_to_encode=[target_column])
+        train_set, test_set = create_test_train_set(target_col=target_column, cols_to_encode=[target_column])
     else:
         # load existing data
         train_set = pd.read_csv(TRAIN_TEST_DATA_FOLDER / "train_data.csv")
@@ -420,7 +433,7 @@ if __name__ == "__main__":
     for option in [5, 6]:
         CURRENT_OPTION = option
         # update the tag for the model save
-        option_tag = f"option-{CURRENT_OPTION}-{model_tag}_review_bombing" if classify_rb else f"{model_tag}_game_related"
+        option_tag = f"option-{CURRENT_OPTION}-{model_tag}_review_bombing" if classify_rb else f"option-{CURRENT_OPTION}-{model_tag}_game_related"
 
         pre_trained_tokenizer = AutoTokenizer.from_pretrained(checkpoint)
         train_mixed_model(train_set, pre_trained_tokenizer, text_column, option_tag, option=option)

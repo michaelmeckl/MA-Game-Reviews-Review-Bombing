@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
     create_new_test_train_data = False
     if create_new_test_train_data:
-        train_set, test_set = create_test_train_set()
+        train_set, test_set = create_test_train_set(target_col=target_column)
     else:
         # load existing data
         train_set = pd.read_csv(TRAIN_TEST_DATA_FOLDER / "train_data.csv")
