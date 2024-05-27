@@ -179,7 +179,7 @@ def get_feature_combination(row: pd.Series, text_col, option):
         combined += f" [SEP] Relevant Topics Reddit: {row['Topic 0 - Reddit Posts']}"
         return combined
 
-    # combination annotation + review metadata
+    # combination annotation + review metadata + review analysis data
     elif option == 5:
         combined = row[text_col]
         combined += (f" [SEP] This text contains: {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
@@ -202,6 +202,54 @@ def get_feature_combination(row: pd.Series, text_col, option):
         combined += f" [SEP] Game Sentiment: {row['sentiment_score_sentence_level']}"
         combined += f" [SEP] Text is {row['readability_flesch_reading']} to understand"
         combined += f" [SEP] Relevant Game Topics: {row['Topic 0']} {row['Topic 1']} {row['Topic 2']}"
+        return combined
+
+    # more review metadata + analysis data
+    elif option == 61:
+        combined = row[text_col]
+        combined += f" [SEP] Playtime: {row['author_playtime_at_review_min']}"
+        combined += f" [SEP] Game received for free: {row['game_received_for_free']}"
+        combined += f" [SEP] Was Steam Purchase: {row['was_steam_purchase']}"
+        combined += f" [SEP] Review Date: {row['review_date']}"
+        combined += f" [SEP] Author Credibility: {row['author_credibility']}"
+        combined += f" [SEP] Game Sentiment: {row['sentiment_score_sentence_level']}"
+        combined += f" [SEP] Relevant Game Topics: {row['Topic 0']} {row['Topic 1']}"
+        return combined
+
+    # review metadata + social media
+    elif option == 62:
+        combined = row[text_col]
+        combined += f" [SEP] Playtime: {row['author_playtime_at_review_min']}"
+        combined += f" [SEP] Game received for free: {row['game_received_for_free']}"
+        combined += f" [SEP] Was Steam Purchase: {row['was_steam_purchase']}"
+        combined += f" [SEP] Review Date: {row['review_date']}"
+        combined += f" [SEP] Sentiment Twitter: {row['avg_sentiment_rb_period - Twitter']}"
+        combined += f" [SEP] Sentiment Reddit: {row['avg_sentiment_rb_period - Reddit Posts']}"
+        combined += f" [SEP] Relevant Topics Twitter: {row['Topic 0 - Twitter']}"
+        combined += f" [SEP] Relevant Topics Reddit: {row['Topic 0 - Reddit Posts']}"
+        return combined
+
+    # only review metadata
+    elif option == 63:
+        combined = row[text_col]
+        combined += f" [SEP] Playtime: {row['author_playtime_at_review_min']}"
+        combined += f" [SEP] Game received for free: {row['game_received_for_free']}"
+        combined += f" [SEP] Was Steam Purchase: {row['was_steam_purchase']}"
+        combined += f" [SEP] Review Date: {row['review_date']}"
+        return combined
+
+    # review metadata + annotation data
+    elif option == 64:
+        combined = row[text_col]
+        combined += (f" [SEP] This text contains: {game_criticism}, {dev_criticism}, {personal_criticism}, {political_criticism} ")
+        if target_column == "is-review-bombing":
+            combined += f" [SEP] Related to game" if row['is-rating-game-related'] == "yes" else "Not related to game"
+        else:
+            combined += f" [SEP] Is review bombing" if row['is-review-bombing'] == "yes" else "Not review bombing"
+        combined += f" [SEP] Playtime: {row['author_playtime_at_review_min']}"
+        combined += f" [SEP] Game received for free: {row['game_received_for_free']}"
+        combined += f" [SEP] Was Steam Purchase: {row['was_steam_purchase']}"
+        combined += f" [SEP] Review Date: {row['review_date']}"
         return combined
 
     # review metadata + analysis data without topics
@@ -360,6 +408,7 @@ def predict_on_test_data(test_data: pd.DataFrame, tokenizer, text_col: str, tag:
     n_classes = test_data[target_column].nunique()
     model = BERTClassifier(n_classes, model_checkpoint=checkpoint).to(device)
     model_checkpoint = torch.load(MODEL_FOLDER / f"mixed-{tag}-best-model_{ckp_clean}.pt")
+    print(f"Loading model checkpoint 'mixed-{tag}-best-model_{ckp_clean}' for testing ...")
     model.load_state_dict(model_checkpoint['model_state_dict'])
 
     tag_for_confusion = f"mixed-{tag}--{ckp_clean}"
@@ -387,7 +436,7 @@ if __name__ == "__main__":
     if not PLOT_FOLDER.is_dir():
         PLOT_FOLDER.mkdir()
 
-    classify_rb = False  # if False classify off_topic column
+    classify_rb = True  # if False classify off_topic column
     target_column = "is-review-bombing" if classify_rb else "is-rating-game-related"
     # text_column = "review"
     text_column = "text_cleaned"
@@ -403,7 +452,7 @@ if __name__ == "__main__":
     ckp_clean = re.sub("/", "-", checkpoint)  # "clean" version without the / so it can be used in filenames
     print(f"[INFO] Using checkpoint: {checkpoint}")
 
-    create_new_test_train_data = True
+    create_new_test_train_data = False
     if create_new_test_train_data:
         train_set, test_set = create_test_train_set(target_col=target_column, cols_to_encode=[target_column])
     else:
@@ -430,7 +479,7 @@ if __name__ == "__main__":
         raise ValueError("The specified reviews_to_use type is unknown!")
 
     CURRENT_OPTION = 0
-    for option in [5, 6]:
+    for option in [64]:
         CURRENT_OPTION = option
         # update the tag for the model save
         option_tag = f"option-{CURRENT_OPTION}-{model_tag}_review_bombing" if classify_rb else f"option-{CURRENT_OPTION}-{model_tag}_game_related"
